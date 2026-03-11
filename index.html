@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>US Payment Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f5;--surface:#fff;--border:#e8e8e4;--border-soft:#f0f0ec;
+  --text-primary:#1a1a18;--text-secondary:#6b6b65;--text-muted:#a8a8a2;--accent:#1a1a18;
+  --green:#16a34a;--green-light:#22c55e;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;
+  --yellow:#d97706;--yellow-bg:#fffbeb;--yellow-border:#fde68a;
+  --orange:#ea580c;--orange-bg:#fff7ed;--orange-border:#fed7aa;
+  --blue:#3b82f6;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:200}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo svg{width:16px;height:16px;stroke:white;fill:none;stroke-width:2}
+.app-title{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.app-subtitle{font-size:11px;color:var(--text-muted)}
+.legend{display:flex;align-items:center;gap:14px;font-size:11px;color:var(--text-secondary)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:8px;height:8px;border-radius:2px}
+.ld-paid{background:#22c55e}.ld-partial{background:#f59e0b}.ld-unpaid{background:#dc2626}.ld-denda{background:#ea580c}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(247,247,245,.88);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:14px}
+.loading-overlay.show{display:flex}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;font-weight:500;color:var(--text-secondary);letter-spacing:.01em}
+
+/* MAIN */
+.main{padding:28px 32px;max-width:1700px;margin:0 auto}
+
+/* UPLOAD */
+.upload-section{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.upload-card{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius);padding:26px 24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;display:block}
+.upload-card:hover{border-color:#bbb;background:#fafaf8}
+.upload-card.loaded{border-style:solid;border-color:#22c55e;background:var(--green-bg)}
+.upload-card.dragover{border-color:var(--blue);background:var(--blue-bg)}
+.upload-card input[type=file]{display:none}
+.upload-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;background:var(--bg)}
+.upload-card.loaded .upload-icon{background:var(--green-bg)}
+.upload-icon svg{width:20px;height:20px;stroke:var(--text-secondary);fill:none;stroke-width:1.8}
+.upload-label{font-size:13px;font-weight:600;margin-bottom:3px}
+.upload-hint{font-size:11px;color:var(--text-muted)}
+.upload-filename{font-size:11px;font-weight:500;color:var(--green);margin-top:6px;font-family:'DM Mono',monospace;word-break:break-all}
+.upload-badge{position:absolute;top:10px;right:10px;background:#16a34a;color:white;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+
+/* STATS */
+.stats-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 18px;box-shadow:var(--shadow)}
+.stat-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:5px}
+.stat-value{font-size:22px;font-weight:600;letter-spacing:-.03em;font-family:'DM Mono',monospace}
+.sv-green{color:#16a34a}.sv-red{color:#dc2626}.sv-yellow{color:#d97706}.sv-orange{color:#ea580c}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* CONTROLS */
+.controls{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{position:relative;min-width:190px;max-width:260px}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;pointer-events:none}
+.search-input{width:100%;padding:7px 10px 7px 28px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--surface);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:#999}
+select.fsel{padding:7px 24px 7px 9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--surface);outline:none;cursor:pointer;color:var(--text-primary);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
+.sep{width:1px;height:22px;background:var(--border);margin:0 2px}
+
+/* Month nav */
+.month-nav{display:flex;align-items:center;gap:5px}
+.month-nav-label{font-size:12px;font-weight:600;color:var(--text-primary);min-width:120px;text-align:center;font-family:'DM Mono',monospace;letter-spacing:-.01em}
+.mnav-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
+.mnav-btn:hover{background:var(--bg);border-color:#aaa}
+.mnav-btn svg{width:12px;height:12px;stroke:var(--text-secondary);fill:none;stroke-width:2.5}
+.mnav-today{font-size:11px;padding:4px 9px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:inherit;color:var(--text-secondary);font-weight:600;transition:all .15s;letter-spacing:.01em}
+.mnav-today:hover{background:var(--bg);border-color:#aaa}
+
+.controls-right{display:flex;gap:8px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.btn-primary{background:var(--accent);color:white;border-color:var(--accent)}.btn-primary:hover{background:#333}
+.btn-secondary{background:var(--surface);color:var(--text-primary);border-color:var(--border)}.btn-secondary:hover{background:var(--bg)}
+
+/* TABLE */
+.table-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.table-scroll{overflow-x:auto;max-height:calc(100vh - 310px);overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+
+thead th{background:#f8f8f6;border-bottom:1px solid var(--border);padding:9px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;position:sticky;top:0;z-index:20}
+thead th.col-name{min-width:190px;position:sticky;left:0;z-index:30;background:#f8f8f6}
+thead th.col-va{min-width:110px;font-family:'DM Mono',monospace}
+thead th.col-month{text-align:center;min-width:72px}
+thead th.col-num{text-align:center;min-width:58px}
+thead th.col-denda{text-align:center;min-width:90px;color:var(--orange)}
+thead th.col-out{text-align:center;min-width:100px;color:var(--red)}
+
+tr.class-header td{background:#f2f2ef;padding:7px 12px;font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border-soft);border-top:1px solid var(--border)}
+tr.class-header:first-child td{border-top:none}
+.class-pill{display:inline-flex;align-items:center;gap:8px}
+.class-count{background:rgba(0,0,0,.08);color:var(--text-secondary);font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600}
+.class-stats{display:inline-flex;gap:8px}
+.cs-item{font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px}
+.cs-paid{background:var(--green-bg);color:#16a34a;border:1px solid var(--green-border)}
+.cs-out{background:var(--red-bg);color:#dc2626;border:1px solid var(--red-border)}
+
+tbody tr.student-row td{padding:8px 10px;border-bottom:1px solid var(--border-soft);vertical-align:middle;transition:background .1s}
+tbody tr.student-row:hover td{background:#fafaf9}
+tbody tr.student-row.row-overdue td{background:#fff7ed}
+tbody tr.student-row.row-overdue:hover td{background:#ffedd5}
+tbody tr.student-row.row-overdue td.col-name{background:#fff7ed;border-left:3px solid var(--orange)}
+tbody tr.student-row.row-overdue:hover td.col-name{background:#ffedd5}
+tbody tr.student-row td.col-name{position:sticky;left:0;background:white;z-index:5;border-right:1px solid var(--border-soft)}
+tbody tr.student-row:hover td.col-name{background:#fafaf9}
+.student-name-cell{display:flex;flex-direction:column;gap:1px}
+.sn-name{font-size:13px;font-weight:500}
+.sn-id{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:.01em}
+.sn-ket{font-size:10px;color:var(--purple);font-style:italic}
+
+td.col-va{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-secondary)}
+td.col-month{text-align:center;padding:5px 3px;cursor:pointer}
+td.col-month:hover .pay-badge{filter:brightness(.93)}
+
+/* DETAIL POPUP */
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:400;display:none;align-items:center;justify-content:center}
+.popup-overlay.show{display:flex}
+.popup{background:var(--surface);border-radius:14px;box-shadow:0 8px 48px rgba(0,0,0,.16);width:360px;max-width:92vw;overflow:hidden;animation:popIn .2s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.popup-header{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.popup-name{font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.popup-meta{font-size:11px;color:var(--text-muted);margin-top:3px;font-family:'DM Mono',monospace}
+.popup-close{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.popup-close:hover{background:var(--bg)}
+.popup-close svg{width:12px;height:12px;stroke:var(--text-secondary);fill:none;stroke-width:2.5}
+.popup-body{padding:14px 20px 18px}
+.popup-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-soft)}
+.popup-row:last-child{border-bottom:none}
+.popup-key{font-size:11px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.popup-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text-primary);text-align:right;max-width:210px;word-break:break-all}
+.popup-val.pv-green{color:#16a34a}.popup-val.pv-red{color:#dc2626}.popup-val.pv-orange{color:#ea580c}.popup-val.pv-yellow{color:#d97706}
+.popup-denda-box{margin-top:12px;background:var(--orange-bg);border:1px solid var(--orange-border);border-radius:8px;padding:10px 14px}
+.popup-denda-title{font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.popup-denda-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);padding:2px 0}
+.popup-denda-total{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--orange);border-top:1px solid var(--orange-border);margin-top:6px;padding-top:6px}
+
+.pay-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 6px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.02em;width:64px;transition:box-shadow .15s}
+.pb-paid{background:var(--green-bg);color:#16a34a;border:1px solid var(--green-border)}
+.pb-partial{background:var(--yellow-bg);color:#d97706;border:1px solid var(--yellow-border)}
+.pb-unpaid{background:var(--red-bg);color:#dc2626;border:1px solid var(--red-border)}
+.pb-na{background:transparent;color:var(--text-muted);border:1px solid transparent}
+.pb-current-month{box-shadow:0 0 0 2px var(--blue) !important}
+
+tr.class-summary td{background:#f8f8f6;padding:6px 10px;font-size:11px;border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border);color:var(--text-secondary)}
+tr.class-summary td.col-month{text-align:center}
+.sf{font-family:'DM Mono',monospace;font-size:10px;font-weight:700}
+.sf-all{color:#16a34a}.sf-none{color:#dc2626}.sf-part{color:#d97706}
+
+td.col-num,td.col-denda,td.col-out{text-align:center}
+.nv{font-family:'DM Mono',monospace;font-size:11px;font-weight:500}
+.nv-red{color:#dc2626}.nv-orange{color:#ea580c}.nv-green{color:#16a34a}.nv-muted{color:var(--text-muted)}
+.denda-chip{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;color:#ea580c}
+
+.state-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px;text-align:center;color:var(--text-muted)}
+.state-empty svg{width:44px;height:44px;margin-bottom:14px;opacity:.22;stroke:currentColor;fill:none;stroke-width:1.4}
+.state-empty h3{font-size:15px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+.state-empty p{font-size:13px;max-width:340px;line-height:1.7}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:white;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:var(--shadow-md);transform:translateY(100px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.t-success{background:#16a34a}.toast.t-error{background:#dc2626}
+
+@media(max-width:768px){.main{padding:16px}.header{padding:0 16px}.upload-section{grid-template-columns:1fr}.stats-bar{grid-template-columns:1fr 1fr}}
+
+/* LOGIN SCREEN */
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
+.login-screen.hidden{display:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:360px;max-width:92vw;box-shadow:var(--shadow-md)}
+.login-logo{width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.login-logo svg{width:22px;height:22px;stroke:white;fill:none;stroke-width:2}
+.login-title{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px}
+.login-field{margin-bottom:14px}
+.login-label{font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
+.login-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);outline:none;transition:border-color .15s;color:var(--text-primary)}
+.login-input:focus{border-color:#999;background:white}
+.login-btn{width:100%;padding:10px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;transition:background .15s;letter-spacing:.01em}
+.login-btn:hover{background:#333}
+.login-btn:disabled{background:#999;cursor:not-allowed}
+.login-error{font-size:12px;color:#dc2626;margin-top:10px;text-align:center;min-height:18px}
+.btn-logout{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);transition:all .15s;font-family:inherit}
+.btn-logout:hover{background:var(--bg);color:var(--red)}
+.btn-logout svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.user-info{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    </div>
+    <div class="login-title">US Payment Tracker</div>
+    <div class="login-sub">SMA Kristen Petra 5 — Sign in to continue</div>
+    <div class="login-field">
+      <label class="login-label">Email</label>
+      <input class="login-input" type="email" id="login-email" placeholder="your@email.com" autocomplete="email"/>
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input class="login-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Reading file…</div>
+</div>
+
+<!-- DETAIL POPUP -->
+<div class="popup-overlay" id="popup-overlay" onclick="closePopup(event)">
+  <div class="popup" id="popup">
+    <div class="popup-header">
+      <div>
+        <div class="popup-name" id="popup-name"></div>
+        <div class="popup-meta" id="popup-meta"></div>
+      </div>
+      <button class="popup-close" onclick="closePopupDirect()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="popup-body" id="popup-body"></div>
+  </div>
+</div>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    </div>
+    <div>
+      <div class="app-title">US Payment Tracker</div>
+      <div class="app-subtitle">SMA Kristen Petra 5</div>
+    </div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot ld-paid"></div>Paid</div>
+    <div class="legend-item"><div class="legend-dot ld-partial"></div>Partial</div>
+    <div class="legend-item"><div class="legend-dot ld-unpaid"></div>Unpaid</div>
+    <div class="legend-item"><div class="legend-dot ld-denda"></div>Denda</div>
+    <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
+    <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace" id="header-date"></div>
+    <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
+    <span class="user-info" id="header-user"></span>
+    <button class="btn-logout" id="btn-logout" onclick="doLogout()" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <div class="upload-section">
+    <label class="upload-card" id="card-students"
+      ondragover="onDrag(event,'students')" ondragleave="onDragLeave('students')" ondrop="onDrop(event,'students')">
+      <input type="file" id="file-students" accept=".xlsx,.xls" onchange="onFileSelect(event,'students')"/>
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"/><polyline points="14 3 14 8 19 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+      </div>
+      <div class="upload-label">Student Master Data</div>
+      <div class="upload-hint">Columns: NO / STUDENT CODE / INDUK / NAMA / KELAS / VA / KET</div>
+      <div class="upload-filename" id="students-filename"></div>
+    </label>
+    <label class="upload-card" id="card-payments"
+      ondragover="onDrag(event,'payments')" ondragleave="onDragLeave('payments')" ondrop="onDrop(event,'payments')">
+      <input type="file" id="file-payments" accept=".xlsx,.xls" onchange="onFileSelect(event,'payments')"/>
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+      </div>
+      <div class="upload-label">Payment Records</div>
+      <div class="upload-hint">SPP / fee payment data .xlsx</div>
+      <div class="upload-filename" id="payments-filename"></div>
+    </label>
+  </div>
+
+  <div class="stats-bar" id="stats-bar" style="display:none">
+    <div class="stat-card">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value" id="s-total">—</div>
+      <div class="stat-sub" id="s-classes">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Paid This Month / Today</div>
+      <div class="stat-value sv-green" id="s-paid">—</div>
+      <div class="stat-sub" id="s-paid-pct">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Outstanding</div>
+      <div class="stat-value sv-red" id="s-out">—</div>
+      <div class="stat-sub" id="s-out-pct">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total IDR Outstanding</div>
+      <div class="stat-value sv-yellow" id="s-amount">—</div>
+      <div class="stat-sub">current month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Denda</div>
+      <div class="stat-value sv-orange" id="s-denda">—</div>
+      <div class="stat-sub">cumulative late fees</div>
+    </div>
+    <div class="stat-card" style="border-color:#fecaca">
+      <div class="stat-label" style="color:#dc2626">Total Outstanding</div>
+      <div class="stat-value sv-red" id="s-total-out">—</div>
+      <div class="stat-sub">all months combined</div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls" style="display:none">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="Search student…" id="search-input" oninput="renderTable()"/>
+    </div>
+    <select class="fsel" id="f-grade" onchange="onGradeChange()">
+      <option value="">All Grades</option>
+      <option value="X">Grade X</option>
+      <option value="XI">Grade XI</option>
+      <option value="XII">Grade XII</option>
+    </select>
+    <select class="fsel" id="f-class" onchange="renderTable()">
+      <option value="">All Classes</option>
+    </select>
+    <select class="fsel" id="f-status" onchange="renderTable()">
+      <option value="">All Status</option>
+      <option value="outstanding">Has Outstanding</option>
+      <option value="paid">Fully Paid</option>
+      <option value="denda">Has Denda</option>
+    </select>
+    <div class="sep"></div>
+    <div class="month-nav">
+      <button class="mnav-btn" onclick="shiftMonth(-1)">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="month-nav-label" id="month-nav-label">— ——</span>
+      <button class="mnav-btn" onclick="shiftMonth(1)">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button class="mnav-today" onclick="goToCurrentMonth()">Today</button>
+    </div>
+    <div class="sep"></div>
+    <select class="fsel" id="f-view" onchange="renderTable()">
+      <option value="current">Current month</option>
+      <option value="all">All months</option>
+      <option value="ytd">Year to date</option>
+    </select>
+    <div class="controls-right">
+      <button class="btn btn-secondary" onclick="exportExcel()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="state-empty" id="empty-state">
+      <svg viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8"/></svg>
+      <h3>Upload both files to begin</h3>
+      <p>Upload the student master and payment records. Students are matched automatically via Student Code / NISN.</p>
+    </div>
+    <div class="table-scroll" id="table-scroll" style="display:none">
+      <table id="main-table">
+        <thead id="tbl-head"></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SUPABASE ──
+const SUPABASE_URL = 'https://vjydxbdizbolsjqtzoot.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqeWR4YmRpemJvbHNqcXR6b290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMTIxOTEsImV4cCI6MjA4ODc4ODE5MX0.Er1fgEhyqzDpcw2oaVbdZl_1s5d0ffXxNmUQIfR-fbs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── CONSTANTS ──
+const DENDA_PER_STEP = 10000;
+const DENDA_CUTOFF_DAY = 25;
+
+// ── STATE ──
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let studentsData   = null;
+let paymentsData   = null;
+let mergedData     = null;
+let allMonths      = [];
+let allClasses     = [];
+let activeMonthIdx = 0;
+
+const NOW = new Date();
+const CURRENT_PERIOD = NOW.getFullYear()+'/'+String(NOW.getMonth()+1).padStart(2,'0');
+
+// ── HELPERS ──
+function periodKey(y,m){ return y+'/'+String(m).padStart(2,'0'); }
+function monthLabel(period){
+  const p = String(period||'').split('/');
+  if(p.length!==2) return {short:period,full:period,year:''};
+  const mi = parseInt(p[1])-1;
+  return {short:MONTH_NAMES[mi]||'?', full:MONTH_FULL[mi]||'?', year:p[0]};
+}
+function fmtIDR(val){
+  const n = parseInt(val||0);
+  if(!n) return '—';
+  return 'Rp\u202f'+n.toLocaleString('id-ID');
+}
+function fmtIDRShort(val){
+  const n=parseInt(val||0);
+  if(!n) return '—';
+  if(n>=1e9) return 'Rp '+(n/1e9).toFixed(2)+'B';
+  if(n>=1e6) return 'Rp '+(n/1e6).toFixed(2)+'M';
+  if(n>=1e3) return 'Rp '+(n/1e3).toFixed(0)+'K';
+  return 'Rp '+n;
+}
+function fmtInt(val){
+  if(!val) return '';
+  return String(parseInt(val));
+}
+function calcDenda(n){
+  if(n<=0) return 0;
+  let t=0; for(let i=1;i<=n;i++) t+=i*DENDA_PER_STEP;
+  return t;
+}
+function getOverdueCount(student, targetMonth){
+  const todayDay = NOW.getDate();
+  const dendaUpTo = (todayDay >= DENDA_CUTOFF_DAY)
+    ? targetMonth
+    : (allMonths[allMonths.indexOf(CURRENT_PERIOD)-1] || '');
+  let streak=0;
+  for(const m of allMonths){
+    if(m>targetMonth) break;
+    if(m>dendaUpTo) break;
+    const p=student.payments[m];
+    if(!p || p.xoutstanding>0) streak++;
+    else streak=0;
+  }
+  return streak;
+}
+
+// ── INIT DATE ──
+document.getElementById('header-date').textContent =
+  NOW.toLocaleDateString('id-ID', {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+
+// ── AUTH ──
+async function initAuth(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    onLoggedIn(session.user);
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
+}
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.textContent = '';
+  if(!email||!password){ errEl.textContent='Please enter email and password.'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){
+    errEl.textContent = error.message;
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+    return;
+  }
+  onLoggedIn(data.user);
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+function onLoggedIn(user){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('header-user').textContent = user.email;
+  document.getElementById('btn-logout').style.display = 'inline-flex';
+  loadFromSupabase();
+}
+
+// ── LOAD FROM SUPABASE ──
+async function loadFromSupabase(){
+  showLoading('Loading data from database…');
+  try {
+    const [{ data: students, error: e1 }, { data: payments, error: e2 }] = await Promise.all([
+      sb.from('students').select('*'),
+      sb.from('payments').select('*')
+    ]);
+    if(e1) throw e1;
+    if(e2) throw e2;
+
+    if(!students||students.length===0){
+      hideLoading();
+      showToast('No data yet — please upload Excel files','');
+      return;
+    }
+
+    studentsData = students.map(s=>({
+      id:       s.id,
+      no_induk: s.no_induk,
+      name:     s.name,
+      class:    s.class,
+      va:       s.va||'',
+      ket:      s.ket||'',
+    }));
+
+    paymentsData = payments.map(p=>({
+      student_code:        p.student_code,
+      monthly_period:      p.monthly_period,
+      xfee:                parseFloat(p.xfee)||0,
+      payment_amount:      parseFloat(p.payment_amount)||0,
+      xused:               parseFloat(p.xused)||0,
+      xoutstanding:        parseFloat(p.xoutstanding)||0,
+      student_name:        p.student_name||'',
+      org_code:            p.org_code||'',
+      classroom:           p.classroom||'',
+      payment_date:        p.payment_date||'',
+      payment_description: p.payment_description||'',
+    }));
+
+    // Mark upload cards as loaded
+    markCardLoaded('students','Database',studentsData.length+' students');
+    markCardLoaded('payments','Database',paymentsData.length+' records');
+
+    hideLoading();
+    mergeData();
+  } catch(err){
+    hideLoading();
+    showToast('DB Error: '+err.message,'t-error');
+  }
+}
+
+// ── SAVE TO SUPABASE ──
+async function saveStudentsToSupabase(data){
+  showLoading('Saving students to database…');
+  // Delete all existing
+  const { error: delErr } = await sb.from('students').delete().neq('id', 0);
+  if(delErr) throw delErr;
+  // Insert in chunks of 500
+  const CHUNK = 500;
+  for(let i=0;i<data.length;i+=CHUNK){
+    const chunk = data.slice(i,i+CHUNK);
+    const { error } = await sb.from('students').insert(chunk);
+    if(error) throw error;
+  }
+}
+
+async function savePaymentsToSupabase(data){
+  showLoading('Saving payments to database…');
+  // Delete all existing
+  const { error: delErr } = await sb.from('payments').delete().neq('id', 0);
+  if(delErr) throw delErr;
+  // Insert in chunks of 500
+  const CHUNK = 500;
+  for(let i=0;i<data.length;i+=CHUNK){
+    const chunk = data.slice(i,i+CHUNK).map(p=>({
+      student_code:        p.student_code,
+      monthly_period:      p.monthly_period,
+      xfee:                p.xfee,
+      payment_amount:      p.payment_amount,
+      xused:               p.xused,
+      xoutstanding:        p.xoutstanding,
+      student_name:        p.student_name,
+      org_code:            p.org_code,
+      classroom:           p.classroom,
+      payment_date:        p.payment_date,
+      payment_description: p.payment_description,
+    }));
+    const { error } = await sb.from('payments').insert(chunk);
+    if(error) throw error;
+  }
+}
+
+// ── DRAG/DROP ──
+function onDrag(e,t){e.preventDefault();document.getElementById('card-'+t).classList.add('dragover')}
+function onDragLeave(t){document.getElementById('card-'+t).classList.remove('dragover')}
+function onDrop(e,t){e.preventDefault();onDragLeave(t);const f=e.dataTransfer.files[0];if(f)processFile(f,t)}
+function onFileSelect(e,t){const f=e.target.files[0];if(f)processFile(f,t)}
+
+// ── LOADING ──
+function showLoading(msg){
+  document.getElementById('loading-text').textContent=msg||'Processing…';
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading(){document.getElementById('loading-overlay').classList.remove('show')}
+
+// ── FILE PROCESSING ──
+function processFile(file,type){
+  showLoading('Parsing '+file.name+'…');
+  setTimeout(()=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+        if(type==='students') parseStudents(wb,file.name);
+        else parsePayments(wb,file.name);
+      }catch(err){hideLoading();showToast('Error: '+err.message,'t-error');}
+    };
+    reader.readAsBinaryString(file);
+  },60);
+}
+
+// ── PARSE STUDENTS ──
+function parseStudents(wb,filename){
+  const sheetName=wb.SheetNames.includes('2526')?'2526':wb.SheetNames[0];
+  const ws=wb.Sheets[sheetName];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+  let hRow=0;
+  for(let i=0;i<Math.min(6,rows.length);i++){
+    const s=rows[i].join(' ').toUpperCase();
+    if(s.includes('NAMA')&&(s.includes('KELAS')||s.includes('INDUK'))){hRow=i;break}
+  }
+  const headers=rows[hRow].map(h=>String(h).trim().toUpperCase().replace(/[\.\s\-\/]+/g,'_'));
+
+  function fc(...names){
+    for(const n of names){
+      const i=headers.findIndex(h=>h===n||h.includes(n));
+      if(i>=0) return i;
+    }
+    return -1;
+  }
+
+  const iCode  = fc('STUDENT_CODE','STUDENTCODE','NISN');
+  const iInduk = fc('INDUK','NO_INDUK','NOINDUK');
+  const iNama  = fc('NAMA');
+  const iKelas = fc('KELAS');
+  const iVA    = fc('VA');
+  const iKet   = fc('KET','KETERANGAN');
+
+  const parsed=[];
+  for(let i=hRow+1;i<rows.length;i++){
+    const row=rows[i];
+    const nama=String(row[iNama]||'').trim();
+    if(!nama||nama.toUpperCase()==='NAMA'||!nama) continue;
+
+    const codeRaw  = iCode>=0  ? row[iCode]  : '';
+    const indukRaw = iInduk>=0 ? row[iInduk] : '';
+    const codeStr  = String(codeRaw ).replace(/[^0-9]/g,'');
+    const indukStr = String(indukRaw).replace(/[^0-9]/g,'');
+    const codeNum  = codeStr  ? parseInt(codeStr)  : 0;
+    const indukNum = indukStr ? parseInt(indukStr) : 0;
+    if(!codeNum && !indukNum) continue;
+
+    parsed.push({
+      id:       codeNum||indukNum,
+      no_induk: indukNum||codeNum,
+      name:     nama,
+      class:    String(row[iKelas]||'').trim(),
+      va:       iVA>=0  ? String(row[iVA ]||'').trim() : '',
+      ket:      iKet>=0 ? String(row[iKet]||'').trim() : '',
+    });
+  }
+
+  // Save to Supabase
+  saveStudentsToSupabase(parsed).then(()=>{
+    studentsData = parsed;
+    markCardLoaded('students',filename,parsed.length+' students');
+    showToast('✓ '+parsed.length+' students saved','t-success');
+    hideLoading();
+    if(studentsData&&paymentsData) mergeData();
+  }).catch(err=>{ hideLoading(); showToast('Save error: '+err.message,'t-error'); });
+}
+
+// ── PARSE PAYMENTS ──
+function parsePayments(wb,filename){
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+  let hRow=0;
+  for(let i=0;i<Math.min(5,rows.length);i++){
+    const s=rows[i].join(' ').toLowerCase();
+    if(s.includes('student_code')||s.includes('monthly_period')){hRow=i;break}
+  }
+  const headers=rows[hRow].map(h=>String(h).trim().toLowerCase().replace(/\s+/g,'_'));
+  const col=(...ns)=>{for(const n of ns){const i=headers.findIndex(h=>h.includes(n));if(i>=0)return i;}return -1;};
+
+  const iSC   = col('student_code');
+  const iMP   = col('monthly_period');
+  const iFee  = col('xfee');
+  const iPAmt = col('payment_amount');
+  const iUsed = col('xused');
+  const iOut  = col('xoutstanding');
+  const iName = col('student_name');
+  const iOrg  = col('organization_code');
+  const iCls  = col('classroom_description');
+  const iDate = col('payment_date');
+  const iDesc = col('payment_description');
+
+  const parsed=[];
+  for(let i=hRow+1;i<rows.length;i++){
+    const row=rows[i];
+    const sc=row[iSC];
+    if(!sc||String(sc).trim()==='') continue;
+    const scNum=parseInt(String(sc).replace(/[^0-9]/g,''));
+    if(!scNum) continue;
+    const rawDate = iDate>=0 ? row[iDate] : '';
+    const dateStr = rawDate ? String(rawDate).trim() : '';
+    parsed.push({
+      student_code:        scNum,
+      monthly_period:      String(row[iMP]||'').trim(),
+      xfee:                parseFloat(row[iFee])||0,
+      payment_amount:      parseFloat(row[iPAmt])||0,
+      xused:               parseFloat(row[iUsed])||0,
+      xoutstanding:        parseFloat(row[iOut])||0,
+      student_name:        row[iName]||'',
+      org_code:            row[iOrg]||'',
+      classroom:           row[iCls]||'',
+      payment_date:        dateStr,
+      payment_description: iDesc>=0 ? String(row[iDesc]||'').trim() : '',
+    });
+  }
+
+  // Save to Supabase
+  savePaymentsToSupabase(parsed).then(()=>{
+    paymentsData = parsed;
+    markCardLoaded('payments',filename,parsed.length+' records');
+    showToast('✓ '+parsed.length+' payment records saved','t-success');
+    hideLoading();
+    if(studentsData&&paymentsData) mergeData();
+  }).catch(err=>{ hideLoading(); showToast('Save error: '+err.message,'t-error'); });
+}
+
+// ── MERGE (renamed from tryMerge) ──
+function mergeData(){
+  if(!studentsData||!paymentsData) return;
+  showLoading('Merging & calculating…');
+  setTimeout(()=>{
+    const mSet=new Set();
+    paymentsData.forEach(p=>{if(p.monthly_period) mSet.add(p.monthly_period);});
+    allMonths=Array.from(mSet).sort();
+
+    const payMap={};
+    paymentsData.forEach(p=>{
+      if(!payMap[p.student_code]) payMap[p.student_code]={};
+      payMap[p.student_code][p.monthly_period]=p;
+    });
+
+    mergedData=studentsData.map(s=>({...s, payments:payMap[s.id]||{}}));
+
+    allClasses=[...new Set(mergedData.map(s=>s.class).filter(Boolean))].sort((a,b)=>{
+      const go={'X':0,'XI':1,'XII':2};
+      const ga=a.split('-')[0],gb=b.split('-')[0];
+      const d=(go[ga]??9)-(go[gb]??9);
+      return d!==0?d:parseInt(a.split('-')[1]||0)-parseInt(b.split('-')[1]||0);
+    });
+
+    const cf=document.getElementById('f-class');
+    cf.innerHTML='<option value="">All Classes</option>';
+    allClasses.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cf.appendChild(o);});
+
+    let idx=allMonths.indexOf(CURRENT_PERIOD);
+    if(idx<0) idx=allMonths.length-1;
+    activeMonthIdx=Math.max(0,idx);
+
+    document.getElementById('stats-bar').style.display='grid';
+    document.getElementById('controls').style.display='flex';
+    document.getElementById('empty-state').style.display='none';
+    document.getElementById('table-scroll').style.display='block';
+
+    hideLoading();
+    updateMonthLabel();
+    updateStats();
+    renderTable();
+  },60);
+}
+
+// ── MONTH NAV ──
+function updateMonthLabel(){
+  const lb=monthLabel(allMonths[activeMonthIdx]||CURRENT_PERIOD);
+  document.getElementById('month-nav-label').textContent=lb.full+' '+lb.year;
+}
+function shiftMonth(dir){
+  activeMonthIdx=Math.max(0,Math.min(allMonths.length-1,activeMonthIdx+dir));
+  updateMonthLabel();updateStats();renderTable();
+}
+function goToCurrentMonth(){
+  let idx=allMonths.indexOf(CURRENT_PERIOD);
+  if(idx<0) idx=allMonths.length-1;
+  activeMonthIdx=Math.max(0,idx);
+  updateMonthLabel();updateStats();renderTable();
+}
+
+function onGradeChange(){
+  const grade=document.getElementById('f-grade').value;
+  const cf=document.getElementById('f-class');
+  cf.innerHTML='<option value="">All Classes</option>';
+  allClasses.filter(c=>!grade||c.startsWith(grade)).forEach(c=>{
+    const o=document.createElement('option');o.value=c;o.textContent=c;cf.appendChild(o);
+  });
+  renderTable();
+}
+
+// ── STATS ──
+function updateStats(){
+  if(!mergedData) return;
+  const curM=allMonths[activeMonthIdx]||CURRENT_PERIOD;
+  const todayStr = NOW.toISOString().slice(0,10);
+  let paid=0,out=0,totalOutCur=0,totalDenda=0,totalOutAll=0,paidToday=0;
+  mergedData.forEach(s=>{
+    const p=s.payments[curM];
+    if(p&&p.xoutstanding===0) paid++;
+    else{ out++; if(p) totalOutCur+=p.xoutstanding; }
+    totalDenda+=calcDenda(getOverdueCount(s,curM));
+    allMonths.forEach(m=>{ const pm=s.payments[m]; if(pm) totalOutAll+=pm.xoutstanding; });
+    const hasToday = Object.values(s.payments).some(pm=>{
+      if(!pm||!pm.payment_date) return false;
+      return String(pm.payment_date).slice(0,10) === todayStr;
+    });
+    if(hasToday) paidToday++;
+  });
+  const total=mergedData.length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-classes').textContent=allClasses.length+' classes';
+  document.getElementById('s-paid').textContent=paid+' / '+paidToday;
+  document.getElementById('s-paid-pct').textContent=Math.round(paid/total*100)+'% of students';
+  document.getElementById('s-out').textContent=out;
+  document.getElementById('s-out-pct').textContent=Math.round(out/total*100)+'% of students';
+  document.getElementById('s-amount').textContent=fmtIDRShort(totalOutCur);
+  document.getElementById('s-denda').textContent=fmtIDRShort(totalDenda);
+  document.getElementById('s-total-out').textContent=fmtIDRShort(totalOutAll);
+}
+
+// ── RENDER TABLE ──
+function renderTable(){
+  if(!mergedData) return;
+  const search =document.getElementById('search-input').value.toLowerCase();
+  const grade  =document.getElementById('f-grade').value;
+  const cls    =document.getElementById('f-class').value;
+  const status =document.getElementById('f-status').value;
+  const view   =document.getElementById('f-view').value;
+  const curM   =allMonths[activeMonthIdx]||CURRENT_PERIOD;
+
+  let showMonths;
+  if(view==='current') showMonths=[curM];
+  else if(view==='ytd') showMonths=allMonths.filter(m=>m<=curM);
+  else showMonths=[...allMonths];
+
+  let filtered=mergedData.filter(s=>{
+    if(search&&!s.name.toLowerCase().includes(search)) return false;
+    if(grade&&!s.class.startsWith(grade)) return false;
+    if(cls&&s.class!==cls) return false;
+    if(status==='outstanding') return showMonths.some(m=>!s.payments[m]||s.payments[m].xoutstanding>0);
+    if(status==='paid')        return showMonths.every(m=>s.payments[m]&&s.payments[m].xoutstanding===0);
+    if(status==='denda')       return getOverdueCount(s,curM)>0;
+    return true;
+  });
+
+  const hasVA  = studentsData&&studentsData.some(s=>s.va&&s.va!=='');
+  const hasKet = studentsData&&studentsData.some(s=>s.ket&&s.ket!=='');
+
+  let th='<tr>';
+  th+=`<th class="col-name">Student</th>`;
+  if(hasVA)  th+=`<th class="col-va">VA Number</th>`;
+  if(hasKet) th+=`<th class="col-va">Ket</th>`;
+  showMonths.forEach(m=>{
+    const lb=monthLabel(m);
+    const isCur=m===curM;
+    th+=`<th class="col-month" style="${isCur?'color:var(--blue);background:#eff6ff':''}">`+
+      `<div style="display:flex;flex-direction:column;align-items:center;gap:1px">`+
+      `<span>${lb.short}</span><span style="font-size:9px;opacity:.55">${lb.year}</span>`+
+      `</div></th>`;
+  });
+  th+=`<th class="col-num" title="Months with outstanding balance">Months Due</th>`;
+  th+=`<th class="col-denda">Denda</th>`;
+  th+=`<th class="col-out">Outstanding</th>`;
+  th+=`</tr>`;
+  document.getElementById('tbl-head').innerHTML=th;
+
+  const byClass={};
+  filtered.forEach(s=>{ if(!byClass[s.class])byClass[s.class]=[]; byClass[s.class].push(s); });
+  const byClassFull={};
+  mergedData.forEach(s=>{ if(!byClassFull[s.class])byClassFull[s.class]=[]; byClassFull[s.class].push(s); });
+  const orderedCls=allClasses.filter(c=>byClass[c]);
+
+  let rows='';
+  if(!orderedCls.length){
+    const span=3+(hasVA?1:0)+(hasKet?1:0)+showMonths.length;
+    rows=`<tr><td colspan="${span}" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px">No students match the current filters</td></tr>`;
+  }
+
+  orderedCls.forEach(clsName=>{
+    const students=byClass[clsName];
+    const allStudentsInClass=byClassFull[clsName]||[];
+    const cDue  = allStudentsInClass.filter(s=>!s.payments[curM]||s.payments[curM].xoutstanding>0).length;
+    const cPaid = allStudentsInClass.length - cDue;
+    const span =2+(hasVA?1:0)+(hasKet?1:0)+showMonths.length+2;
+
+    rows+=`<tr class="class-header"><td colspan="${span}"><div class="class-pill">`;
+    rows+=`Class ${clsName} <span class="class-count">${allStudentsInClass.length}</span>`;
+    rows+=`<span class="class-stats">`;
+    rows+=`<span class="cs-item cs-paid">✓ ${cPaid} paid</span>`;
+    rows+=`<span class="cs-item cs-out">⚠ ${cDue} due</span>`;
+    rows+=`</span></div></td></tr>`;
+
+    students.forEach(s=>{
+      const overdueN=getOverdueCount(s,curM);
+      const denda   =calcDenda(overdueN);
+      let totalOut=0;
+      allMonths.filter(m=>m<=curM).forEach(m=>{const p=s.payments[m];if(p)totalOut+=p.xoutstanding;});
+
+      const cells=showMonths.map(m=>{
+        const p=s.payments[m];
+        const isCur=m===curM;
+        const ring=isCur?' pb-current-month':'';
+        const click=`onclick="showDetail(${s.id},'${m}')"`;
+        if(!p)                      return `<td class="col-month" ${click}><span class="pay-badge pb-unpaid${ring}">Unpaid</span></td>`;
+        if(p.xoutstanding===0)      return `<td class="col-month" ${click}><span class="pay-badge pb-paid${ring}">✓ Paid</span></td>`;
+        if(p.xused>0)               return `<td class="col-month" ${click}><span class="pay-badge pb-partial${ring}">Partial</span></td>`;
+        return `<td class="col-month" ${click}><span class="pay-badge pb-unpaid${ring}">Unpaid</span></td>`;
+      }).join('');
+
+      const overdueClass = overdueN>=2 ? ' row-overdue' : '';
+      rows+=`<tr class="student-row${overdueClass}">`;
+      rows+=`<td class="col-name"><div class="student-name-cell">`;
+      rows+=`<span class="sn-name">${s.name}</span>`;
+      rows+=`<span class="sn-id">${fmtInt(s.no_induk)}</span>`;
+      if(s.ket&&!hasKet) rows+=`<span class="sn-ket">${s.ket}</span>`;
+      rows+=`</div></td>`;
+      if(hasVA)  rows+=`<td class="col-va">${s.va||'—'}</td>`;
+      if(hasKet) rows+=`<td class="col-va">${s.ket||'—'}</td>`;
+      rows+=cells;
+      rows+=`<td class="col-num">${overdueN>0?`<span class="nv nv-orange">${overdueN}</span>`:`<span class="nv nv-muted">—</span>`}</td>`;
+      rows+=`<td class="col-denda">${denda>0?`<span class="denda-chip">${fmtIDR(denda)}</span>`:`<span class="nv nv-muted">—</span>`}</td>`;
+      rows+=`<td class="col-out">${totalOut>0?`<span class="nv nv-red">${fmtIDR(totalOut)}</span>`:`<span class="nv nv-green">—</span>`}</td>`;
+      rows+=`</tr>`;
+    });
+
+    const clsDue   =students.filter(s=>getOverdueCount(s,curM)>0).length;
+    const clsDenda =students.reduce((a,s)=>a+calcDenda(getOverdueCount(s,curM)),0);
+    const clsOut   =students.reduce((a,s)=>{
+      let o=0; allMonths.filter(m=>m<=curM).forEach(m=>{const p=s.payments[m];if(p)o+=p.xoutstanding;}); return a+o;
+    },0);
+    let sRow=`<tr class="class-summary">
+      <td style="font-weight:700;color:var(--text-primary)">
+        <span title="Each column shows: paid students / students with a billing record that month">
+          Monthly Paid Rate
+          <span style="font-size:9px;color:var(--text-muted);font-weight:400;margin-left:4px">(paid / billed)</span>
+        </span>
+      </td>`;
+    if(hasVA)  sRow+=`<td></td>`;
+    if(hasKet) sRow+=`<td></td>`;
+    showMonths.forEach(m=>{
+      const pN=students.filter(s=>s.payments[m]&&s.payments[m].xoutstanding===0).length;
+      const hR=students.filter(s=>s.payments[m]).length;
+      if(!hR){sRow+=`<td class="col-month"><span class="sf nv-muted">—</span></td>`;return;}
+      const c=pN===hR?'sf-all':pN===0?'sf-none':'sf-part';
+      sRow+=`<td class="col-month" title="${pN} paid out of ${hR} billed"><span class="sf ${c}">${pN}/${hR}</span></td>`;
+    });
+    sRow+=`<td class="col-num" title="Students with 1+ overdue month">${clsDue>0?`<span class="sf sf-none">${clsDue}</span>`:''}</td>`;
+    sRow+=`<td class="col-denda">${clsDenda>0?`<span class="denda-chip">${fmtIDRShort(clsDenda)}</span>`:''}</td>`;
+    sRow+=`<td class="col-out" title="Total outstanding across all shown months">${clsOut>0?`<span class="nv nv-red">${fmtIDRShort(clsOut)}</span>`:''}</td>`;
+    sRow+=`</tr>`;
+    rows+=sRow;
+  });
+
+  document.getElementById('tbl-body').innerHTML=rows;
+}
+
+// ── EXPORT ──
+function exportExcel(){
+  if(!mergedData) return showToast('No data to export','t-error');
+  showLoading('Generating report…');
+  setTimeout(()=>{
+    const curM   =allMonths[activeMonthIdx]||CURRENT_PERIOD;
+    const view   =document.getElementById('f-view').value;
+    const hasVA  =studentsData&&studentsData.some(s=>s.va&&s.va!=='');
+    let showMonths;
+    if(view==='current') showMonths=[curM];
+    else if(view==='ytd') showMonths=allMonths.filter(m=>m<=curM);
+    else showMonths=[...allMonths];
+
+    const wb=XLSX.utils.book_new();
+    const header=['Class','Student Name','NO Induk'];
+    if(hasVA) header.push('VA Number');
+    showMonths.forEach(m=>{const lb=monthLabel(m);header.push(lb.short+' '+lb.year);});
+    header.push('Months Due','Denda (IDR)','Outstanding (IDR)');
+
+    const byClass={};
+    mergedData.forEach(s=>{if(!byClass[s.class])byClass[s.class]=[];byClass[s.class].push(s);});
+    const ordered=allClasses.filter(c=>byClass[c]);
+
+    const allRows=[header];
+    ordered.forEach(clsName=>{
+      byClass[clsName].forEach(s=>{
+        const row=[clsName, s.name, fmtInt(s.no_induk)];
+        if(hasVA) row.push(s.va||'');
+        showMonths.forEach(m=>{
+          const p=s.payments[m];
+          if(!p){row.push('Unpaid');return;}
+          if(p.xoutstanding===0){row.push('Paid');return;}
+          row.push(p.xused>0?'Partial':'Unpaid');
+        });
+        const ov=getOverdueCount(s,curM);
+        const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
+        row.push(ov||'', calcDenda(ov)||'', totalOut||'');
+        allRows.push(row);
+      });
+    });
+
+    const ws=XLSX.utils.aoa_to_sheet(allRows);
+    ws['!cols']=[{wch:10},{wch:28},{wch:12},...(hasVA?[{wch:16}]:[]),...showMonths.map(()=>({wch:10})),{wch:11},{wch:14},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,ws,'All Classes');
+
+    ordered.forEach(clsName=>{
+      const cRows=[header];
+      byClass[clsName].forEach(s=>{
+        const row=[clsName,s.name,fmtInt(s.no_induk)];
+        if(hasVA) row.push(s.va||'');
+        showMonths.forEach(m=>{
+          const p=s.payments[m];
+          if(!p){row.push('Unpaid');return;}
+          if(p.xoutstanding===0){row.push('Paid');return;}
+          row.push(p.xused>0?'Partial':'Unpaid');
+        });
+        const ov=getOverdueCount(s,curM);
+        const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
+        row.push(ov||'',calcDenda(ov)||'',totalOut||'');
+        cRows.push(row);
+      });
+      const ws2=XLSX.utils.aoa_to_sheet(cRows);
+      ws2['!cols']=[{wch:10},{wch:28},{wch:12},...(hasVA?[{wch:16}]:[]),...showMonths.map(()=>({wch:10})),{wch:11},{wch:14},{wch:16}];
+      XLSX.utils.book_append_sheet(wb,ws2,clsName.replace(/[\/\\?\*\[\]]/g,'_'));
+    });
+
+    XLSX.writeFile(wb,'SPP_Payment_Report.xlsx');
+    hideLoading();
+    showToast('✓ Exported successfully!','t-success');
+  },60);
+}
+
+// ── DETAIL POPUP ──
+function fmtPaymentDate(raw){
+  if(!raw) return null;
+  const s = String(raw).trim();
+  if(!s||s==='undefined'||s==='null') return null;
+  const datePart = s.slice(0,10);
+  const timePart = s.slice(11,16);
+  return datePart + (timePart ? ' ' + timePart : '');
+}
+
+function getLastPayment(student){
+  let latest = null, latestDesc = '';
+  Object.values(student.payments).forEach(p=>{
+    if(!p||!p.payment_date||p.xoutstanding!==0) return;
+    const fmt = fmtPaymentDate(p.payment_date);
+    if(!fmt) return;
+    if(!latest || fmt > latest){
+      latest = fmt;
+      latestDesc = p.payment_description ? String(p.payment_description).slice(0,6) : '';
+    }
+  });
+  if(!latest) return null;
+  return latest + (latestDesc ? ' | ' + latestDesc : '');
+}
+
+function showDetail(studentId, month){
+  const s = mergedData.find(s=>s.id===studentId);
+  if(!s) return;
+  const p = s.payments[month];
+  const lb = monthLabel(month);
+  const overdueN = getOverdueCount(s, month);
+  const denda = calcDenda(overdueN);
+  const totalOutAll = allMonths.filter(m=>m<=month).reduce((a,m)=>{ const pm=s.payments[m]; return a+(pm?pm.xoutstanding:0); },0);
+
+  document.getElementById('popup-name').textContent = s.name;
+  document.getElementById('popup-meta').textContent = fmtInt(s.no_induk) + (s.va?' · VA: '+s.va:'') + ' · ' + lb.full+' '+lb.year;
+
+  const lastPay = getLastPayment(s);
+  let body = '';
+
+  if(!p){
+    body += row('Status', `<span class="popup-val pv-red">Unpaid</span>`);
+    body += row('Last Payment', `<span class="popup-val">${lastPay||'—'}</span>`);
+    body += row('Fee', `<span class="popup-val pv-red">No record</span>`);
+    body += row('Outstanding', `<span class="popup-val ${totalOutAll>0?'pv-red':'pv-green'}">${totalOutAll>0?fmtIDR(totalOutAll):'—'}</span>`);
+  } else {
+    let statusHtml;
+    if(p.xoutstanding===0) statusHtml=`<span class="popup-val pv-green">✓ Paid</span>`;
+    else if(p.xused>0)     statusHtml=`<span class="popup-val pv-yellow">Partial</span>`;
+    else                   statusHtml=`<span class="popup-val pv-red">Unpaid</span>`;
+    body += row('Status', statusHtml);
+    body += row('Last Payment', `<span class="popup-val">${lastPay||'—'}</span>`);
+    body += row('Fee', `<span class="popup-val">${fmtIDR(p.xfee)}</span>`);
+    if(p.payment_amount>0) body += row('Payment Amount', `<span class="popup-val pv-green">${fmtIDR(p.payment_amount)}</span>`);
+    if(p.xused>0)          body += row('Used', `<span class="popup-val pv-green">${fmtIDR(p.xused)}</span>`);
+    body += row('Outstanding', `<span class="popup-val ${totalOutAll>0?'pv-red':'pv-green'}">${totalOutAll>0?fmtIDR(totalOutAll):'—'}</span>`);
+    if(p.org_code)  body += row('Org Code', `<span class="popup-val">${p.org_code}</span>`);
+    if(p.classroom) body += row('Classroom', `<span class="popup-val">${p.classroom}</span>`);
+  }
+
+  if(overdueN>0){
+    let dendaHtml = `<div class="popup-denda-box"><div class="popup-denda-title">⚠ Denda Calculation</div>`;
+    for(let i=1;i<=overdueN;i++){
+      const step = i*DENDA_PER_STEP;
+      dendaHtml += `<div class="popup-denda-row"><span>Month ${i}</span><span>+ ${fmtIDR(step)}</span></div>`;
+    }
+    dendaHtml += `<div class="popup-denda-total"><span>Total Denda</span><span>${fmtIDR(denda)}</span></div>`;
+    dendaHtml += `</div>`;
+    body += dendaHtml;
+  }
+
+  if(totalOutAll>0){
+    const monthsDue = allMonths.filter(m=>m<=month).filter(m=>{ const pm=s.payments[m]; return !pm||pm.xoutstanding>0; }).length;
+    let tagihan = `Mohon segera melakukan pembayaran Uang Sekolah atas nama ${s.name} dengan detail sebagai berikut:\n`;
+    tagihan += `1. Total Tagihan : ${fmtIDR(totalOutAll)}\n`;
+    tagihan += `2. Jumlah Bulan : ${monthsDue} bulan\n`;
+    if(denda>0) tagihan += `3. Denda : ${fmtIDR(denda)}\n`;
+    tagihan += `${denda>0?'4':'3'}. VA : ${s.va||'—'}\n`;
+    tagihan += `Apabila pembayaran melewati tanggal 25 bulan berjalan maka akan dikenakan denda.\nTerima kasih. Tuhan memberkati`;
+
+    body += `<div style="margin-top:14px">
+      <button onclick="copyTagihan('${s.id}','${month}')"
+        style="width:100%;padding:10px;background:#1a1a18;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em;transition:background .15s"
+        onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a18'">
+        Buat Tagihan
+      </button>
+    </div>`;
+  }
+
+  document.getElementById('popup-body').innerHTML = body;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+
+function copyTagihan(studentId, month){
+  const s = mergedData.find(s=>String(s.id)===String(studentId));
+  if(!s) return;
+  const curM = month || allMonths[activeMonthIdx] || CURRENT_PERIOD;
+  const overdueN = getOverdueCount(s, curM);
+  const denda = calcDenda(overdueN);
+  const totalOutAll = allMonths.filter(m=>m<=curM).reduce((a,m)=>{ const pm=s.payments[m]; return a+(pm?pm.xoutstanding:0); },0);
+  const monthsDue = allMonths.filter(m=>m<=curM).filter(m=>{ const pm=s.payments[m]; return pm&&pm.xoutstanding>0; }).length;
+
+  let tagihan = `Mohon segera melakukan pembayaran Uang Sekolah atas nama ${s.name} dengan detail sebagai berikut:\n`;
+  tagihan += `1. Total Tagihan : ${fmtIDR(totalOutAll)}\n`;
+  tagihan += `2. Jumlah Bulan : ${monthsDue} bulan\n`;
+  if(denda>0) tagihan += `3. Denda : ${fmtIDR(denda)}\n`;
+  tagihan += `Total tagihan : ${fmtIDR(totalOutAll+denda)} + biaya admin\n`;
+  tagihan += `VA : ${s.va||'—'}\n`;
+  tagihan += `Apabila pembayaran melewati tanggal 25 bulan berjalan maka akan dikenakan denda.\nTerima kasih. Tuhan memberkati`;
+
+  navigator.clipboard.writeText(tagihan).then(()=>{
+    showToast('Tagihan telah tercopy di clipboard','t-success');
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=tagihan;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    showToast('Tagihan telah tercopy di clipboard','t-success');
+  });
+}
+
+function row(key, valHtml){
+  return `<div class="popup-row"><span class="popup-key">${key}</span>${valHtml}</div>`;
+}
+function closePopup(e){ if(e.target===document.getElementById('popup-overlay')) closePopupDirect(); }
+function closePopupDirect(){ document.getElementById('popup-overlay').classList.remove('show'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePopupDirect(); });
+
+function markCardLoaded(type,filename,info){
+  const card=document.getElementById('card-'+type);
+  card.classList.add('loaded');
+  document.getElementById(type+'-filename').textContent=filename;
+  let badge=card.querySelector('.upload-badge');
+  if(!badge){badge=document.createElement('div');badge.className='upload-badge';card.appendChild(badge);}
+  badge.textContent=info;
+  card.querySelector('.upload-icon').innerHTML=`<svg viewBox="0 0 24 24" style="stroke:#16a34a;fill:none;stroke-width:2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+}
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show '+(type||'');
+  setTimeout(()=>t.className='toast',3000);
+}
+
+// ── BOOT ──
+initAuth();
+</script>
+</body>
+</html>
