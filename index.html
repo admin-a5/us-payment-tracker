@@ -500,9 +500,8 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
 // ── SUPABASE ──
 const SUPABASE_URL = 'https://vjydxbdizbolsjqtzoot.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqeWR4YmRpemJvbHNqcXR6b290Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMTIxOTEsImV4cCI6MjA4ODc4ODE5MX0.Er1fgEhyqzDpcw2oaVbdZl_1s5d0ffXxNmUQIfR-fbs';
-const SUPABASE_SVC  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqeWR4YmRpemJvbHNqcXR6b290Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzIxMjE5MSwiZXhwIjoyMDg4Nzg4MTkxfQ.50gaBHMf4Eqt7PyP3R_s4fLoK--XYZPHYE7KMxqqli0';
-const sb  = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-const sbA = supabase.createClient(SUPABASE_URL, SUPABASE_SVC);
+const EDGE_FN = 'https://vjydxbdizbolsjqtzoot.supabase.co/functions/v1/manage-users';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // ── CONSTANTS ──
 const DENDA_PER_STEP = 10000;
@@ -1117,18 +1116,14 @@ async function addUser(){
   if(role==='user'&&!cls){errEl.textContent='Please select a class for this user.';return;}
   btn.disabled=true;btn.innerHTML=`<span>Creating…</span>`;
   try{
-    // Create auth user via admin API
-    const res=await fetch(`${SUPABASE_URL}/auth/v1/admin/users`,{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(EDGE_FN,{
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_SVC,'Authorization':'Bearer '+SUPABASE_SVC},
-      body:JSON.stringify({email,password,email_confirm:true})
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body:JSON.stringify({action:'create',email,password,full_name:name,role,assigned_class:role==='user'?cls:null})
     });
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.message||data.error||'Failed to create user');
-    const uid=data.id;
-    // Insert into user_roles
-    const {error:re}=await sbA.from('user_roles').insert({id:uid,email,full_name:name,role,assigned_class:role==='user'?cls:null});
-    if(re) throw re;
+    const result=await res.json();
+    if(!res.ok) throw new Error(result.error||'Failed to create user');
     showToast('✓ User '+email+' created','t-success');
     document.getElementById('um-name').value='';
     document.getElementById('um-email').value='';
@@ -1141,13 +1136,14 @@ async function addUser(){
 async function deleteUser(uid,email){
   if(!confirm(`Remove access for ${email}? This cannot be undone.`)) return;
   try{
-    // Delete from user_roles first
-    await sbA.from('user_roles').delete().eq('id',uid);
-    // Delete auth user
-    await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${uid}`,{
-      method:'DELETE',
-      headers:{'apikey':SUPABASE_SVC,'Authorization':'Bearer '+SUPABASE_SVC}
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(EDGE_FN,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body:JSON.stringify({action:'delete',uid})
     });
+    const result=await res.json();
+    if(!res.ok) throw new Error(result.error||'Failed to delete user');
     showToast('User removed','t-success');
     loadUserList();
   }catch(err){showToast('Error: '+err.message,'t-error');}
@@ -1156,7 +1152,7 @@ async function deleteUser(uid,email){
 async function loadUserList(){
   const wrap=document.getElementById('um-user-list');
   wrap.innerHTML='<div class="um-empty">Loading…</div>';
-  const {data,error}=await sbA.from('user_roles').select('*').order('created_at');
+  const {data,error}=await sb.from('user_roles').select('*').order('created_at');
   if(error){wrap.innerHTML=`<div class="um-empty">Error: ${error.message}</div>`;return;}
   document.getElementById('um-count').textContent=data.length+' users';
   if(!data.length){wrap.innerHTML='<div class="um-empty">No users yet.</div>';return;}
