@@ -506,6 +506,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // ── CONSTANTS ──
 const DENDA_PER_STEP = 10000;
 const DENDA_CUTOFF_DAY = 25;
+const DENDA_START_PERIOD = '2025/07'; // denda only counted from this school year onwards
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -538,6 +539,7 @@ function getOverdueCount(student,targetMonth){
   const dendaUpTo=(todayDay>=DENDA_CUTOFF_DAY)?targetMonth:(allMonths[allMonths.indexOf(CURRENT_PERIOD)-1]||'');
   let streak=0;
   for(const m of allMonths){
+    if(m<DENDA_START_PERIOD) continue; // ignore months before current school year
     if(m>targetMonth||m>dendaUpTo) break;
     const p=student.payments[m];
     if(!p||p.xoutstanding>0) streak++; else streak=0;
