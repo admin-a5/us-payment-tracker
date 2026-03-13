@@ -793,12 +793,12 @@ function mergeData(){
     paymentsData.forEach(p=>{if(p.monthly_period)mSet.add(p.monthly_period);});
     allMonths=Array.from(mSet).sort();
     const payMap={};
-    paymentsData.forEach(p=>{if(!payMap[p.student_code])payMap[p.student_code]={};payMap[p.student_code][p.monthly_period]=p;});
+    paymentsData.forEach(p=>{const k=String(p.student_code);if(!payMap[k])payMap[k]={};payMap[k][p.monthly_period]=p;});
 
     // Filter students by class for User role
     let students=studentsData;
     if(currentRole==='user'&&currentClass) students=students.filter(s=>s.class===currentClass);
-    mergedData=students.map(s=>({...s,payments:payMap[s.id]||{}}));
+    mergedData=students.map(s=>({...s,payments:payMap[String(s.id)]||{}}));
 
     allClasses=[...new Set(mergedData.map(s=>s.class).filter(Boolean))].sort((a,b)=>{
       const go={'X':0,'XI':1,'XII':2};
