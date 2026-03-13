@@ -659,12 +659,19 @@ function showPage(name){
 async function loadFromSupabase(){
   showLoading('Loading data…');
   try{
-    const [{data:students,error:e1},{data:payments,error:e2}]=await Promise.all([
-      sb.from('students').select('*'),
-      sb.from('payments').select('*')
-    ]);
-    if(e1)throw e1; if(e2)throw e2;
+    const {data:students,error:e1}=await sb.from('students').select('*');
+    if(e1)throw e1;
     if(!students||students.length===0){hideLoading();return;}
+    let payments=[],from=0;
+    while(true){
+      showLoading(`Loading payments… (${payments.length} records)`);
+      const {data:chunk,error:e2}=await sb.from('payments').select('*').range(from,from+999);
+      if(e2)throw e2;
+      if(!chunk||chunk.length===0) break;
+      payments=payments.concat(chunk);
+      if(chunk.length<1000) break;
+      from+=1000;
+    }
 
     studentsData=students.map(s=>({id:String(s.id),no_induk:s.no_induk,name:s.name,class:s.class,va:s.va||'',ket:s.ket||''}));
     paymentsData=payments.map(p=>({
@@ -1037,7 +1044,7 @@ function getLastPayment(student){
   return latest?(latest+(latestDesc?' | '+latestDesc:'')):null;
 }
 function showDetail(studentId,month){
-  const s=mergedData.find(s=>s.id===studentId);if(!s) return;
+  const s=mergedData.find(s=>String(s.id)===String(studentId));if(!s) return;
   const p=s.payments[month],lb=monthLabel(month);
   const overdueN=getOverdueCount(s,month),denda=calcDenda(overdueN);
   const totalOutAll=allMonths.filter(m=>m<=month).reduce((a,m)=>{const pm=s.payments[m];return a+(pm?pm.xoutstanding:0);},0);
