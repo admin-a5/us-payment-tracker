@@ -665,7 +665,7 @@ async function loadFromSupabase(){
     let payments=[],from=0;
     while(true){
       showLoading(`Loading payments… (${payments.length} records)`);
-      const {data:chunk,error:e2}=await sb.from('payments').select('*').range(from,from+999);
+      const {data:chunk,error:e2}=await sb.from('payments').select('*').gte('monthly_period','2025/07').range(from,from+999);
       if(e2)throw e2;
       if(!chunk||chunk.length===0) break;
       payments=payments.concat(chunk);
