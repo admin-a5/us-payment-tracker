@@ -666,11 +666,11 @@ async function loadFromSupabase(){
     if(e1)throw e1; if(e2)throw e2;
     if(!students||students.length===0){hideLoading();return;}
 
-    studentsData=students.map(s=>({id:s.id,no_induk:s.no_induk,name:s.name,class:s.class,va:s.va||'',ket:s.ket||''}));
+    studentsData=students.map(s=>({id:String(s.id),no_induk:s.no_induk,name:s.name,class:s.class,va:s.va||'',ket:s.ket||''}));
     paymentsData=payments.map(p=>({
-      student_code:p.student_code,monthly_period:p.monthly_period,
-      xfee:parseFloat(p.xfee)||0,payment_amount:parseFloat(p.payment_amount)||0,
-      xused:parseFloat(p.xused)||0,xoutstanding:parseFloat(p.xoutstanding)||0,
+      student_code:String(p.student_code),monthly_period:p.monthly_period,
+      xfee:Number(p.xfee)||0,payment_amount:Number(p.payment_amount)||0,
+      xused:Number(p.xused)||0,xoutstanding:Number(p.xoutstanding)||0,
       student_name:p.student_name||'',org_code:p.org_code||'',classroom:p.classroom||'',
       payment_date:p.payment_date||'',payment_description:p.payment_description||'',
     }));
