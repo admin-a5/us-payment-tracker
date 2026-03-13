@@ -1000,7 +1000,7 @@ function exportExcel(){
       byClass[clsName].forEach(s=>{
         const row=[clsName,s.name,fmtInt(s.no_induk)];
         if(hasVA) row.push(s.va||'');
-        showMonths.forEach(m=>{const p=s.payments[m];if(!p){row.push('Unpaid');return;}if(p.xoutstanding===0){row.push('Paid');return;}row.push(p.xused>0?'Partial':'Unpaid');});
+        showMonths.forEach(m=>{row.push(fmtExportCell(s.payments[m]));});
         const ov=getOverdueCount(s,curM);
         const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
         row.push(ov||'',calcDenda(ov)||'',totalOut||'');allRows.push(row);
@@ -1013,7 +1013,7 @@ function exportExcel(){
       byClass[clsName].forEach(s=>{
         const row=[clsName,s.name,fmtInt(s.no_induk)];
         if(hasVA) row.push(s.va||'');
-        showMonths.forEach(m=>{const p=s.payments[m];if(!p){row.push('Unpaid');return;}if(p.xoutstanding===0){row.push('Paid');return;}row.push(p.xused>0?'Partial':'Unpaid');});
+        showMonths.forEach(m=>{row.push(fmtExportCell(s.payments[m]));});
         const ov=getOverdueCount(s,curM);
         const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
         row.push(ov||'',calcDenda(ov)||'',totalOut||'');cRows.push(row);
@@ -1024,6 +1024,19 @@ function exportExcel(){
     XLSX.writeFile(wb,'SPP_Payment_Report.xlsx');
     hideLoading();showToast('✓ Exported successfully!','t-success');
   },60);
+}
+
+// ── EXPORT CELL HELPER ──
+function fmtExportCell(p){
+  if(!p) return 'Unpaid';
+  const status = p.xoutstanding===0 ? 'Paid' : p.xused>0 ? 'Partial' : 'Unpaid';
+  const date = p.payment_date ? String(p.payment_date).slice(0,16).replace('T',' ') : '';
+  const desc = p.payment_description ? String(p.payment_description).trim() : '';
+  if(!date && !desc) return status;
+  const parts = [status];
+  if(date) parts.push(date);
+  if(desc) parts.push(desc);
+  return parts.join(' | ');
 }
 
 // ── DETAIL POPUP ──
