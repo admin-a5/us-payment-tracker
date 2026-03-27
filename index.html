@@ -232,6 +232,15 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
 .ut-del{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text-muted)}
 .ut-del:hover{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
 .ut-del svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.ut-pwd{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text-muted)}
+.ut-pwd:hover{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.ut-pwd svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.ut-actions{display:flex;gap:6px;align-items:center}
+.today-popup-list{max-height:320px;overflow-y:auto;margin:12px 0}
+.today-popup-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft);font-size:13px}
+.today-popup-num{color:var(--text-muted);font-family:'DM Mono',monospace;font-size:11px;min-width:20px}
+.today-popup-class{font-size:11px;color:var(--text-secondary);font-family:'DM Mono',monospace;min-width:40px}
+.today-popup-name{font-weight:500}
 .um-empty{padding:40px;text-align:center;color:var(--text-muted);font-size:13px}
 .um-count{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace}
 
@@ -333,6 +342,54 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
 </header>
 
 <!-- MAIN -->
+
+<!-- TODAY POPUP -->
+<div class="popup-overlay" id="today-popup-overlay" onclick="closeTodayPopup(event)">
+  <div class="popup" style="width:420px">
+    <div class="popup-header">
+      <div>
+        <div class="popup-name" id="today-popup-title">Pembayaran hari ini</div>
+        <div class="popup-meta" id="today-popup-count"></div>
+      </div>
+      <button class="popup-close" onclick="document.getElementById('today-popup-overlay').classList.remove('show')">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="popup-body">
+      <div class="today-popup-list" id="today-popup-list"></div>
+      <button onclick="copyTodayList()"
+        style="width:100%;padding:10px;background:#1a1a18;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px"
+        onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a18'">
+        Copy List
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="popup-overlay" id="pwd-popup-overlay" onclick="closePwdPopup(event)">
+  <div class="popup" style="width:340px">
+    <div class="popup-header">
+      <div>
+        <div class="popup-name">Change Password</div>
+        <div class="popup-meta" id="pwd-popup-email"></div>
+      </div>
+      <button class="popup-close" onclick="document.getElementById('pwd-popup-overlay').classList.remove('show')">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="popup-body">
+      <input type="password" id="pwd-new-input" placeholder="New password (min. 6 characters)"
+        style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:10px"/>
+      <div id="pwd-err" style="font-size:12px;color:var(--red);margin-bottom:8px"></div>
+      <button onclick="submitChangePassword()"
+        style="width:100%;padding:10px;background:#1a1a18;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit"
+        onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a18'">
+        Update Password
+      </button>
+    </div>
+  </div>
+</div>
 <main class="main">
 
   <!-- DASHBOARD PAGE -->
@@ -347,7 +404,7 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
         <div class="stat-value" id="s-total">—</div>
         <div class="stat-sub" id="s-classes">—</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" style="cursor:pointer" onclick="showTodayPopup()" title="Click to see today's payments">
         <div class="stat-label">Paid This Month / Today</div>
         <div class="stat-value sv-green" id="s-paid">—</div>
         <div class="stat-sub" id="s-paid-pct">—</div>
@@ -1223,11 +1280,81 @@ async function loadUserList(){
       <td><div class="ut-name">${u.full_name||'—'}</div><div class="ut-email">${u.email}</div></td>
       <td><span class="ut-role ${roleCls[u.role]||''}">${roleLabel[u.role]||u.role}</span></td>
       <td><span class="ut-class">${u.assigned_class||'—'}</span></td>
-      <td>${isSelf?'':'<button class="ut-del" onclick="deleteUser(\''+u.id+'\',\''+u.email+'\')" title="Remove user"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>'}</td>
+      <td><div class="ut-actions">${isSelf?'':`<button class="ut-pwd" onclick="showChangePwd('${u.id}','${u.email}')" title="Change password"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></button>`}${isSelf?'':'<button class="ut-del" onclick="deleteUser('+u.id+'','+u.email+'')" title="Remove user"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>'}</div></td>
     </tr>`;
   });
   html+=`</tbody></table>`;
   wrap.innerHTML=html;
+}
+
+// ── TODAY POPUP ──
+function showTodayPopup(){
+  if(!mergedData) return;
+  const todayStr=NOW.toISOString().slice(0,10);
+  const d=NOW.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const students=mergedData.filter(s=>
+    Object.values(s.payments).some(p=>p&&p.payment_date&&String(p.payment_date).slice(0,10)===todayStr)
+  ).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name));
+
+  document.getElementById('today-popup-title').textContent='Pembayaran hari ini — '+d+':';
+  document.getElementById('today-popup-count').textContent=students.length+' students';
+
+  let html='';
+  if(!students.length){
+    html='<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">Belum ada pembayaran hari ini</div>';
+  } else {
+    students.forEach((s,i)=>{
+      html+=`<div class="today-popup-item">
+        <span class="today-popup-num">${i+1}.</span>
+        <span class="today-popup-class">${s.class}</span>
+        <span class="today-popup-name">${s.name}</span>
+      </div>`;
+    });
+  }
+  document.getElementById('today-popup-list').innerHTML=html;
+  document.getElementById('today-popup-overlay').classList.add('show');
+}
+function closeTodayPopup(e){if(e.target===document.getElementById('today-popup-overlay')) document.getElementById('today-popup-overlay').classList.remove('show');}
+function copyTodayList(){
+  if(!mergedData) return;
+  const todayStr=NOW.toISOString().slice(0,10);
+  const d=NOW.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const students=mergedData.filter(s=>
+    Object.values(s.payments).some(p=>p&&p.payment_date&&String(p.payment_date).slice(0,10)===todayStr)
+  ).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name));
+  let text=`Pembayaran hari ini — ${d}:\n`;
+  students.forEach((s,i)=>{ text+=`${i+1}. ${s.class} - ${s.name}\n`; });
+  navigator.clipboard.writeText(text.trim()).then(()=>showToast('List telah tercopy di clipboard','t-success'))
+    .catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('List telah tercopy di clipboard','t-success');});
+}
+
+// ── CHANGE PASSWORD ──
+let pwdTargetUid='';
+function showChangePwd(uid,email){
+  pwdTargetUid=uid;
+  document.getElementById('pwd-popup-email').textContent=email;
+  document.getElementById('pwd-new-input').value='';
+  document.getElementById('pwd-err').textContent='';
+  document.getElementById('pwd-popup-overlay').classList.add('show');
+}
+function closePwdPopup(e){if(e.target===document.getElementById('pwd-popup-overlay')) document.getElementById('pwd-popup-overlay').classList.remove('show');}
+async function submitChangePassword(){
+  const pwd=document.getElementById('pwd-new-input').value;
+  const errEl=document.getElementById('pwd-err');
+  errEl.textContent='';
+  if(!pwd||pwd.length<6){errEl.textContent='Password must be at least 6 characters.';return;}
+  const {data:{session}}=await sb.auth.getSession();
+  try{
+    const res=await fetch(EDGE_FN,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body:JSON.stringify({action:'change_password',uid:pwdTargetUid,password:pwd})
+    });
+    const result=await res.json();
+    if(!res.ok) throw new Error(result.error||'Failed to change password');
+    document.getElementById('pwd-popup-overlay').classList.remove('show');
+    showToast('✓ Password updated','t-success');
+  }catch(err){errEl.textContent=err.message;}
 }
 
 // ── UTILS ──
