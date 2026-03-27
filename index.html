@@ -313,6 +313,14 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
     </button>
   </div>
   <div class="header-right" id="header-right" style="display:none">
+    <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;text-align:right;line-height:1.4">
+      <div>Last updated</div>
+      <div id="last-updated-label" style="color:var(--text-secondary);font-weight:500">—</div>
+    </div>
+    <button class="btn btn-secondary" onclick="refreshData()" style="padding:5px 10px">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
     <div class="user-chip">
       <span class="user-chip-role" id="chip-role"></span>
       <span class="user-chip-email" id="chip-email"></span>
@@ -506,6 +514,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // ── CONSTANTS ──
 const DENDA_PER_STEP = 10000;
 const DENDA_CUTOFF_DAY = 25;
+const DENDA_START_PERIOD = '2025/07';
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -538,6 +547,7 @@ function getOverdueCount(student,targetMonth){
   const dendaUpTo=(todayDay>=DENDA_CUTOFF_DAY)?targetMonth:(allMonths[allMonths.indexOf(CURRENT_PERIOD)-1]||'');
   let streak=0;
   for(const m of allMonths){
+    if(m<DENDA_START_PERIOD) continue;
     if(m>targetMonth||m>dendaUpTo) break;
     const p=student.payments[m];
     if(!p||p.xoutstanding>0) streak++; else streak=0;
@@ -598,6 +608,7 @@ async function onLoggedIn(user){
 
   // Load data
   await loadFromSupabase();
+  await loadLastUpdated();
 }
 
 async function doLogout(){await sb.auth.signOut();location.reload();}
@@ -657,18 +668,26 @@ function showPage(name){
 async function loadFromSupabase(){
   showLoading('Loading data…');
   try{
-    const [{data:students,error:e1},{data:payments,error:e2}]=await Promise.all([
-      sb.from('students').select('*'),
-      sb.from('payments').select('*')
-    ]);
-    if(e1)throw e1; if(e2)throw e2;
+    const {data:students,error:e1}=await sb.from('students').select('*');
+    if(e1)throw e1;
     if(!students||students.length===0){hideLoading();return;}
 
-    studentsData=students.map(s=>({id:s.id,no_induk:s.no_induk,name:s.name,class:s.class,va:s.va||'',ket:s.ket||''}));
+    let payments=[],from=0;
+    while(true){
+      showLoading(`Loading payments… (${payments.length} records)`);
+      const {data:chunk,error:e2}=await sb.from('payments').select('*').gte('monthly_period','2025/07').range(from,from+999);
+      if(e2)throw e2;
+      if(!chunk||chunk.length===0) break;
+      payments=payments.concat(chunk);
+      if(chunk.length<1000) break;
+      from+=1000;
+    }
+
+    studentsData=students.map(s=>({id:String(s.id),no_induk:s.no_induk,name:s.name,class:s.class,va:s.va||'',ket:s.ket||''}));
     paymentsData=payments.map(p=>({
-      student_code:p.student_code,monthly_period:p.monthly_period,
-      xfee:parseFloat(p.xfee)||0,payment_amount:parseFloat(p.payment_amount)||0,
-      xused:parseFloat(p.xused)||0,xoutstanding:parseFloat(p.xoutstanding)||0,
+      student_code:String(p.student_code),monthly_period:p.monthly_period,
+      xfee:Number(p.xfee)||0,payment_amount:Number(p.payment_amount)||0,
+      xused:Number(p.xused)||0,xoutstanding:Number(p.xoutstanding)||0,
       student_name:p.student_name||'',org_code:p.org_code||'',classroom:p.classroom||'',
       payment_date:p.payment_date||'',payment_description:p.payment_description||'',
     }));
@@ -678,6 +697,29 @@ async function loadFromSupabase(){
     hideLoading();
     mergeData();
   }catch(err){hideLoading();showToast('DB Error: '+err.message,'t-error');}
+}
+
+// ── LAST UPDATED ──
+async function saveLastUpdated(){
+  const now=new Date().toISOString();
+  await sb.from('settings').upsert({key:'last_updated',value:now,updated_at:now});
+  displayLastUpdated(now);
+}
+async function loadLastUpdated(){
+  const {data}=await sb.from('settings').select('value').eq('key','last_updated').single();
+  if(data&&data.value) displayLastUpdated(data.value);
+}
+function displayLastUpdated(iso){
+  const d=new Date(iso);
+  const label=d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+', '+
+    String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  const el=document.getElementById('last-updated-label');
+  if(el) el.textContent=label;
+}
+async function refreshData(){
+  await loadFromSupabase();
+  await loadLastUpdated();
+  showToast('✓ Data refreshed','t-success');
 }
 
 // ── SAVE TO SUPABASE ──
@@ -751,6 +793,7 @@ function parseStudents(wb,filename){
   saveStudentsToSupabase(parsed).then(()=>{
     studentsData=parsed;markCardLoaded('students',filename,parsed.length+' students');
     showToast('✓ '+parsed.length+' students saved','t-success');hideLoading();
+    saveLastUpdated();
     if(studentsData&&paymentsData) mergeData();
   }).catch(err=>{hideLoading();showToast('Save error: '+err.message,'t-error');});
 }
@@ -778,6 +821,7 @@ function parsePayments(wb,filename){
   savePaymentsToSupabase(parsed).then(()=>{
     paymentsData=parsed;markCardLoaded('payments',filename,parsed.length+' records');
     showToast('✓ '+parsed.length+' records saved','t-success');hideLoading();
+    saveLastUpdated();
     if(studentsData&&paymentsData) mergeData();
   }).catch(err=>{hideLoading();showToast('Save error: '+err.message,'t-error');});
 }
@@ -991,7 +1035,7 @@ function exportExcel(){
       byClass[clsName].forEach(s=>{
         const row=[clsName,s.name,fmtInt(s.no_induk)];
         if(hasVA) row.push(s.va||'');
-        showMonths.forEach(m=>{const p=s.payments[m];if(!p){row.push('Unpaid');return;}if(p.xoutstanding===0){row.push('Paid');return;}row.push(p.xused>0?'Partial':'Unpaid');});
+        showMonths.forEach(m=>{row.push(fmtExportCell(s.payments[m]));});
         const ov=getOverdueCount(s,curM);
         const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
         row.push(ov||'',calcDenda(ov)||'',totalOut||'');allRows.push(row);
@@ -1004,7 +1048,7 @@ function exportExcel(){
       byClass[clsName].forEach(s=>{
         const row=[clsName,s.name,fmtInt(s.no_induk)];
         if(hasVA) row.push(s.va||'');
-        showMonths.forEach(m=>{const p=s.payments[m];if(!p){row.push('Unpaid');return;}if(p.xoutstanding===0){row.push('Paid');return;}row.push(p.xused>0?'Partial':'Unpaid');});
+        showMonths.forEach(m=>{row.push(fmtExportCell(s.payments[m]));});
         const ov=getOverdueCount(s,curM);
         const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
         row.push(ov||'',calcDenda(ov)||'',totalOut||'');cRows.push(row);
@@ -1015,6 +1059,19 @@ function exportExcel(){
     XLSX.writeFile(wb,'SPP_Payment_Report.xlsx');
     hideLoading();showToast('✓ Exported successfully!','t-success');
   },60);
+}
+
+// ── EXPORT CELL HELPER ──
+function fmtExportCell(p){
+  if(!p) return 'Unpaid';
+  const status=p.xoutstanding===0?'Paid':p.xused>0?'Partial':'Unpaid';
+  const date=p.payment_date?String(p.payment_date).slice(0,16).replace('T',' '):'';
+  const desc=p.payment_description?String(p.payment_description).trim():'';
+  if(!date&&!desc) return status;
+  const parts=[status];
+  if(date) parts.push(date);
+  if(desc) parts.push(desc);
+  return parts.join(' | ');
 }
 
 // ── DETAIL POPUP ──
