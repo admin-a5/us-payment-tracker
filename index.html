@@ -1149,7 +1149,7 @@ function getLastPayment(student){
   return latest?(latest+(latestDesc?' | '+latestDesc:'')):null;
 }
 function showDetail(studentId,month){
-  const s=mergedData.find(s=>s.id===studentId);if(!s) return;
+  const s=mergedData.find(s=>String(s.id)===String(studentId));if(!s) return;
   const p=s.payments[month],lb=monthLabel(month);
   const overdueN=getOverdueCount(s,month),denda=calcDenda(overdueN);
   const totalOutAll=allMonths.filter(m=>m<=month).reduce((a,m)=>{const pm=s.payments[m];return a+(pm?pm.xoutstanding:0);},0);
