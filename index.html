@@ -366,6 +366,29 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
   </div>
 </div>
 
+<!-- OUTSTANDING POPUP -->
+<div class="popup-overlay" id="outstanding-popup-overlay" onclick="closeOutstandingPopup(event)">
+  <div class="popup" style="width:460px">
+    <div class="popup-header">
+      <div>
+        <div class="popup-name" id="outstanding-popup-title">Daftar Tagihan Bulan Ini</div>
+        <div class="popup-meta" id="outstanding-popup-count"></div>
+      </div>
+      <button class="popup-close" onclick="document.getElementById('outstanding-popup-overlay').classList.remove('show')">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="popup-body">
+      <div class="today-popup-list" id="outstanding-popup-list"></div>
+      <button onclick="copyOutstandingList()"
+        style="width:100%;padding:10px;background:#dc2626;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px"
+        onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+        Copy List
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- CHANGE PASSWORD MODAL -->
 <div class="popup-overlay" id="pwd-popup-overlay" onclick="closePwdPopup(event)">
   <div class="popup" style="width:340px">
@@ -409,7 +432,7 @@ td.col-num,td.col-denda,td.col-out{text-align:center}
         <div class="stat-value sv-green" id="s-paid">—</div>
         <div class="stat-sub" id="s-paid-pct">—</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" style="cursor:pointer" onclick="showOutstandingPopup()" title="Click to see outstanding students">
         <div class="stat-label">Outstanding</div>
         <div class="stat-value sv-red" id="s-out">—</div>
         <div class="stat-sub" id="s-out-pct">—</div>
@@ -1318,6 +1341,54 @@ function copyTodayList(){
     Object.values(s.payments).some(p=>p&&p.payment_date&&String(p.payment_date).slice(0,10)===todayStr)
   ).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name));
   let text=`Pembayaran hari ini — ${d}:\n`;
+  students.forEach((s,i)=>{ text+=`${i+1}. ${s.class} - ${s.name}\n`; });
+  navigator.clipboard.writeText(text.trim()).then(()=>showToast('List telah tercopy di clipboard','t-success'))
+    .catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('List telah tercopy di clipboard','t-success');});
+}
+
+// ── OUTSTANDING POPUP ──
+function showOutstandingPopup(){
+  if(!mergedData) return;
+  const curM=allMonths[activeMonthIdx]||CURRENT_PERIOD;
+  const d=NOW.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const students=mergedData.filter(s=>{
+    const ket=(s.ket||'').toLowerCase();
+    if(ket==='pegawai') return false;
+    const p=s.payments[curM];
+    return !p||p.xoutstanding>0;
+  }).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name));
+
+  const lb=monthLabel(curM);
+  document.getElementById('outstanding-popup-title').textContent='Tagihan US — '+lb.full+' '+lb.year;
+  document.getElementById('outstanding-popup-count').textContent=students.length+' students outstanding';
+
+  let html='';
+  if(!students.length){
+    html='<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">Tidak ada tagihan bulan ini</div>';
+  } else {
+    students.forEach((s,i)=>{
+      html+=`<div class="today-popup-item">
+        <span class="today-popup-num">${i+1}.</span>
+        <span class="today-popup-class">${s.class}</span>
+        <span class="today-popup-name">${s.name}</span>
+      </div>`;
+    });
+  }
+  document.getElementById('outstanding-popup-list').innerHTML=html;
+  document.getElementById('outstanding-popup-overlay').classList.add('show');
+}
+function closeOutstandingPopup(e){if(e.target===document.getElementById('outstanding-popup-overlay')) document.getElementById('outstanding-popup-overlay').classList.remove('show');}
+function copyOutstandingList(){
+  if(!mergedData) return;
+  const curM=allMonths[activeMonthIdx]||CURRENT_PERIOD;
+  const d=NOW.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const students=mergedData.filter(s=>{
+    const ket=(s.ket||'').toLowerCase();
+    if(ket==='pegawai') return false;
+    const p=s.payments[curM];
+    return !p||p.xoutstanding>0;
+  }).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name));
+  let text=`Daftar Tagihan US hari ini - ${d}:\n`;
   students.forEach((s,i)=>{ text+=`${i+1}. ${s.class} - ${s.name}\n`; });
   navigator.clipboard.writeText(text.trim()).then(()=>showToast('List telah tercopy di clipboard','t-success'))
     .catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('List telah tercopy di clipboard','t-success');});
