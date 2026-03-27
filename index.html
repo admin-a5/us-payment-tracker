@@ -740,7 +740,7 @@ async function loadFromSupabase(){
       from+=1000;
     }
 
-    studentsData=students.map(s=>({id:String(s.id),no_induk:s.no_induk,name:s.name,class:s.class,va:s.va||'',ket:s.ket||''}));
+    studentsData=students.map(s=>({id:String(s.id),no_induk:s.no_induk,name:s.name,class:s.class,va_bca:s.va_bca||'',va_mandiri:s.va_mandiri||'',ket:s.ket||''}));
     paymentsData=payments.map(p=>({
       student_code:String(p.student_code),monthly_period:p.monthly_period,
       xfee:Number(p.xfee)||0,payment_amount:Number(p.payment_amount)||0,
@@ -836,7 +836,7 @@ function parseStudents(wb,filename){
   const headers=rows[hRow].map(h=>String(h).trim().toUpperCase().replace(/[\.\s\-\/]+/g,'_'));
   const fc=(...ns)=>{for(const n of ns){const i=headers.findIndex(h=>h===n||h.includes(n));if(i>=0)return i;}return -1;};
   const iCode=fc('STUDENT_CODE','STUDENTCODE','NISN'),iInduk=fc('INDUK','NO_INDUK','NOINDUK');
-  const iNama=fc('NAMA'),iKelas=fc('KELAS'),iVA=fc('VA'),iKet=fc('KET','KETERANGAN');
+  const iNama=fc('NAMA'),iKelas=fc('KELAS'),iVABCA=fc('VA_BCA','VABCA'),iVAMandiri=fc('VA_MANDIRI','VAMANDIRI'),iKet=fc('KET','KETERANGAN');
   const parsed=[];
   for(let i=hRow+1;i<rows.length;i++){
     const row=rows[i];
@@ -845,7 +845,7 @@ function parseStudents(wb,filename){
     const codeNum=parseInt(String(row[iCode]||'').replace(/[^0-9]/g,''))||0;
     const indukNum=parseInt(String(row[iInduk]||'').replace(/[^0-9]/g,''))||0;
     if(!codeNum&&!indukNum) continue;
-    parsed.push({id:codeNum||indukNum,no_induk:indukNum||codeNum,name:nama,class:String(row[iKelas]||'').trim(),va:iVA>=0?String(row[iVA]||'').trim():'',ket:iKet>=0?String(row[iKet]||'').trim():''});
+    parsed.push({id:codeNum||indukNum,no_induk:indukNum||codeNum,name:nama,class:String(row[iKelas]||'').trim(),va_bca:iVABCA>=0?String(row[iVABCA]||'').trim():'',va_mandiri:iVAMandiri>=0?String(row[iVAMandiri]||'').trim():'',ket:iKet>=0?String(row[iKet]||'').trim():''});
   }
   saveStudentsToSupabase(parsed).then(()=>{
     studentsData=parsed;markCardLoaded('students',filename,parsed.length+' students');
@@ -997,12 +997,10 @@ function renderTable(){
     return true;
   });
 
-  const hasVA=studentsData&&studentsData.some(s=>s.va&&s.va!=='');
   const hasKet=studentsData&&studentsData.some(s=>s.ket&&s.ket!=='');
 
   let th='<tr>';
   th+=`<th class="col-name">Student</th>`;
-  if(hasVA) th+=`<th class="col-va">VA Number</th>`;
   if(hasKet) th+=`<th class="col-va">Ket</th>`;
   showMonths.forEach(m=>{
     const lb=monthLabel(m);const isCur=m===curM;
@@ -1018,13 +1016,13 @@ function renderTable(){
 
   let rows='';
   if(!orderedCls.length){
-    rows=`<tr><td colspan="${3+(hasVA?1:0)+(hasKet?1:0)+showMonths.length}" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px">No students match the current filters</td></tr>`;
+    rows=`<tr><td colspan="${3+(hasKet?1:0)+showMonths.length}" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px">No students match the current filters</td></tr>`;
   }
   orderedCls.forEach(clsName=>{
     const students=byClass[clsName],allInClass=byClassFull[clsName]||[];
     const cDue=allInClass.filter(s=>!s.payments[curM]||s.payments[curM].xoutstanding>0).length;
     const cPaid=allInClass.length-cDue;
-    const span=2+(hasVA?1:0)+(hasKet?1:0)+showMonths.length+2;
+    const span=2+(hasKet?1:0)+showMonths.length+2;
     rows+=`<tr class="class-header"><td colspan="${span}"><div class="class-pill">Class ${clsName} <span class="class-count">${allInClass.length}</span><span class="class-stats"><span class="cs-item cs-paid">✓ ${cPaid} paid</span><span class="cs-item cs-out">⚠ ${cDue} due</span></span></div></td></tr>`;
     students.forEach(s=>{
       const overdueN=getOverdueCount(s,curM),denda=calcDenda(overdueN);
@@ -1039,7 +1037,6 @@ function renderTable(){
       }).join('');
       rows+=`<tr class="student-row${overdueN>=2?' row-overdue':''}">`;
       rows+=`<td class="col-name"><div class="student-name-cell"><span class="sn-name">${s.name}</span><span class="sn-id">${fmtInt(s.no_induk)}</span>${s.ket&&!hasKet?`<span class="sn-ket">${s.ket}</span>`:''}</div></td>`;
-      if(hasVA) rows+=`<td class="col-va">${s.va||'—'}</td>`;
       if(hasKet) rows+=`<td class="col-va">${s.ket||'—'}</td>`;
       rows+=cells;
       rows+=`<td class="col-num">${overdueN>0?`<span class="nv nv-orange">${overdueN}</span>`:`<span class="nv nv-muted">—</span>`}</td>`;
@@ -1051,7 +1048,7 @@ function renderTable(){
     const clsDenda=students.reduce((a,s)=>a+calcDenda(getOverdueCount(s,curM)),0);
     const clsOut=students.reduce((a,s)=>{let o=0;allMonths.filter(m=>m<=curM).forEach(m=>{const p=s.payments[m];if(p)o+=p.xoutstanding;});return a+o;},0);
     let sRow=`<tr class="class-summary"><td style="font-weight:700;color:var(--text-primary)">Monthly Paid Rate <span style="font-size:9px;color:var(--text-muted);font-weight:400">(paid / billed)</span></td>`;
-    if(hasVA) sRow+=`<td></td>`;if(hasKet) sRow+=`<td></td>`;
+    if(hasKet) sRow+=`<td></td>`;
     showMonths.forEach(m=>{
       const pN=students.filter(s=>s.payments[m]&&s.payments[m].xoutstanding===0).length;
       const hR=students.filter(s=>s.payments[m]).length;
@@ -1074,14 +1071,12 @@ function exportExcel(){
   setTimeout(()=>{
     const curM=allMonths[activeMonthIdx]||CURRENT_PERIOD;
     const view=document.getElementById('f-view').value;
-    const hasVA=studentsData&&studentsData.some(s=>s.va&&s.va!=='');
     let showMonths;
     if(view==='current') showMonths=[curM];
     else if(view==='ytd') showMonths=allMonths.filter(m=>m<=curM);
     else showMonths=[...allMonths];
     const wb=XLSX.utils.book_new();
     const header=['Class','Student Name','NO Induk'];
-    if(hasVA) header.push('VA Number');
     showMonths.forEach(m=>{const lb=monthLabel(m);header.push(lb.short+' '+lb.year);});
     header.push('Months Due','Denda (IDR)','Outstanding (IDR)');
     const byClass={};
@@ -1091,7 +1086,6 @@ function exportExcel(){
     ordered.forEach(clsName=>{
       byClass[clsName].forEach(s=>{
         const row=[clsName,s.name,fmtInt(s.no_induk)];
-        if(hasVA) row.push(s.va||'');
         showMonths.forEach(m=>{row.push(fmtExportCell(s.payments[m]));});
         const ov=getOverdueCount(s,curM);
         const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
@@ -1104,7 +1098,6 @@ function exportExcel(){
       const cRows=[header];
       byClass[clsName].forEach(s=>{
         const row=[clsName,s.name,fmtInt(s.no_induk)];
-        if(hasVA) row.push(s.va||'');
         showMonths.forEach(m=>{row.push(fmtExportCell(s.payments[m]));});
         const ov=getOverdueCount(s,curM);
         const totalOut=allMonths.filter(m=>m<=curM).reduce((a,m)=>{const p=s.payments[m];return a+(p?p.xoutstanding:0);},0);
@@ -1154,7 +1147,7 @@ function showDetail(studentId,month){
   const overdueN=getOverdueCount(s,month),denda=calcDenda(overdueN);
   const totalOutAll=allMonths.filter(m=>m<=month).reduce((a,m)=>{const pm=s.payments[m];return a+(pm?pm.xoutstanding:0);},0);
   document.getElementById('popup-name').textContent=s.name;
-  document.getElementById('popup-meta').textContent=fmtInt(s.no_induk)+(s.va?' · VA: '+s.va:'')+' · '+lb.full+' '+lb.year;
+  document.getElementById('popup-meta').textContent=fmtInt(s.no_induk)+' · '+lb.full+' '+lb.year;
   const lastPay=getLastPayment(s);
   let body='';
   if(!p){
@@ -1198,8 +1191,10 @@ function copyTagihan(studentId,month){
   t+=`1. Total Tagihan : ${fmtIDR(totalOutAll)}\n`;
   t+=`2. Jumlah Bulan : ${monthsDue} bulan\n`;
   if(denda>0) t+=`3. Denda : ${fmtIDR(denda)}\n`;
-  t+=`Total tagihan : ${fmtIDR(totalOutAll+denda)} + biaya admin\nVA : ${s.va||'—'}\n`;
-  t+=`Apabila pembayaran melewati tanggal 25 bulan berjalan maka akan dikenakan denda.\nTerima kasih. Tuhan memberkati`;
+  t+=`Total tagihan : ${fmtIDR(totalOutAll+denda)} + biaya admin\n`;
+  if(s.va_bca) t+=`VA BCA : ${s.va_bca}\n`;
+  if(s.va_mandiri) t+=`VA Mandiri : ${s.va_mandiri}\n`;
+  t+=`\nApabila pembayaran melewati tanggal 25 bulan berjalan maka akan dikenakan denda.\nTerima kasih. Tuhan memberkati`;
   navigator.clipboard.writeText(t).then(()=>showToast('Tagihan telah tercopy di clipboard','t-success')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('Tagihan telah tercopy di clipboard','t-success');
   });
