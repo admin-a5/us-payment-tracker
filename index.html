@@ -1280,7 +1280,7 @@ async function loadUserList(){
       <td><div class="ut-name">${u.full_name||'—'}</div><div class="ut-email">${u.email}</div></td>
       <td><span class="ut-role ${roleCls[u.role]||''}">${roleLabel[u.role]||u.role}</span></td>
       <td><span class="ut-class">${u.assigned_class||'—'}</span></td>
-      <td><div class="ut-actions">${isSelf?'':`<button class="ut-pwd" onclick="showChangePwd('${u.id}','${u.email}')" title="Change password"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></button>`}${isSelf?'':'<button class="ut-del" onclick="deleteUser('+u.id+'','+u.email+'')" title="Remove user"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>'}</div></td>
+      <td><div class="ut-actions">${isSelf?'':`<button class="ut-pwd" onclick="showChangePwd('${u.id}','${u.email}')" title="Change password"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></button>`}${isSelf?'':`<button class="ut-del" onclick="deleteUser('${u.id}','${u.email}')" title="Remove user"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>`}</div></td>
     </tr>`;
   });
   html+=`</tbody></table>`;
