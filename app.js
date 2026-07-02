@@ -1488,12 +1488,16 @@ async function saveSingleTransactionToSupabase(page, token, typeLabel, stamp, or
     );
     if (txErr) throw txErr;
 
-    /* Also update stock & freq in master_items for each item in this transaction */
+    /* Also update stock & freq in master_items for each item (deduplicate by item_code) */
     const state = ensureInventoryState();
-    const updates = orders.map((o) => {
+    const seen = new Set();
+    const updates = orders.reduce((acc, o) => {
+      if (seen.has(o.code)) return acc;
+      seen.add(o.code);
       const master = state.items.find((row) => row[0] === o.code);
-      return master ? { item_code: master[0], item_name: master[1], category: master[2], location: master[3], stock: Number(master[4]) || 0, timestamp: master[5] || null, freq: Number(master[6]) || 0 } : null;
-    }).filter(Boolean);
+      if (master) acc.push({ item_code: master[0], item_name: master[1], category: master[2], location: master[3], stock: Number(master[4]) || 0, timestamp: master[5] || null, freq: Number(master[6]) || 0 });
+      return acc;
+    }, []);
     if (updates.length > 0) {
       const { error: mErr } = await sb.from("sarpras_master_items").upsert(updates, { onConflict: "item_code" });
       if (mErr) throw mErr;
