@@ -1,0 +1,8 @@
+// config.js.example
+// Copy this file to config.js and add your real Supabase values.
+// WARNING: Do not commit config.js to source control.
+
+window.__CONFIG__ = {
+  SUPABASE_URL: "https://your-project.supabase.co",
+  SUPABASE_ANON_KEY: "your-rotated-anon-key-here"
+};
