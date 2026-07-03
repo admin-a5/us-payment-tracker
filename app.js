@@ -67,7 +67,145 @@ const translations = {
     approve: "Approve",
     module: "Module",
     owner: "Owner",
-    scope: "Scope"
+    scope: "Scope",
+    invTabOverview: "Overview",
+    invTabQrcr: "QR / OCR",
+    invTabMaster: "Master",
+    invTabInventory: "Inventory",
+    invTabOpname: "Stock Opname",
+    invTabAsset: "Asset",
+    invTabBorrow: "Borrow",
+    invTabMaintenance: "Maintenance",
+    invTabActivity: "Activity",
+    invTabReports: "Reports",
+    invActSearch: "Search token / item...",
+    invActAll: "All",
+    invActIn: "In",
+    invActOut: "Out",
+    invActExport: "Export",
+    invActClear: "Clear All",
+    invActEmpty: "No transaction history.",
+    invActToken: "Token",
+    invActType: "Type",
+    invActDate: "Date",
+    invActItems: "Items",
+    invActTotalQty: "Total Qty",
+    invActOfficer: "Officer",
+    invActStatus: "Status",
+    invActDetail: "Detail",
+    invActCode: "Code",
+    invActItemName: "Item Name",
+    invActQty: "Qty",
+    invActItem: "item",
+    invActNoDetail: "No item details",
+    invActClearConfirm: "Delete all transaction history? This action is permanent.",
+    invActExportDone: "transactions exported",
+    invActTransaction: "transaction",
+    invActConfirmDelete: "Delete",
+    invActPlaceholderTitle: "Activity Log",
+    invActPlaceholderDesc: "A unified log for incoming items, outgoing items, mutations, stock opname, adjustments, maintenance, and borrowing.",
+    invActPlaceholderScope: "Date filter, Activity type, Items, Officer, Location",
+    invMasterCode: "Code",
+    invMasterName: "Item Name",
+    invMasterCategory: "Category",
+    invMasterLocation: "Location",
+    invMasterStock: "Stock",
+    invMasterFreq: "Freq",
+    invMasterTimestamp: "Timestamp",
+    invMasterActions: "Actions",
+    invMasterEmpty: "No data yet.",
+    invMasterSearch: "Search item...",
+    invMasterAdd: "+ Add",
+    invMasterExport: "Export",
+    invMasterImport: "Import",
+    invMasterSave: "Save to DB",
+    invMasterLoad: "Load from DB",
+    invMasterData: "data",
+    invMasterShow: "Show",
+    invMasterEdit: "Edit",
+    invMasterDelete: "Delete",
+    invMasterModalAdd: "Add Item",
+    invMasterModalEdit: "Edit Item",
+    invMasterSaveBtn: "Save",
+    invMasterCancelBtn: "Cancel",
+    invMasterImportSuccess: "items imported",
+    invMasterImportFail: "Import failed",
+    invMasterReadFail: "Failed to read file",
+    invMasterTemplate: "Download Template",
+    invMasterUpload: "Upload File",
+    invOverviewTotalItems: "Total Items",
+    invOverviewTotalStock: "Total Stock Units",
+    invOverviewCategories: "Categories",
+    invOverviewLowStock: "Low Stock",
+    invOverviewZeroStock: "Out of Stock",
+    invOverviewTransactionChart: "Transaction Volume",
+    invOverviewTopItems: "Top Items by Frequency",
+    invOverviewFreqRanking: "Frequency Ranking",
+    invOverviewRank: "Rank",
+    invOverviewCode: "Code",
+    invOverviewName: "Name",
+    invOverviewCategory: "Category",
+    invOverviewFreq: "Freq",
+    invOverviewQuickActions: "Quick Actions",
+    invOverviewNoData: "No data yet — start by adding items in Master, then record transactions in Inventory.",
+    invOpSearch: "Search / Scan item code...",
+    invOpTypeIn: "Check In",
+    invOpTypeOut: "Check Out",
+    invOpToken: "Token",
+    invOpOrderList: "Order List",
+    invOpEmpty: "No items yet. Scan or search item code.",
+    invOpConfirm: "Confirm",
+    invOpClear: "Clear",
+    invOpSummary: "Summary",
+    invOpUnique: "Unique Items",
+    invOpTotal: "Total Qty",
+    invOpCategory: "Category",
+    invRepTitle: "Reports",
+    invRepMonthly: "Monthly",
+    invRepQuarterly: "3-Month",
+    invRepTahapan: "Tahapan (6-Month)",
+    invRepGenerate: "Generate",
+    invRepExport: "Export XLSX",
+    invRepNo: "No",
+    invRepCategory: "Category",
+    invRepCode: "Code",
+    invRepName: "Item Name",
+    invRepStockAwal: "Opening Stock",
+    invRepMasuk: "In",
+    invRepKeluar: "Out",
+    invRepTotalMasuk: "Total In",
+    invRepTotalKeluar: "Total Out",
+    invRepSisaStock: "Stock",
+    invRepNoData: "No transactions for this period.",
+    invRepBulan: "Month",
+    invRepTahun: "Year",
+    invRepTahapan1: "Phase 1 (Jan–Jun)",
+    invRepTahapan2: "Phase 2 (Jul–Dec)",
+    invRepConfirmLoad: "Have you loaded data from DB?",
+    invRepLedger: "Ledger",
+    invRepCards: "Cards",
+    invRepSelectItem: "Select Item...",
+    invRepDate: "Date",
+    invRepIn: "In",
+    invRepOut: "Out",
+    invRepBalance: "Balance",
+    invRepExportCard: "Export Card",
+    invRepExportAll: "Export All",
+    invRepCardNoTx: "No transactions for this item.",
+    invRepCardOf: "Officer",
+    invRepToken: "Token",
+    invRepCurrentStock: "Current Stock",
+    invOpTokenReq: "Token must be 6 digits.",
+    invOpNoItems: "No items in the list.",
+    invOpQty: "Qty",
+    invOpRemove: "Remove",
+    invOpConfirmTitle: "Confirm Check {type}",
+    invOpTokenReEnter: "Re-enter the 6-digit token to confirm",
+    invOpInvalidToken: "Invalid token. Transaction cancelled.",
+    invOpSuccess: "success",
+    invOpInStock: "Insufficient stock:",
+    invOpAvail: "available",
+    invOpRequested: "requested"
   },
   id: {
     brandSubtitle: "Sistem Admin",
@@ -137,7 +275,145 @@ const translations = {
     approve: "Setujui",
     module: "Modul",
     owner: "Pemilik",
-    scope: "Scope"
+    scope: "Scope",
+    invTabOverview: "Ringkasan",
+    invTabQrcr: "QR / OCR",
+    invTabMaster: "Master",
+    invTabInventory: "Inventory",
+    invTabOpname: "Stock Opname",
+    invTabAsset: "Asset",
+    invTabBorrow: "Peminjaman",
+    invTabMaintenance: "Maintenance",
+    invTabActivity: "Riwayat",
+    invTabReports: "Laporan",
+    invActSearch: "Cari token / barang...",
+    invActAll: "Semua",
+    invActIn: "Masuk",
+    invActOut: "Keluar",
+    invActExport: "Export",
+    invActClear: "Clear All",
+    invActEmpty: "Belum ada riwayat transaksi.",
+    invActToken: "Token",
+    invActType: "Tipe",
+    invActDate: "Tanggal",
+    invActItems: "Barang",
+    invActTotalQty: "Total Qty",
+    invActOfficer: "Petugas",
+    invActStatus: "Status",
+    invActDetail: "Detail",
+    invActCode: "Kode",
+    invActItemName: "Nama Barang",
+    invActQty: "Jml",
+    invActItem: "item",
+    invActNoDetail: "Tidak ada detail item",
+    invActClearConfirm: "Hapus semua riwayat transaksi? Data akan hilang permanen.",
+    invActExportDone: "transaksi diexport",
+    invActTransaction: "transaksi",
+    invActConfirmDelete: "Hapus",
+    invActPlaceholderTitle: "Riwayat Aktivitas",
+    invActPlaceholderDesc: "Satu tempat untuk log barang masuk, keluar, mutasi, stock opname, penyesuaian, maintenance, dan peminjaman.",
+    invActPlaceholderScope: "Filter tanggal, Jenis aktivitas, Barang, Petugas, Lokasi",
+    invMasterCode: "Kode",
+    invMasterName: "Nama Barang",
+    invMasterCategory: "Kategori",
+    invMasterLocation: "Location",
+    invMasterStock: "Stock",
+    invMasterFreq: "Freq",
+    invMasterTimestamp: "Timestamp",
+    invMasterActions: "Aksi",
+    invMasterEmpty: "Belum ada data.",
+    invMasterSearch: "Cari barang...",
+    invMasterAdd: "+ Tambah",
+    invMasterExport: "Export",
+    invMasterImport: "Import",
+    invMasterSave: "Save to DB",
+    invMasterLoad: "Load from DB",
+    invMasterData: "data",
+    invMasterShow: "Tampil",
+    invMasterEdit: "Edit",
+    invMasterDelete: "Hapus",
+    invMasterModalAdd: "Tambah Barang",
+    invMasterModalEdit: "Edit Barang",
+    invMasterSaveBtn: "Simpan",
+    invMasterCancelBtn: "Batal",
+    invMasterImportSuccess: "barang berhasil diimport",
+    invMasterImportFail: "Gagal import",
+    invMasterReadFail: "Gagal membaca file",
+    invMasterTemplate: "Download Template",
+    invMasterUpload: "Upload File",
+    invOverviewTotalItems: "Total Barang",
+    invOverviewTotalStock: "Total Stok Unit",
+    invOverviewCategories: "Kategori",
+    invOverviewLowStock: "Stok Minimum",
+    invOverviewZeroStock: "Stok Habis",
+    invOverviewTransactionChart: "Volume Transaksi",
+    invOverviewTopItems: "Barang Teratas",
+    invOverviewFreqRanking: "Peringkat Frekuensi",
+    invOverviewRank: "Peringkat",
+    invOverviewCode: "Kode",
+    invOverviewName: "Nama",
+    invOverviewCategory: "Kategori",
+    invOverviewFreq: "Frekuensi",
+    invOverviewQuickActions: "Aksi Cepat",
+    invOverviewNoData: "Belum ada data — mulai dengan menambah barang di Master, lalu catat transaksi di Inventory.",
+    invOpSearch: "Cari / Scan kode barang...",
+    invOpTypeIn: "Barang Masuk",
+    invOpTypeOut: "Barang Keluar",
+    invOpToken: "Token",
+    invOpOrderList: "Daftar barang",
+    invOpEmpty: "Belum ada barang. Scan atau cari kode barang.",
+    invOpConfirm: "Check {type}",
+    invOpClear: "Clear",
+    invOpSummary: "Ringkasan",
+    invOpUnique: "Item Unik",
+    invOpTotal: "Total Qty",
+    invOpCategory: "Kategori",
+    invRepTitle: "Laporan",
+    invRepMonthly: "Bulanan",
+    invRepQuarterly: "3 Bulanan",
+    invRepTahapan: "Tahapan (6 Bulan)",
+    invRepGenerate: "Generate",
+    invRepExport: "Export XLSX",
+    invRepNo: "No",
+    invRepCategory: "Kategori",
+    invRepCode: "Kode",
+    invRepName: "Nama Barang",
+    invRepStockAwal: "Stock Awal",
+    invRepMasuk: "Msk",
+    invRepKeluar: "Klr",
+    invRepTotalMasuk: "Total Masuk",
+    invRepTotalKeluar: "Total Keluar",
+    invRepSisaStock: "Stok",
+    invRepNoData: "Belum ada transaksi untuk periode ini.",
+    invRepBulan: "Bulan",
+    invRepTahun: "Tahun",
+    invRepTahapan1: "Tahapan 1 (Jan–Jun)",
+    invRepTahapan2: "Tahapan 2 (Jul–Dec)",
+    invRepConfirmLoad: "Apakah sudah load DB?",
+    invRepLedger: "Buku Besar",
+    invRepCards: "Kartu Stok",
+    invRepSelectItem: "Pilih Barang...",
+    invRepDate: "Tanggal",
+    invRepIn: "Masuk",
+    invRepOut: "Keluar",
+    invRepBalance: "Saldo",
+    invRepExportCard: "Export Kartu",
+    invRepExportAll: "Export Semua",
+    invRepCardNoTx: "Belum ada transaksi untuk barang ini.",
+    invRepCardOf: "Petugas",
+    invRepToken: "Token",
+    invRepCurrentStock: "Stok Saat Ini",
+    invOpTokenReq: "Token harus 6 digit angka.",
+    invOpNoItems: "Belum ada barang dalam daftar.",
+    invOpQty: "Qty",
+    invOpRemove: "Hapus",
+    invOpConfirmTitle: "Konfirmasi Check {type}",
+    invOpTokenReEnter: "Masukkan ulang 6 digit token untuk konfirmasi",
+    invOpInvalidToken: "Token tidak valid. Transaksi dibatalkan.",
+    invOpSuccess: "berhasil",
+    invOpInStock: "Stok tidak mencukupi:",
+    invOpAvail: "tersedia",
+    invOpRequested: "diminta"
   }
 };
 
@@ -212,67 +488,6 @@ const pageData = {
   }
 };
 
-const inventoryOverviewData = {
-  metrics: [
-    { value: "1,248", label: "Total barang", tone: "mint" },
-    { value: "8,964", label: "Total stok unit", tone: "sand" },
-    { value: "Rp 284 jt", label: "Nilai persediaan", tone: "sky" },
-    { value: "12", label: "Stok minimum", tone: "rose" }
-  ],
-  masterSummary: [
-    { label: "Master Barang", value: "326", note: "ATK, elektronik, kebersihan, arsip" },
-    { label: "Kategori", value: "7", note: "Sudah sesuai PRD inti" },
-    { label: "Lokasi", value: "6", note: "Gudang, TU, perpustakaan, lab" },
-    { label: "Supplier", value: "28", note: "PIC dan kontak siap dilacak" },
-    { label: "Satuan", value: "7", note: "pcs, box, rim, liter, kg, pack, lusin" }
-  ],
-  stockByLocation: [
-    ["MHP-ATK-001", "Kertas A4", "Gudang ATK", "420 rim", "Min. 120", "Aman"],
-    ["MHP-ELK-014", "Mouse Wireless", "Lab Komputer", "18 pcs", "Min. 10", "Aman"],
-    ["MHP-KBR-008", "Cairan Pel", "Gudang Kebersihan", "6 liter", "Min. 12", "Perlu restok"],
-    ["MHP-ARS-021", "Ordner Arsip", "TU", "14 pcs", "Min. 10", "Aman"],
-    ["MHP-ELK-022", "Kabel HDMI", "Perpustakaan", "0 pcs", "Min. 4", "Kosong"]
-  ],
-  foundations: [
-    {
-      title: "Master data siap tumbuh",
-      text: "Struktur sudah dipisah antara barang, kategori, lokasi, supplier, dan satuan supaya transaksi nanti tidak campur aduk."
-    },
-    {
-      title: "Stok per lokasi",
-      text: "Satu barang bisa hidup di banyak lokasi. Total stok dihitung dari penjumlahan semua lokasi, bukan satu kolom gudang tunggal."
-    },
-    {
-      title: "Transaksi tanpa approval",
-      text: "Barang masuk, keluar, mutasi, dan stock opname akan langsung tercatat dengan jejak petugas sebagai akuntabilitas."
-    }
-  ],
-  nextSlices: [
-    "Barang Masuk / Keluar / Mutasi Lokasi",
-    "Stock Opname dan Penyesuaian Stok",
-    "Asset Management dan Depresiasi",
-    "Peminjaman, Maintenance, dan Laporan"
-  ],
-  activityFeed: [
-    ["Stok lokasi", "Gudang Kebersihan untuk Cairan Pel di bawah minimum", "Butuh restok hari ini"],
-    ["Master barang", "Kode MHP-ATK-001 terhubung ke 3 lokasi aktif", "Distribusi lintas lokasi"],
-    ["Weighted average", "Nilai persediaan akan dihitung ulang saat Barang Masuk aktif", "Siap untuk fase transaksi"]
-  ],
-  inventoryFlow: [
-    { title: "Barang Masuk", text: "Supplier, invoice, qty, harga satuan, dan update stok lokasi + weighted average." },
-    { title: "Barang Keluar", text: "Distribusi habis pakai ke unit tujuan dengan pengambil, keperluan, dan jejak petugas." },
-    { title: "Mutasi Lokasi", text: "Perpindahan stok antar lokasi tanpa mengubah total stok barang." },
-    { title: "Penyesuaian", text: "Menangani rusak, hilang, kadaluarsa, dan selisih hasil stock opname." }
-  ],
-  reportGroups: [
-    "Persediaan dan stok minimum",
-    "Barang masuk / keluar",
-    "Stock opname dan selisih",
-    "Asset dan maintenance",
-    "Peminjaman dan riwayat aktivitas"
-  ]
-};
-
 function nowStamp() { return nowStampWIB(); }
 function nowStampWIB() {
   const d = new Date();
@@ -290,8 +505,33 @@ let invActivitySearch = "";
 /* ── Inventory operations state ── */
 let invTransactionType = "masuk";
 let invToken = "000001";
+let invTokenDate = "";
 let invTokenVisible = false;
 let invCurrentOrder = [];
+
+function loadInvTokenState() {
+  const today = nowStampWIB().slice(0, 10);
+  const storedDate = localStorage.getItem("reload_sarpras_token_date");
+  const storedToken = localStorage.getItem("reload_sarpras_token");
+  if (storedDate === today && storedToken) {
+    invToken = storedToken;
+    invTokenDate = today;
+  } else {
+    invToken = "000001";
+    invTokenDate = today;
+    localStorage.setItem("reload_sarpras_token_date", today);
+    localStorage.setItem("reload_sarpras_token", invToken);
+  }
+}
+function saveInvTokenState() {
+  const today = nowStampWIB().slice(0, 10);
+  if (invTokenDate !== today) {
+    invToken = "000001";
+    invTokenDate = today;
+  }
+  localStorage.setItem("reload_sarpras_token_date", invTokenDate);
+  localStorage.setItem("reload_sarpras_token", invToken);
+}
 
 const inventoryMasterData = {
   items: [
@@ -416,6 +656,91 @@ function ensureInventoryState() {
   return inventoryState;
 }
 
+/* ── Data helpers for live overview dashboard ── */
+function getTransactionTimeline() {
+  const state = ensureInventoryState();
+  const tx = state.transactions;
+  if (!tx.length) return [];
+  const byDay = {};
+  let earliest = null, latest = null;
+  tx.forEach((row) => {
+    const day = row[2].slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + 1;
+    if (!earliest || day < earliest) earliest = day;
+    if (!latest || day > latest) latest = day;
+  });
+  const start = new Date(earliest);
+  const end = new Date(latest);
+  const diffDays = Math.round((end - start) / 86400000) + 1;
+  const useMonthly = diffDays > 365;
+  const useWeekly = diffDays > 60 && !useMonthly;
+  const result = [];
+  if (useMonthly) {
+    const byMonth = {};
+    tx.forEach((row) => {
+      const m = row[2].slice(0, 7);
+      byMonth[m] = (byMonth[m] || 0) + 1;
+    });
+    const mStart = new Date(earliest.slice(0, 7) + "-01");
+    const mEnd = new Date(latest.slice(0, 7) + "-01");
+    for (let d = new Date(mStart); d <= mEnd; d.setMonth(d.getMonth() + 1)) {
+      const key = d.toISOString().slice(0, 7);
+      result.push({ label: key, value: byMonth[key] || 0 });
+    }
+  } else if (useWeekly) {
+    const byWeek = {};
+    tx.forEach((row) => {
+      const d = new Date(row[2].slice(0, 10));
+      const wkStart = new Date(d);
+      wkStart.setDate(d.getDate() - d.getDay());
+      const key = wkStart.toISOString().slice(0, 10);
+      byWeek[key] = (byWeek[key] || 0) + 1;
+    });
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
+      const key = d.toISOString().slice(0, 10);
+      result.push({ label: key, value: byWeek[key] || 0 });
+    }
+  } else {
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().slice(0, 10);
+      result.push({ label: key, value: byDay[key] || 0 });
+    }
+  }
+  return result;
+}
+function getTopItemsByFreq(n) {
+  const state = ensureInventoryState();
+  return state.items
+    .filter((row) => Number(row[6]) > 0)
+    .sort((a, b) => Number(b[6]) - Number(a[6]))
+    .slice(0, n || 3)
+    .map((row) => ({ code: row[0], name: row[1], freq: Number(row[6]) }));
+}
+function getFreqRanking(n) {
+  const state = ensureInventoryState();
+  return state.items
+    .filter((row) => Number(row[6]) > 0)
+    .sort((a, b) => Number(b[6]) - Number(a[6]))
+    .slice(0, n || 10)
+    .map((row, i) => ({ rank: i + 1, code: row[0], name: row[1], kategori: row[2] || "—", freq: Number(row[6]) }));
+}
+function getOverviewMetrics() {
+  const state = ensureInventoryState();
+  const items = state.items;
+  const totalItems = items.length;
+  const totalStock = items.reduce((s, r) => s + (Number(r[4]) || 0), 0);
+  const kategoriSet = new Set(items.map((r) => r[2]).filter(Boolean));
+  const lowStock = items.filter((r) => Number(r[4]) <= 1 && Number(r[4]) > 0).length;
+  const zeroStock = items.filter((r) => Number(r[4]) === 0).length;
+  return [
+    { value: String(totalItems), label: "invOverviewTotalItems", tone: "mint" },
+    { value: String(totalStock), label: "invOverviewTotalStock", tone: "sand" },
+    { value: String(kategoriSet.size), label: "invOverviewCategories", tone: "sky" },
+    { value: String(lowStock), label: "invOverviewLowStock", tone: "rose" },
+    { value: String(zeroStock), label: "invOverviewZeroStock", tone: "rose" }
+  ];
+}
+
 function getInventorySupabaseClient() {
   return window.authModule?.getSupabaseClient?.() || window.schoolAuth?.sb || window._sb || null;
 }
@@ -433,6 +758,17 @@ function t(key) {
   return translations[language][key] || translations.en[key] || key;
 }
 
+function refreshInventoryLanguage() {
+  const invPage = document.querySelector("#inventory .module-page");
+  if (!invPage) return;
+  const tabMap = { "inv-overview": "invTabOverview", "inv-qrocr": "invTabQrcr", "inv-master": "invTabMaster", "inv-inventory": "invTabInventory", "inv-opname": "invTabOpname", "inv-asset": "invTabAsset", "inv-borrow": "invTabBorrow", "inv-maintenance": "invTabMaintenance", "inv-activity": "invTabActivity", "inv-reports": "invTabReports" };
+  invPage.querySelectorAll("[data-invpage]").forEach((btn) => {
+    const key = tabMap[btn.dataset.invpage];
+    if (key) btn.textContent = t(key);
+  });
+  refreshInventorySubpages(invPage);
+}
+
 function applyLanguage() {
   document.documentElement.lang = language;
   languageSelect.value = language;
@@ -445,7 +781,12 @@ function applyLanguage() {
   renderRows();
   renderSimplePages();
   enhanceStaffPage();
-  enhanceInventoryPage();
+  /* Only call enhanceInventoryPage on the first run; language switch uses refreshInventoryLanguage */
+  if (!document.querySelector("#inventory .module-page .module-subnav")) {
+    enhanceInventoryPage();
+  } else {
+    refreshInventoryLanguage();
+  }
   window.userManagementModule?.mount?.();
 }
 
@@ -470,7 +811,9 @@ function renderRows() {
 
 function renderSimplePages() {
   document.querySelectorAll("[data-simple-page]").forEach((section) => {
-    const key      = section.dataset.simplePage;
+    const key = section.dataset.simplePage;
+    /* Don't rebuild inventory if it has already been enhanced (subnav exists) */
+    if (key === "inventory" && section.querySelector(".module-page .module-subnav")) return;
     const title    = t(`page${capitalize(key)}Title`);
     const subtitle = t(`page${capitalize(key)}Subtitle`);
     const data     = pageData[key] || pageData.students;
@@ -553,7 +896,9 @@ function renderSimplePages() {
   });
 
   enhanceStaffPage();
-  enhanceInventoryPage();
+  if (!document.querySelector("#inventory .module-page .module-subnav")) {
+    enhanceInventoryPage();
+  }
 }
 
 function formatModuleCell(value, index) {
@@ -701,6 +1046,7 @@ function enhanceStaffPage() {
 }
 
 function enhanceInventoryPage() {
+  loadInvTokenState();
   const section = document.querySelector("#inventory");
   const page    = section?.querySelector(".module-page");
   const heading = page?.querySelector(".module-heading");
@@ -722,16 +1068,16 @@ function enhanceInventoryPage() {
   subnav.setAttribute("role", "tablist");
   subnav.setAttribute("aria-label", "Sarpras sub pages");
   subnav.innerHTML = `
-    <button class="active" type="button" data-invpage="inv-overview">Overview</button>
-    <button type="button" data-invpage="inv-qrocr">QR / OCR</button>
-    <button type="button" data-invpage="inv-master">Master</button>
-    <button type="button" data-invpage="inv-inventory">Inventory</button>
-    <button type="button" data-invpage="inv-opname">Stock Opname</button>
-    <button type="button" data-invpage="inv-asset">Asset</button>
-    <button type="button" data-invpage="inv-borrow">Peminjaman</button>
-    <button type="button" data-invpage="inv-maintenance">Maintenance</button>
-    <button type="button" data-invpage="inv-activity">Riwayat</button>
-    <button type="button" data-invpage="inv-reports">Laporan</button>
+    <button class="active" type="button" data-invpage="inv-overview">${t("invTabOverview")}</button>
+    <button type="button" data-invpage="inv-qrocr">${t("invTabQrcr")}</button>
+    <button type="button" data-invpage="inv-master">${t("invTabMaster")}</button>
+    <button type="button" data-invpage="inv-inventory">${t("invTabInventory")}</button>
+    <button type="button" data-invpage="inv-opname">${t("invTabOpname")}</button>
+    <button type="button" data-invpage="inv-asset">${t("invTabAsset")}</button>
+    <button type="button" data-invpage="inv-borrow">${t("invTabBorrow")}</button>
+    <button type="button" data-invpage="inv-maintenance">${t("invTabMaintenance")}</button>
+    <button type="button" data-invpage="inv-activity">${t("invTabActivity")}</button>
+    <button type="button" data-invpage="inv-reports">${t("invTabReports")}</button>
   `;
 
   /* ── QR/OCR sub-page container ── */
@@ -800,9 +1146,9 @@ function enhanceInventoryPage() {
   activityPage.className = "module-subpage";
   activityPage.hidden = true;
   activityPage.innerHTML = buildInventoryPlaceholderPage(
-    "Riwayat Aktivitas",
-    "Satu tempat untuk log barang masuk, keluar, mutasi, stock opname, penyesuaian, maintenance, dan peminjaman.",
-    ["Filter tanggal", "Jenis aktivitas", "Barang", "Petugas", "Lokasi"]
+    t("invActPlaceholderTitle"),
+    t("invActPlaceholderDesc"),
+    t("invActPlaceholderScope").split(", ")
   );
 
   const reportPage = document.createElement("section");
@@ -944,7 +1290,7 @@ function bindInventoryWorkspace(page) {
       refreshInventorySubpages(page);
     }
     if (action === "activity-clear") {
-      if (!confirm("Hapus semua riwayat transaksi? Data akan hilang permanen.")) return;
+      if (!confirm(t("invActClearConfirm"))) return;
       const st = ensureInventoryState();
       st.transactions = [];
       persistInventoryStore();
@@ -952,6 +1298,34 @@ function bindInventoryWorkspace(page) {
     }
     if (action === "activity-export") {
       exportActivityExcel();
+    }
+    /* ── Reports page ── */
+    if (action === "report-set-type") {
+      invReportType = actionButton.dataset.value || "bulanan";
+      refreshInventorySubpages(page);
+    }
+    if (action === "report-generate") {
+      const monthSel = page.querySelector("[data-sarpras-input='report-month']");
+      const yearSel = page.querySelector("[data-sarpras-input='report-year']");
+      if (monthSel) invReportMonth = Number(monthSel.value);
+      if (yearSel) invReportYear = Number(yearSel.value);
+      refreshInventorySubpages(page);
+    }
+    if (action === "report-export") {
+      if (!confirm(t("invRepConfirmLoad"))) return;
+      exportReportExcel();
+    }
+    if (action === "report-set-subtab") {
+      invReportSubTab = actionButton.dataset.value || "ledger";
+      refreshInventorySubpages(page);
+    }
+    if (action === "report-export-card") {
+      if (!confirm(t("invRepConfirmLoad"))) return;
+      exportStockCardExcel(invStockCardCode);
+    }
+    if (action === "report-export-all-cards") {
+      if (!confirm(t("invRepConfirmLoad"))) return;
+      exportAllStockCardsExcel();
     }
     if (action === "toggle-tx-detail") {
       const idx = Number(actionButton.dataset.index);
@@ -1077,7 +1451,7 @@ function bindInventoryWorkspace(page) {
 
     if (action === "add-item-show") {
       document.getElementById("sarpras-edit-index").value = "-1";
-      document.getElementById("sarpras-master-modal-title").textContent = "Tambah Barang";
+      document.getElementById("sarpras-master-modal-title").textContent = t("invMasterModalAdd");
       document.getElementById("sarpras-master-form").reset();
       document.getElementById("sarpras-master-modal").style.display = "grid";
     }
@@ -1092,7 +1466,7 @@ function bindInventoryWorkspace(page) {
       form.elements["category"].value = catEntry ? catEntry[0] : "";
       form.elements["location"].value = item[3];
       form.elements["stock"].value = item[4];
-      document.getElementById("sarpras-master-modal-title").textContent = "Edit Barang";
+      document.getElementById("sarpras-master-modal-title").textContent = t("invMasterModalEdit");
       document.getElementById("sarpras-master-modal").style.display = "grid";
     }
 
@@ -1201,6 +1575,10 @@ function bindInventoryWorkspace(page) {
       invActivityCurrentPage = 1;
       refreshInventorySubpages(page);
     }
+    if (event.target.matches("[data-sarpras-input='stock-card-item']")) {
+      invStockCardCode = event.target.value;
+      refreshInventorySubpages(page);
+    }
   });
 
   /* ── Inventory: add item on Enter ── */
@@ -1238,6 +1616,7 @@ function bindInventoryWorkspace(page) {
       const raw = event.target.value.replace(/\D/g, "").slice(0, 6);
       event.target.value = raw;
       invToken = raw || "000001";
+      saveInvTokenState();
     }
   });
 
@@ -1423,6 +1802,7 @@ function inventoryLoading(show, text) {
 }
 
 function executeInventoryTransaction(page) {
+  loadInvTokenState();
   const state = ensureInventoryState();
   const type = invTransactionType;
   const typeLabel = type === "masuk" ? "Masuk" : "Keluar";
@@ -1462,6 +1842,7 @@ function executeInventoryTransaction(page) {
   invCurrentOrder = [];
   /* Increment token */
   invToken = String(Math.min(999999, (Number(invToken) || 0) + 1)).padStart(6, "0");
+  saveInvTokenState();
 
   /* Re-render to clear order table */
   refreshInventorySubpages(page);
@@ -1481,38 +1862,28 @@ async function saveSingleTransactionToSupabase(page, token, typeLabel, stamp, or
   inventoryLoading(true, `Menyimpan transaksi ${typeLabel.toLowerCase()} ke database...`);
   try {
     const orders = JSON.parse(ordersJson);
-    /* Save transaction record */
-    const { error: txErr } = await sb.from("sarpras_transactions").upsert(
-      { token, type: typeLabel, date: stamp, items: orders, total_qty: totalQty, item_count: itemCount, petugas, status: "Selesai" },
-      { onConflict: "token" }
-    );
-    if (txErr) throw txErr;
-
-    /* Also update stock & freq in master_items for each item (deduplicate by item_code) */
-    const state = ensureInventoryState();
-    const seen = new Set();
-    const updates = orders.reduce((acc, o) => {
-      if (seen.has(o.code)) return acc;
-      seen.add(o.code);
-      const master = state.items.find((row) => row[0] === o.code);
-      if (master) acc.push({ item_code: master[0], item_name: master[1], category: master[2], location: master[3], stock: Number(master[4]) || 0, timestamp: master[5] || null, freq: Number(master[6]) || 0 });
-      return acc;
-    }, []);
-    if (updates.length > 0) {
-      const { error: mErr } = await sb.from("sarpras_master_items").upsert(updates, { onConflict: "item_code" });
-      if (mErr) throw mErr;
-    }
+    /* Atomic: call RPC — inserts transaction + updates stock in one DB transaction */
+    const { data, error: rpcErr } = await sb.rpc("process_inventory_transaction", {
+      p_token: token,
+      p_type: typeLabel,
+      p_date: stamp,
+      p_items: orders,
+      p_total_qty: totalQty,
+      p_item_count: itemCount,
+      p_petugas: petugas
+    });
+    if (rpcErr) throw rpcErr;
 
     inventoryLoading(false);
     inventorySyncState.inventory = `Transaksi ${typeLabel.toLowerCase()} tersimpan ke Supabase`;
     inventorySyncState.master = "Stok & frekuensi tersimpan ke Supabase";
     inventoryToast("✓ Transaksi + stok tersimpan ke database Supabase");
-    console.log("saveSingleTransaction: transaction + stock saved");
+    console.log("saveSingleTransaction: RPC ok", data);
   } catch (err) {
     inventoryLoading(false);
     inventoryToast("⚠ Gagal menyimpan ke database: " + err.message + ". Transaksi tetap aman di browser.");
     inventorySyncState.inventory = `Gagal simpan transaksi: ${err.message}`;
-    console.error("saveSingleTransaction: save failed", err);
+    console.error("saveSingleTransaction: RPC failed", err);
   }
   refreshInventorySubpages(page);
 }
@@ -1706,143 +2077,182 @@ async function loadOpnameFromSupabase(page) {
 }
 
 function buildInventoryOverview() {
+  const metrics = getOverviewMetrics();
+  const timeline = getTransactionTimeline();
+  const topItems = getTopItemsByFreq(3);
+  const freqRanking = getFreqRanking(10);
+  const isEmpty = !timeline.length && !topItems.length;
+
   return `
     <section class="sarpras-overview">
       <article class="sarpras-hero panel-card">
         <div>
           <p class="eyebrow">Sarpras workspace</p>
-          <h2>Overview pusat untuk semua alur Sarpras</h2>
-          <span>Sekarang switcher Sarpras sudah siap tumbuh jadi Overview / QR-OCR / Master / Inventory / dan seterusnya, jadi kita bisa bangun modulnya per bagian tanpa mengorbankan flow yang sudah enak dipakai.</span>
+          <h2>${t("invTabOverview")}</h2>
+          <span>${t("invOverviewNoData")}</span>
         </div>
         <div class="sarpras-hero-actions">
-          <button type="button" class="primary-button" data-inv-target="inv-master">Buka master</button>
-          <button type="button" class="primary-button secondary" data-inv-target="inv-inventory">Buka inventory</button>
+          <button type="button" class="primary-button" data-inv-target="inv-master">${t("invTabMaster")}</button>
+          <button type="button" class="primary-button secondary" data-inv-target="inv-inventory">${t("invTabInventory")}</button>
+          <button type="button" class="primary-button secondary" data-inv-target="inv-activity">${t("invTabActivity")}</button>
         </div>
       </article>
 
       <div class="sarpras-metric-grid">
-        ${inventoryOverviewData.metrics.map((item) => `
+        ${metrics.map((item) => `
           <article class="sarpras-metric sarpras-metric-${item.tone}">
-            <span>${item.label}</span>
+            <span>${t(item.label)}</span>
             <strong>${item.value}</strong>
           </article>
         `).join("")}
       </div>
 
-      <div class="sarpras-foundation-grid">
-        ${inventoryOverviewData.foundations.map((item) => `
-          <article class="feature-card sarpras-foundation-card">
-            <strong>${item.title}</strong>
-            <span>${item.text}</span>
-          </article>
-        `).join("")}
+      <div class="sarpras-charts-grid">
+        <section class="panel-card sarpras-chart-card">
+          <div class="panel-heading">
+            <h2>${t("invOverviewTransactionChart")}</h2>
+            <span>${timeline.length ? timeline[0].label + " — " + timeline[timeline.length - 1].label : ""}</span>
+          </div>
+          <div class="sarpras-chart-wrap">
+            ${isEmpty ? `<div class="sarpras-chart-empty">${t("invOverviewNoData")}</div>` : buildLineChartSVG(timeline, { lineColor: "var(--accent)", fillColor: "var(--accent)", width: 600, height: 220 })}
+          </div>
+        </section>
+
+        <section class="panel-card sarpras-chart-card">
+          <div class="panel-heading">
+            <h2>${t("invOverviewTopItems")}</h2>
+          </div>
+          <div class="sarpras-chart-wrap">
+            ${isEmpty ? `<div class="sarpras-chart-empty">${t("invOverviewNoData")}</div>` : buildBarChartSVG(topItems, { barColor: "var(--accent)", width: 260, height: 180 })}
+          </div>
+        </section>
       </div>
 
       <div class="sarpras-layout">
         <section class="table-panel sarpras-table-panel">
           <div class="panel-heading">
             <div>
-              <h2>Peta stok per lokasi</h2>
-              <span>Snapshot awal untuk pola tabel <code>stok_lokasi</code></span>
+              <h2>${t("invOverviewFreqRanking")}</h2>
             </div>
-            <b class="sarpras-badge">Live concept</b>
           </div>
           <div class="module-table-scroll">
             <table class="module-table sarpras-table">
               <thead>
                 <tr>
-                  <th>Kode Barang</th>
-                  <th>Nama Barang</th>
-                  <th>Lokasi</th>
-                  <th>Qty</th>
-                  <th>Min. Stok</th>
-                  <th>Status</th>
+                  <th>${t("invOverviewRank")}</th>
+                  <th>${t("invOverviewCode")}</th>
+                  <th>${t("invOverviewName")}</th>
+                  <th>${t("invOverviewCategory")}</th>
+                  <th>${t("invOverviewFreq")}</th>
                 </tr>
               </thead>
               <tbody>
-                ${inventoryOverviewData.stockByLocation.map((row) => `
+                ${freqRanking.length ? freqRanking.map((row) => `
                   <tr>
-                    <td><strong>${row[0]}</strong></td>
-                    <td>${row[1]}</td>
-                    <td>${row[2]}</td>
-                    <td>${row[3]}</td>
-                    <td>${row[4]}</td>
-                    <td>${formatInventoryStatus(row[5])}</td>
+                    <td><strong>#${row.rank}</strong></td>
+                    <td>${row.code}</td>
+                    <td>${row.name}</td>
+                    <td>${row.kategori}</td>
+                    <td><b>${row.freq}</b></td>
                   </tr>
-                `).join("")}
+                `).join("") : `
+                  <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">${t("invOverviewNoData")}</td></tr>
+                `}
               </tbody>
             </table>
           </div>
         </section>
 
         <aside class="sarpras-side-stack">
-          <section class="panel-card sarpras-master-card">
+          <section class="panel-card sarpras-shortcuts-card">
             <div class="panel-heading">
-              <h2>Master inti</h2>
-              <span>Tab ini siap dilanjutkan</span>
+              <h2>${t("invOverviewQuickActions")}</h2>
             </div>
-            <div class="sarpras-master-list">
-              ${inventoryOverviewData.masterSummary.map((item) => `
-                <article class="sarpras-master-item">
-                  <div>
-                    <strong>${item.label}</strong>
-                    <small>${item.note}</small>
-                  </div>
-                  <b>${item.value}</b>
-                </article>
-              `).join("")}
-            </div>
-          </section>
-
-          <section class="panel-card sarpras-activity-card">
-            <div class="panel-heading">
-              <h2>Aktivitas fondasi</h2>
-              <span>Arah implementasi berikutnya</span>
-            </div>
-            <div class="sarpras-activity-list">
-              ${inventoryOverviewData.activityFeed.map((item) => `
-                <article class="sarpras-activity-item">
-                  <strong>${item[0]}</strong>
-                  <span>${item[1]}</span>
-                  <small>${item[2]}</small>
-                </article>
-              `).join("")}
+            <div class="module-feature-list">
+              <button type="button" data-inv-target="inv-master">${t("invTabMaster")}</button>
+              <button type="button" data-inv-target="inv-inventory">${t("invTabInventory")}</button>
+              <button type="button" data-inv-target="inv-activity">${t("invTabActivity")}</button>
+              <button type="button" data-inv-target="inv-reports">${t("invTabReports")}</button>
+              <button type="button" data-inv-target="inv-qrocr">${t("invTabQrcr")}</button>
             </div>
           </section>
         </aside>
       </div>
-
-      <div class="sarpras-bottom-grid">
-        <section class="panel-card sarpras-roadmap-card">
-          <div class="panel-heading">
-            <h2>Roadmap tabs</h2>
-            <span>Semua bagian utama sudah punya tempat</span>
-          </div>
-          <div class="sarpras-roadmap-list">
-            ${inventoryOverviewData.nextSlices.map((item, index) => `
-              <div class="sarpras-roadmap-item">
-                <b>0${index + 2}</b>
-                <span>${item}</span>
-              </div>
-            `).join("")}
-          </div>
-        </section>
-
-        <section class="panel-card sarpras-shortcuts-card">
-          <div class="panel-heading">
-            <h2>Aksi cepat</h2>
-            <span>Pindah antar bagian tanpa keluar dari Sarpras</span>
-          </div>
-          <div class="module-feature-list">
-            <button type="button" data-inv-target="inv-master">Master</button>
-            <button type="button" data-inv-target="inv-inventory">Inventory</button>
-            <button type="button" data-inv-target="inv-reports">Laporan</button>
-            <button type="button" data-inv-target="inv-qrocr">QR / OCR</button>
-          </div>
-        </section>
-      </div>
     </section>
   `;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SVG Chart Builders
+   Zero-dependency inline SVG for the overview dashboard.
+   ══════════════════════════════════════════════════════════════ */
+function buildLineChartSVG(data, opts) {
+  const w = opts.width || 600, h = opts.height || 220;
+  const pad = { t: 20, r: 20, b: 30, l: 50 };
+  const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  const values = data.map((d) => d.value);
+  const maxV = Math.max(...values, 1);
+  const niceMax = Math.ceil(maxV / 5) * 5 || 5;
+  const ySteps = 5;
+  const xMin = 0, xMax = data.length - 1;
+
+  const toX = (i) => pad.l + (i / xMax) * cw;
+  const toY = (v) => pad.t + ch - (v / niceMax) * ch;
+
+  const gridLines = [];
+  for (let i = 0; i <= ySteps; i++) {
+    const y = pad.t + (ch / ySteps) * i;
+    const val = niceMax - (niceMax / ySteps) * i;
+    gridLines.push(`<line x1="${pad.l}" y1="${y}" x2="${w - pad.r}" y2="${y}" stroke="var(--line)" stroke-width="1" opacity="0.3"/>`);
+    gridLines.push(`<text x="${pad.l - 6}" y="${y + 4}" text-anchor="end" fill="var(--muted)" font-size="10">${val}</text>`);
+  }
+
+  const pts = data.map((d, i) => `${toX(i)},${toY(d.value)}`).join(" ");
+  const polyline = `<polyline fill="none" stroke="${opts.lineColor || "var(--accent)"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts}"/>`;
+
+  const area = data.map((d, i) => `${i === 0 ? "M" : "L"}${toX(i)},${toY(d.value)}`).join(" ") + ` L${toX(data.length - 1)},${pad.t + ch} L${pad.l},${pad.t + ch} Z`;
+  const areaFill = `<path d="${area}" fill="${opts.fillColor || "var(--accent)"}" opacity="0.15"/>`;
+
+  const xLabels = [];
+  const labelStep = Math.max(1, Math.floor(data.length / 8));
+  data.forEach((d, i) => {
+    if (i % labelStep === 0 || i === data.length - 1) {
+      const label = d.label.length > 7 ? d.label.slice(5) : d.label;
+      xLabels.push(`<text x="${toX(i)}" y="${h - pad.b + 16}" text-anchor="${i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"}" fill="var(--muted)" font-size="9">${label}</text>`);
+    }
+  });
+
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block" role="img" aria-label="Transaction volume chart">
+    ${gridLines.join("")}
+    ${areaFill}
+    ${polyline}
+    ${xLabels.join("")}
+  </svg>`;
+}
+
+function buildBarChartSVG(items, opts) {
+  const w = opts.width || 260, h = opts.height || 180;
+  const pad = { t: 10, r: 10, b: 10, l: 10 };
+  const barH = 34;
+  const gap = 10;
+  const totalH = items.length * (barH + gap) - gap;
+  const svgH = Math.max(h, totalH + pad.t + pad.b);
+  const cw = w - pad.l - pad.r;
+  const maxFreq = Math.max(...items.map((i) => i.freq), 1);
+
+  const bars = items.map((item, i) => {
+    const y = pad.t + i * (barH + gap);
+    const bw = (item.freq / maxFreq) * cw;
+    return `
+      <rect x="${pad.l}" y="${y}" width="${Math.max(bw, 4)}" height="${barH}" rx="4" fill="${opts.barColor || "var(--accent)"}" opacity="0.8"/>
+      <text x="${pad.l + 6}" y="${y + barH / 2 + 4}" fill="#fff" font-size="11" font-weight="600">${item.name.length > 18 ? item.name.slice(0, 16) + "…" : item.name}</text>
+      <text x="${pad.l + bw - 4}" y="${y + barH / 2 + 4}" text-anchor="end" fill="#fff" font-size="11" font-weight="700">${item.freq}</text>
+    `;
+  });
+
+  return `<svg viewBox="0 0 ${w} ${svgH}" style="width:100%;height:auto;display:block" role="img" aria-label="Top items chart">
+    ${bars.join("")}
+  </svg>`;
 }
 
 function filterMasterTable(q) {
@@ -1858,7 +2268,7 @@ function filterMasterTable(q) {
   const start = (masterCurrentPage - 1) * masterPageSize;
   const page = filtered.slice(start, start + masterPageSize);
   tbody.innerHTML = page.length === 0
-    ? '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">Tidak ada hasil.</td></tr>'
+    ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
         <td><strong>${row[0]}</strong></td>
@@ -1869,8 +2279,8 @@ function filterMasterTable(q) {
         <td style="text-align:center;font-weight:600">${row[6] || "0"}</td>
         <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${row[5] || "—"}</td>
         <td>
-          <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="Edit">✎</button>
-          <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="Hapus" style="color:var(--due-text)">✕</button>
+          <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="${t("invMasterEdit")}">✎</button>
+          <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="${t("invMasterDelete")}" style="color:var(--due-text)">✕</button>
         </td>
       </tr>
     `).join("");
@@ -1908,23 +2318,23 @@ function importMasterExcel(file) {
       });
       persistInventoryStore();
       inventoryLoading(false);
-      inventoryToast(`✓ ${count} barang berhasil diimport`);
+      inventoryToast(`✓ ${count} ${t("invMasterImportSuccess")}`);
       refreshInventorySubpages(document.querySelector("#inventory"));
     } catch (err) {
       inventoryLoading(false);
-      inventoryToast("✗ Gagal import: " + err.message);
+      inventoryToast(`✗ ${t("invMasterImportFail")}: ${err.message}`);
     }
   };
   reader.onerror = function () {
     inventoryLoading(false);
-    inventoryToast("✗ Gagal membaca file");
+    inventoryToast(`✗ ${t("invMasterReadFail")}`);
   };
   reader.readAsArrayBuffer(file);
 }
 
 function exportActivityExcel() {
   const state = ensureInventoryState();
-  if (state.transactions.length === 0) { inventoryToast("Tidak ada transaksi untuk diexport"); return; }
+  if (state.transactions.length === 0) { inventoryToast(`✗ ${t("invMasterImportFail")}`); return; }
   const data = state.transactions.map((row) => {
     const items = (() => { try { return JSON.parse(row[3]); } catch { return []; } })();
     return {
@@ -1942,7 +2352,76 @@ function exportActivityExcel() {
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Riwayat");
   XLSX.writeFile(wb, "riwayat-transaksi-sarpras.xlsx");
-  inventoryToast(`✓ ${data.length} transaksi diexport`);
+  inventoryToast(`✓ ${data.length} ${t("invActExportDone")}`);
+}
+
+function exportReportExcel() {
+  const data = buildReportData(invReportType, invReportYear, invReportMonth);
+  const { rows, periods, type } = data;
+  const aoa = [];
+  const h1 = [t("invRepNo"), t("invRepCategory"), t("invRepCode"), t("invRepName"), t("invRepStockAwal")];
+  periods.forEach(() => { h1.push(t("invRepMasuk"), t("invRepKeluar")); });
+  h1.push(t("invRepTotalMasuk"), t("invRepTotalKeluar"), t("invRepSisaStock"));
+  aoa.push(h1);
+  aoa.push(Array.from({ length: h1.length }, () => ""));
+  rows.forEach((r) => {
+    const row = [r.idx + 1, r.kategori, r.code, r.name, r.stockAwal];
+    r.periodData.forEach((p) => row.push(p.masuk || 0, p.keluar || 0));
+    row.push(r.totalMasuk, r.totalKeluar, r.sisaStock);
+    aoa.push(row);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const merges = [];
+  let ci = 5;
+  periods.forEach(() => { merges.push({ s: { r: 0, c: ci }, e: { r: 0, c: ci + 1 } }); ci += 2; });
+  if (merges.length) ws["!merges"] = merges;
+  ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 11 }];
+  ws["!cols"].push(...periods.flatMap(() => [{ wch: 7 }, { wch: 7 }]));
+  ws["!cols"].push({ wch: 11 }, { wch: 11 }, { wch: 11 });
+  const wb = XLSX.utils.book_new();
+  const sheetName = type === "bulanan" ? t("invRepMonthly") : type === "tahunan-3" ? t("invRepQuarterly") : t("invRepTahapan");
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, `laporan-${type}-${invReportYear}-${String(invReportMonth).padStart(2, "0")}.xlsx`);
+  inventoryToast(`✓ ${t("invActExportDone")}`);
+}
+
+function exportStockCardExcel(code) {
+  const movements = getItemStockCard(code);
+  const state = ensureInventoryState();
+  const item = state.items.find((r) => r[0] === code);
+  const aoa = [[t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]];
+  movements.forEach((m, i) => {
+    aoa.push([i + 1, m.date.slice(0, 10), m.type, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.balance, m.token, m.officer]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, code);
+  XLSX.writeFile(wb, `kartu-stok-${code}.xlsx`);
+  inventoryToast(`✓ ${t("invActExportDone")}`);
+}
+
+function exportAllStockCardsExcel() {
+  const state = ensureInventoryState();
+  const items = state.items;
+  const wb = XLSX.utils.book_new();
+  items.forEach((row) => {
+    const code = row[0];
+    const movements = getItemStockCard(code);
+    const aoa = [[t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]];
+    if (!movements.length) {
+      aoa.push([t("invRepCardNoTx")]);
+    } else {
+      movements.forEach((m, i) => {
+        aoa.push([i + 1, m.date.slice(0, 10), m.type, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.balance, m.token, m.officer]);
+      });
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws, code.slice(0, 31));
+  });
+  XLSX.writeFile(wb, `kartu-stok-semua-barang.xlsx`);
+  inventoryToast(`✓ ${t("invActExportDone")}`);
 }
 
 function buildInventoryMasterPage() {
@@ -1958,7 +2437,7 @@ function buildInventoryMasterPage() {
   const page = filtered.slice(start, start + masterPageSize);
 
   const rows = page.length === 0
-    ? '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">Belum ada data.</td></tr>'
+    ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
         <td><strong>${row[0]}</strong></td>
@@ -1969,18 +2448,18 @@ function buildInventoryMasterPage() {
         <td style="text-align:center;font-weight:600">${row[6] || "0"}</td>
         <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${row[5] || "—"}</td>
         <td>
-          <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="Edit">✎</button>
-          <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="Hapus" style="color:var(--due-text)">✕</button>
+          <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="${t("invMasterEdit")}">✎</button>
+          <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="${t("invMasterDelete")}" style="color:var(--due-text)">✕</button>
         </td>
       </tr>
     `).join("");
 
   const paginationHtml = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0.75rem 1rem;border-top:1px solid var(--line);font-size:0.82rem">
-      <span style="color:var(--muted)">${total} data</span>
+      <span style="color:var(--muted)">${total} ${t("invMasterData")}</span>
       <div style="display:flex;align-items:center;gap:0.75rem">
         <label style="display:flex;align-items:center;gap:0.4rem;color:var(--muted)">
-          Tampil
+          ${t("invMasterShow")}
           <select id="sarpras-master-pagesize" style="min-height:2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft)">
             ${[10, 20, 50, 100, 1000].map(s => `<option value="${s}"${s === masterPageSize ? " selected" : ""}>${s}</option>`).join("")}
           </select>
@@ -1997,16 +2476,16 @@ function buildInventoryMasterPage() {
   return `
     <section class="sarpras-overview">
       <div class="module-toolbar" style="margin-bottom:0.85rem;position:relative">
-        <div class="module-search"><span>⌕</span><input id="sarpras-master-search" type="search" placeholder="Cari barang..." /></div>
-        <button type="button" class="primary-button" data-sarpras-action="add-item-show">+ Tambah</button>
-        <button type="button" class="primary-button secondary" data-sarpras-action="export-items">Export</button>
-        <button type="button" class="primary-button secondary" data-sarpras-action="import-show">Import</button>
+        <div class="module-search"><span>⌕</span><input id="sarpras-master-search" type="search" placeholder="${t("invMasterSearch")}" /></div>
+        <button type="button" class="primary-button" data-sarpras-action="add-item-show">${t("invMasterAdd")}</button>
+        <button type="button" class="primary-button secondary" data-sarpras-action="export-items">${t("invMasterExport")}</button>
+        <button type="button" class="primary-button secondary" data-sarpras-action="import-show">${t("invMasterImport")}</button>
         <div style="width:1px;height:1.8rem;background:var(--line);margin:0 0.25rem"></div>
-        <button type="button" class="primary-button secondary" data-sarpras-action="master-save" style="font-size:0.78rem">Save to DB</button>
-        <button type="button" class="primary-button secondary" data-sarpras-action="master-load" style="font-size:0.78rem">Load from DB</button>
+        <button type="button" class="primary-button secondary" data-sarpras-action="master-save" style="font-size:0.78rem">${t("invMasterSave")}</button>
+        <button type="button" class="primary-button secondary" data-sarpras-action="master-load" style="font-size:0.78rem">${t("invMasterLoad")}</button>
         <div id="sarpras-import-popup" style="display:none;position:absolute;top:100%;right:0;z-index:60;min-width:13rem;margin-top:0.25rem;padding:0.5rem;border:1px solid var(--line);border-radius:0.75rem;background:var(--surface);box-shadow:var(--shadow)">
-          <button type="button" class="primary-button" data-sarpras-action="import-template" style="width:100%;justify-content:flex-start;padding:0.6rem 0.85rem;border:none;border-radius:0.5rem;color:var(--text);background:transparent;cursor:pointer;font-size:0.82rem;text-align:left">↓ Download Template</button>
-          <button type="button" class="primary-button" data-sarpras-action="import-upload" style="width:100%;justify-content:flex-start;padding:0.6rem 0.85rem;border:none;border-radius:0.5rem;color:var(--text);background:transparent;cursor:pointer;font-size:0.82rem;text-align:left">📂 Upload File</button>
+          <button type="button" class="primary-button" data-sarpras-action="import-template" style="width:100%;justify-content:flex-start;padding:0.6rem 0.85rem;border:none;border-radius:0.5rem;color:var(--text);background:transparent;cursor:pointer;font-size:0.82rem;text-align:left">↓ ${t("invMasterTemplate")}</button>
+          <button type="button" class="primary-button" data-sarpras-action="import-upload" style="width:100%;justify-content:flex-start;padding:0.6rem 0.85rem;border:none;border-radius:0.5rem;color:var(--text);background:transparent;cursor:pointer;font-size:0.82rem;text-align:left">📂 ${t("invMasterUpload")}</button>
         </div>
         <input type="file" id="sarpras-master-import" accept=".xlsx,.xls" style="display:none" />
       </div>
@@ -2016,14 +2495,14 @@ function buildInventoryMasterPage() {
           <table class="module-table">
             <thead>
               <tr>
-                <th>Kode</th>
-                <th>Nama Barang</th>
-                <th>Kategori</th>
-                <th>Location</th>
-                <th>Stock</th>
-                <th>Freq</th>
-                <th>Timestamp</th>
-                <th style="width:5rem">Aksi</th>
+                <th>${t("invMasterCode")}</th>
+                <th>${t("invMasterName")}</th>
+                <th>${t("invMasterCategory")}</th>
+                <th>${t("invMasterLocation")}</th>
+                <th>${t("invMasterStock")}</th>
+                <th>${t("invMasterFreq")}</th>
+                <th>${t("invMasterTimestamp")}</th>
+                <th style="width:5rem">${t("invMasterActions")}</th>
               </tr>
             </thead>
             <tbody id="sarpras-master-tbody">
@@ -2041,7 +2520,7 @@ function buildInventoryMasterPage() {
       <div class="sarpras-master-modal" id="sarpras-master-modal" style="position:fixed;inset:0;z-index:70;display:none;place-items:center;padding:1rem;background:rgba(10,12,12,0.54)">
         <div style="position:relative;width:min(24rem,100%);padding:1.2rem;border:1px solid var(--line);border-radius:1.4rem;background:var(--surface);box-shadow:var(--shadow)">
           <button type="button" id="sarpras-master-modal-close" data-sarpras-action="master-modal-close" style="position:absolute;top:0.75rem;right:0.75rem;width:2rem;height:2rem;border:1px solid var(--line);border-radius:0.75rem;color:var(--text);background:var(--surface-soft);cursor:pointer">×</button>
-          <h2 id="sarpras-master-modal-title" style="margin:0 0 0.5rem;font-size:1rem">Tambah Barang</h2>
+          <h2 id="sarpras-master-modal-title" style="margin:0 0 0.5rem;font-size:1rem">${t("invMasterModalAdd")}</h2>
           <form id="sarpras-master-form" data-sarpras-form="master-item" style="display:grid;gap:0.6rem">
             <input type="hidden" name="edit_index" id="sarpras-edit-index" value="-1" />
             <label style="display:grid;gap:0.2rem;font-size:0.78rem;font-weight:700;color:var(--muted)">
@@ -2106,17 +2585,17 @@ function buildInventoryOperationsPage() {
   const type = invTransactionType;
   const state = ensureInventoryState();
   const orderRows = invCurrentOrder.length === 0
-    ? '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:2rem">Belum ada barang. Scan atau cari kode barang.</td></tr>'
+    ? `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:2rem">${t("invOpEmpty")}</td></tr>`
     : invCurrentOrder.map((item, i) => `
       <tr>
         <td><strong>${item.code}</strong><br><span style="font-size:0.82rem;color:var(--muted)">${item.name}</span></td>
         <td><input type="number" min="1" value="${item.qty}" style="width:4.5rem;min-height:2rem;padding:0 0.4rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft)" data-sarpras-action="inventory-update-qty" data-index="${i}" /></td>
-        <td><button type="button" class="action-button" data-sarpras-action="inventory-remove-order" data-index="${i}" style="color:var(--due-text)">✕</button></td>
+        <td><button type="button" class="action-button" data-sarpras-action="inventory-remove-order" data-index="${i}" title="${t("invOpRemove")}" style="color:var(--due-text)">✕</button></td>
       </tr>
     `).join("");
   const uniqueItems = new Set(invCurrentOrder.map(item => item.code)).size;
   const totalQty = invCurrentOrder.reduce((sum, item) => sum + item.qty, 0);
-  const confirmLabel = type === "masuk" ? "Check In" : "Check Out";
+  const confirmLabel = type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut");
   /* Category breakdown */
   const catCount = {};
   invCurrentOrder.forEach((item) => {
@@ -2133,35 +2612,35 @@ function buildInventoryOperationsPage() {
 
       <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.85rem">
         <div style="display:flex;border:1px solid var(--line);border-radius:0.5rem;overflow:hidden">
-          <button type="button" class="primary-button${type === "masuk" ? "" : " secondary"}" data-sarpras-action="set-transaction-type" data-value="masuk" style="border-radius:0;padding:0.45rem 1rem">📥 Barang Masuk</button>
-          <button type="button" class="primary-button${type === "keluar" ? "" : " secondary"}" data-sarpras-action="set-transaction-type" data-value="keluar" style="border-radius:0;padding:0.45rem 1rem">📤 Barang Keluar</button>
+          <button type="button" class="primary-button${type === "masuk" ? "" : " secondary"}" data-sarpras-action="set-transaction-type" data-value="masuk" style="border-radius:0;padding:0.45rem 1rem">📥 ${t("invOpTypeIn")}</button>
+          <button type="button" class="primary-button${type === "keluar" ? "" : " secondary"}" data-sarpras-action="set-transaction-type" data-value="keluar" style="border-radius:0;padding:0.45rem 1rem">📤 ${t("invOpTypeOut")}</button>
         </div>
         <div style="display:flex;align-items:center;gap:0.4rem;margin-left:0.25rem">
-          <span style="font-size:0.82rem;color:var(--muted);font-weight:600">Token</span>
+          <span style="font-size:0.82rem;color:var(--muted);font-weight:600">${t("invOpToken")}</span>
           <input type="${invTokenVisible ? "text" : "password"}" maxlength="6" value="${invToken}" data-sarpras-input="inventory-token" style="width:6rem;min-height:2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1rem;letter-spacing:0.2em;text-align:center" />
           <button type="button" class="action-button" data-sarpras-action="inventory-token-toggle" title="${invTokenVisible ? "Sembunyikan" : "Tampilkan"}">${invTokenVisible ? "🙈" : "👁"}</button>
         </div>
         <div style="margin-left:auto;display:flex;gap:0.35rem">
-          <button type="button" class="primary-button secondary" data-sarpras-action="inventory-save" style="font-size:0.72rem;padding:0.35rem 0.6rem">Save to DB</button>
-          <button type="button" class="primary-button secondary" data-sarpras-action="inventory-load" style="font-size:0.72rem;padding:0.35rem 0.6rem">Load from DB</button>
+          <button type="button" class="primary-button secondary" data-sarpras-action="inventory-save" style="font-size:0.72rem;padding:0.35rem 0.6rem">${t("invMasterSave")}</button>
+          <button type="button" class="primary-button secondary" data-sarpras-action="inventory-load" style="font-size:0.72rem;padding:0.35rem 0.6rem">${t("invMasterLoad")}</button>
         </div>
       </div>
 
       <div class="sarpras-layout">
         <section class="table-panel" style="padding:0;position:relative">
           <div class="panel-heading" style="padding:0.65rem 1rem">
-            <h2>Daftar barang</h2>
-            <span id="sarpras-order-count">${invCurrentOrder.length} item</span>
+            <h2>${t("invOpOrderList")}</h2>
+            <span id="sarpras-order-count">${invCurrentOrder.length} ${t("invActItem")}</span>
           </div>
           <div style="padding:0.6rem 1rem;border-bottom:1px solid var(--line)">
-            <input type="text" data-sarpras-input="inventory-item-input" placeholder="🔍 Cari / Scan kode barang..." style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-size:0.9rem" />
+            <input type="text" data-sarpras-input="inventory-item-input" placeholder="${t("invOpSearch")}" style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-size:0.9rem" />
           </div>
           <div class="module-table-scroll">
             <table class="module-table">
               <thead>
                 <tr>
-                  <th>Barang</th>
-                  <th style="width:5.5rem">Qty</th>
+                  <th>${t("invActItems")}</th>
+                  <th style="width:5.5rem">${t("invOpQty")}</th>
                   <th style="width:3rem"></th>
                 </tr>
               </thead>
@@ -2175,17 +2654,17 @@ function buildInventoryOperationsPage() {
         <aside class="sarpras-side-stack" style="min-width:14rem">
           <section class="panel-card" style="display:grid;gap:0.65rem;position:sticky;top:1rem">
             <div style="display:grid;gap:0.25rem">
-              <span style="font-size:0.78rem;color:var(--muted)">Total Barang Unik</span>
+              <span style="font-size:0.78rem;color:var(--muted)">${t("invOpUnique")}</span>
               <strong id="sarpras-order-unique" style="font-size:1.2rem">${uniqueItems}</strong>
             </div>
             <div style="display:grid;gap:0.25rem">
-              <span style="font-size:0.78rem;color:var(--muted)">Total Qty</span>
+              <span style="font-size:0.78rem;color:var(--muted)">${t("invOpTotal")}</span>
               <strong id="sarpras-order-total" style="font-size:1.2rem">${totalQty}</strong>
             </div>
             ${catRows ? `<div style="display:grid;gap:0.2rem;padding:0.5rem 0;border-top:1px solid var(--line)">${catRows}</div>` : ""}
             <div style="display:flex;gap:0.5rem">
               <button type="button" class="primary-button" data-sarpras-action="inventory-confirm" id="sarpras-confirm-btn" ${invCurrentOrder.length === 0 ? "disabled" : ""} style="flex:1">${confirmLabel}</button>
-              <button type="button" class="primary-button secondary" data-sarpras-action="inventory-clear-order" ${invCurrentOrder.length === 0 ? "disabled" : ""}>Clear</button>
+              <button type="button" class="primary-button secondary" data-sarpras-action="inventory-clear-order" ${invCurrentOrder.length === 0 ? "disabled" : ""}>${t("invOpClear")}</button>
             </div>
           </section>
         </aside>
@@ -2199,11 +2678,11 @@ function buildInventoryOperationsPage() {
     <div id="sarpras-confirm-modal" style="position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:1rem;background:rgba(10,12,12,0.54)">
       <div style="position:relative;width:min(20rem,100%);padding:1.2rem;border:1px solid var(--line);border-radius:1.4rem;background:var(--surface);box-shadow:var(--shadow)">
         <button type="button" id="sarpras-confirm-modal-close" style="position:absolute;top:0.75rem;right:0.75rem;width:2rem;height:2rem;border:1px solid var(--line);border-radius:0.75rem;color:var(--text);background:var(--surface-soft);cursor:pointer">×</button>
-        <h2 style="margin:0 0 0.5rem;font-size:1rem">Konfirmasi ${type === "masuk" ? "Check In" : "Check Out"}</h2>
-        <p style="margin:0 0 1rem;font-size:0.82rem;color:var(--muted)">Masukkan token <strong style="font-family:monospace;letter-spacing:0.15em">${invToken}</strong> untuk mengonfirmasi</p>
+        <h2 style="margin:0 0 0.5rem;font-size:1rem">${t("invOpConfirmTitle").replace("{type}", type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut"))}</h2>
+        <p style="margin:0 0 1rem;font-size:0.82rem;color:var(--muted)">${t("invOpTokenReEnter")} <strong style="font-family:monospace;letter-spacing:0.15em">${invToken}</strong></p>
         <form id="sarpras-confirm-form" style="display:grid;gap:0.6rem">
           <input type="text" maxlength="6" placeholder="000000" required style="width:100%;min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1.2rem;letter-spacing:0.2em;text-align:center" id="sarpras-confirm-token-input" />
-          <button type="submit" class="primary-button">Konfirmasi</button>
+          <button type="submit" class="primary-button">${t("invOpConfirm").replace("{type}", type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut"))}</button>
         </form>
       </div>
     </div>
@@ -2356,38 +2835,44 @@ function buildInventoryActivityPage() {
   const filterBtn = (val, label) =>
     `<button type="button" class="primary-button${filter === val ? "" : " secondary"}" data-sarpras-action="activity-filter" data-value="${val}" style="border-radius:0;padding:0.35rem 0.75rem;font-size:0.78rem">${label}</button>`;
 
+  const inLabel = t("invActIn");
+  const outLabel = t("invActOut");
+
   const rows = pageData.length === 0
-    ? '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">Belum ada riwayat transaksi.</td></tr>'
+    ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invActEmpty")}</td></tr>`
     : pageData.map((row, si) => {
         const globalIdx = state.transactions.indexOf(row);
         const items = (() => { try { return JSON.parse(row[3]); } catch { return []; } })();
         const itemsPreview = items.length > 0
           ? items.map((i) => ` ${i.code} (${i.qty})`).join(",")
           : row[3].slice(0, 60);
+        const typeBadge = row[1] === "Masuk"
+          ? `<span class="module-pill good">${inLabel}</span>`
+          : `<span class="module-pill warn">${outLabel}</span>`;
         return `
       <tr data-tx-index="${globalIdx}" style="cursor:pointer">
         <td><strong>${row[0]}</strong></td>
-        <td>${row[1] === "Masuk" ? `<span class="module-pill good">Masuk</span>` : `<span class="module-pill warn">Keluar</span>`}</td>
+        <td>${typeBadge}</td>
         <td style="white-space:nowrap">${row[2]}</td>
-        <td style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${itemsPreview}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} item)</span></td>
+        <td style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${itemsPreview}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} ${t("invActItem")})</span></td>
         <td>${row[4]}</td>
         <td>${row[7] || "—"}</td>
         <td>${formatInventoryRecordState(row[6] || "Selesai")}</td>
         <td style="display:flex;gap:0.2rem">
-          <button type="button" class="action-button" data-sarpras-action="toggle-tx-detail" data-index="${globalIdx}" title="Detail" style="font-size:0.7rem;padding:0.15rem 0.35rem">▶</button>
-          <button type="button" class="action-button" data-sarpras-action="remove-transaction" data-index="${globalIdx}" title="Hapus" style="color:var(--due-text);font-size:0.78rem;padding:0.15rem 0.35rem">✕</button>
+          <button type="button" class="action-button" data-sarpras-action="toggle-tx-detail" data-index="${globalIdx}" title="${t("invActDetail")}" style="font-size:0.7rem;padding:0.15rem 0.35rem">▶</button>
+          <button type="button" class="action-button" data-sarpras-action="remove-transaction" data-index="${globalIdx}" title="${t("invActConfirmDelete")}" style="color:var(--due-text);font-size:0.78rem;padding:0.15rem 0.35rem">✕</button>
         </td>
       </tr>
       <tr class="tx-detail-row" data-parent="${globalIdx}" style="display:none">
         <td colspan="8" style="padding:0">
           <div style="padding:0.5rem 1rem 0.75rem 2rem;background:var(--surface-soft);border-bottom:1px solid var(--line)">
-            ${items.length === 0 ? '<span style="color:var(--muted)">Tidak ada detail item</span>' : `
+            ${items.length === 0 ? `<span style="color:var(--muted)">${t("invActNoDetail")}</span>` : `
             <table style="width:100%;font-size:0.78rem;border-collapse:collapse">
               <thead>
                 <tr style="color:var(--muted)">
-                  <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--line)">Kode</th>
-                  <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--line)">Nama Barang</th>
-                  <th style="text-align:center;padding:0.25rem 0.5rem;border-bottom:1px solid var(--line)">Qty</th>
+                  <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--line)">${t("invActCode")}</th>
+                  <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--line)">${t("invActItemName")}</th>
+                  <th style="text-align:center;padding:0.25rem 0.5rem;border-bottom:1px solid var(--line)">${t("invActQty")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2404,10 +2889,11 @@ function buildInventoryActivityPage() {
       </tr>`;
       }).join("");
 
+  const txLabel = total > 1 ? `${t("invActTransaction")}s` : t("invActTransaction");
   const paginationHtml = total > invActivityPageSize ? `
     <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:0.78rem">
       <div style="display:flex;align-items:center;gap:0.5rem">
-        <span style="color:var(--muted)">${total} transaksi</span>
+        <span style="color:var(--muted)">${total} ${txLabel}</span>
         <select id="sarpras-activity-pagesize" style="padding:0.2rem 0.4rem;border:1px solid var(--line);border-radius:0.3rem;color:var(--text);background:var(--surface);font-size:0.78rem">
           ${[10, 20, 50, 100].map(s => `<option value="${s}"${s === invActivityPageSize ? " selected" : ""}>${s}</option>`).join("")}
         </select>
@@ -2417,20 +2903,26 @@ function buildInventoryActivityPage() {
         <span style="white-space:nowrap;color:var(--muted)">${invActivityCurrentPage}/${pages}</span>
         <button type="button" class="action-button" id="sarpras-activity-pagenext" ${invActivityCurrentPage >= pages ? "disabled" : ""} style="padding:0.25rem 0.6rem">›</button>
       </div>
-    </div>` : `<div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.78rem;color:var(--muted)">${total} transaksi</div>`;
+    </div>` : `<div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.78rem;color:var(--muted)">${total} ${txLabel}</div>`;
 
   const syncIcon = inventorySyncState.inventory && inventorySyncState.inventory !== "Transaksi tersimpan di browser"
     ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:0.35rem"></span>`
     : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:0.35rem"></span>`;
 
+  const searchPlaceholder = t("invActSearch");
+  const lblAll = t("invActAll");
+  const lblExport = t("invActExport");
+  const lblClear = t("invActClear");
+  const syncBrowser = "Transaksi tersimpan di browser";
+
   return `
     <section class="sarpras-overview">
       <div class="module-toolbar" style="margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem">
-        <div class="module-search" style="flex:1;min-width:10rem"><span>⌕</span><input id="sarpras-activity-search" type="search" placeholder="Cari token / barang..." value="${invActivitySearch.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" /></div>
-        <div style="display:flex;gap:0.15rem">${filterBtn("semua", "Semua")}${filterBtn("masuk", "Masuk")}${filterBtn("keluar", "Keluar")}</div>
+        <div class="module-search" style="flex:1;min-width:10rem"><span>⌕</span><input id="sarpras-activity-search" type="search" placeholder="${searchPlaceholder}" value="${invActivitySearch.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" /></div>
+        <div style="display:flex;gap:0.15rem">${filterBtn("semua", lblAll)}${filterBtn("masuk", t("invActIn"))}${filterBtn("keluar", t("invActOut"))}</div>
         <div style="display:flex;gap:0.35rem">
-          <button type="button" class="primary-button secondary" data-sarpras-action="activity-export" style="font-size:0.78rem;padding:0.35rem 0.75rem">Export</button>
-          <button type="button" class="primary-button secondary" data-sarpras-action="activity-clear" style="font-size:0.78rem;padding:0.35rem 0.75rem;color:var(--due-text)">Clear All</button>
+          <button type="button" class="primary-button secondary" data-sarpras-action="activity-export" style="font-size:0.78rem;padding:0.35rem 0.75rem">${lblExport}</button>
+          <button type="button" class="primary-button secondary" data-sarpras-action="activity-clear" style="font-size:0.78rem;padding:0.35rem 0.75rem;color:var(--due-text)">${lblClear}</button>
         </div>
       </div>
       <div class="table-panel" style="padding:0;position:relative">
@@ -2438,14 +2930,14 @@ function buildInventoryActivityPage() {
           <table class="module-table">
             <thead>
               <tr>
-                <th>Token</th>
-                <th>Tipe</th>
-                <th>Tanggal</th>
-                <th>Barang</th>
-                <th>Total Qty</th>
-                <th>Petugas</th>
-                <th>Status</th>
-                <th style="width:3.5rem">Detail</th>
+                <th>${t("invActToken")}</th>
+                <th>${t("invActType")}</th>
+                <th>${t("invActDate")}</th>
+                <th>${t("invActItems")}</th>
+                <th>${t("invActTotalQty")}</th>
+                <th>${t("invActOfficer")}</th>
+                <th>${t("invActStatus")}</th>
+                <th style="width:3.5rem">${t("invActDetail")}</th>
               </tr>
             </thead>
             <tbody id="sarpras-activity-tbody">
@@ -2456,7 +2948,7 @@ function buildInventoryActivityPage() {
         ${paginationHtml}
         <div style="padding:0.5rem 1rem;border-top:1px solid var(--line);font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:0.5rem">
           ${syncIcon}
-          <span>${inventorySyncState.inventory || "Transaksi tersimpan di browser"}</span>
+          <span>${inventorySyncState.inventory || syncBrowser}</span>
         </div>
       </div>
     </section>
@@ -2493,29 +2985,287 @@ function buildInventoryPlaceholderPage(title, description, bullets) {
   `;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Report Data Helpers
+   ══════════════════════════════════════════════════════════════ */
+let invReportType = "bulanan";
+let invReportYear = new Date().getFullYear();
+let invReportMonth = new Date().getMonth() + 1;
+let invReportSubTab = "ledger";
+let invStockCardCode = "";
+
+function getItemStockCard(code) {
+  const state = ensureInventoryState();
+  const allTxs = state.transactions;
+  const movements = [];
+  allTxs.forEach((tx) => {
+    const type = tx[1];
+    const date = tx[2];
+    const token = tx[0];
+    const officer = tx[6] || "—";
+    let orders;
+    try { orders = JSON.parse(tx[3]); } catch { orders = []; }
+    let qty = 0;
+    orders.forEach((o) => { if (o.code === code) qty += Number(o.qty) || 0; });
+    if (qty > 0) movements.push({ date, type, qty, token, officer });
+  });
+  movements.sort((a, b) => a.date.localeCompare(b.date));
+  let balance = 0;
+  movements.forEach((m) => {
+    if (m.type === "Masuk") balance += m.qty;
+    else balance -= m.qty;
+    m.balance = balance;
+  });
+  return movements;
+}
+
+function getDaysInMonth(y, m) {
+  return new Date(y, m, 0).getDate();
+}
+
+function buildReportData(type, year, month) {
+  const state = ensureInventoryState();
+  const items = state.items;
+  const allTxs = state.transactions;
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+  const curDay = now.getDate();
+
+  /* Parse all transactions into item-level movements */
+  function expandTransactions(txList) {
+    const movements = [];
+    txList.forEach((tx) => {
+      const t = tx[1];
+      const dt = tx[2].slice(0, 10);
+      let orders;
+      try { orders = JSON.parse(tx[3]); } catch { orders = []; }
+      orders.forEach((o) => {
+        movements.push({ code: o.code, name: o.name, qty: Number(o.qty) || 0, type: t, date: dt });
+      });
+    });
+    return movements;
+  }
+
+  const allMovements = expandTransactions(allTxs);
+
+  function sumMovementsInRange(code, startDate, endDate) {
+    let masuk = 0, keluar = 0;
+    allMovements.forEach((m) => {
+      if (m.code !== code) return;
+      if (m.date >= startDate && m.date <= endDate) {
+        if (m.type === "Masuk") masuk += m.qty;
+        else keluar += m.qty;
+      }
+    });
+    return { masuk, keluar };
+  }
+
+  function getStockBefore(code, beforeDate) {
+    let net = 0;
+    allMovements.forEach((m) => {
+      if (m.code !== code) return;
+      if (m.date < beforeDate) {
+        if (m.type === "Masuk") net += m.qty;
+        else net -= m.qty;
+      }
+    });
+    return net;
+  }
+
+  const isMidMonth = curDay <= 15 && curMonth === month && curYear === year;
+
+  /* Build period structure */
+  let periods = [];
+  if (type === "bulanan") {
+    const days = getDaysInMonth(year, month);
+    for (let d = 1; d <= days; d++) {
+      periods.push({ key: `day-${d}`, label: String(d), start: `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`, end: `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}` });
+    }
+  } else if (type === "tahunan-3") {
+    for (let i = 0; i < 3; i++) {
+      const m = month + i;
+      const y = year + Math.floor((m - 1) / 12);
+      const mm = ((m - 1) % 12) + 1;
+      const monthName = new Date(y, mm - 1, 1).toLocaleString("default", { month: "short" });
+      const days = getDaysInMonth(y, mm);
+      periods.push({ key: `month-${i}`, label: `${monthName}`, start: `${y}-${String(mm).padStart(2, "0")}-01`, end: `${y}-${String(mm).padStart(2, "0")}-${String(days).padStart(2, "0")}` });
+    }
+  } else if (type === "tahapan") {
+    periods.push({ key: "tahap1", label: t("invRepTahapan1"), start: `${year}-01-01`, end: `${year}-06-30` });
+    periods.push({ key: "tahap2", label: t("invRepTahapan2"), start: `${year}-07-01`, end: `${year}-12-31` });
+  }
+
+  const periodStart = periods[0].start;
+  const periodEnd = periods[periods.length - 1].end;
+  const afterStart = periods.length ? periods[0].start : "";
+  const afterEnd = "9999-12-31";
+
+  /* Compute report rows */
+  const rows = items.map((row, idx) => {
+    const code = row[0];
+    const name = row[1];
+    const kategori = row[2] || "—";
+    const currentStock = Number(row[4]) || 0;
+
+    /* Stock Awal = current stock - net change during & after period */
+    const netDuring = sumMovementsInRange(code, periodStart, "9999-12-31");
+    const stockAwal = currentStock - netDuring.masuk + netDuring.keluar;
+
+    const periodData = periods.map((p) => sumMovementsInRange(code, p.start, p.end));
+    const totalMasuk = periodData.reduce((s, p) => s + p.masuk, 0);
+    const totalKeluar = periodData.reduce((s, p) => s + p.keluar, 0);
+    const sisaStock = stockAwal + totalMasuk - totalKeluar;
+
+    return { idx, code, name, kategori, stockAwal, periodData, totalMasuk, totalKeluar, sisaStock };
+  });
+
+  return { rows, periods, type, year, month };
+}
+
+function renderReportTable(data) {
+  const { rows, periods, type } = data;
+
+  let html = `<div class="sarpras-report-scroll"><table class="module-table sarpras-report-table" style="min-width:${periods.length > 6 ? "180rem" : "max-content"}">`;
+  html += `<thead><tr>
+    <th rowspan="2" class="rep-sticky">${t("invRepNo")}</th>
+    <th rowspan="2" class="rep-sticky">${t("invRepCategory")}</th>
+    <th rowspan="2" class="rep-sticky">${t("invRepCode")}</th>
+    <th rowspan="2" class="rep-sticky">${t("invRepName")}</th>
+    <th rowspan="2" class="rep-sticky">${t("invRepStockAwal")}</th>`;
+
+  periods.forEach((p) => {
+    html += `<th colspan="2" class="rep-period-header">${p.label}</th>`;
+  });
+
+  html += `<th rowspan="2">${t("invRepTotalMasuk")}</th>
+    <th rowspan="2">${t("invRepTotalKeluar")}</th>
+    <th rowspan="2">${t("invRepSisaStock")}</th>
+  </tr><tr>`;
+  periods.forEach(() => {
+    html += `<th class="rep-sub">${t("invRepMasuk")}</th><th class="rep-sub">${t("invRepKeluar")}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach((r) => {
+    html += `<tr>
+      <td class="rep-sticky">${r.idx + 1}</td>
+      <td class="rep-sticky">${r.kategori}</td>
+      <td class="rep-sticky"><strong>${r.code}</strong></td>
+      <td class="rep-sticky">${r.name}</td>
+      <td class="rep-sticky"><strong>${r.stockAwal}</strong></td>`;
+    r.periodData.forEach((p) => {
+      html += `<td class="rep-masuk">${p.masuk || ""}</td><td class="rep-keluar">${p.keluar || ""}</td>`;
+    });
+    html += `<td><strong>${r.totalMasuk}</strong></td>
+      <td><strong>${r.totalKeluar}</strong></td>
+      <td><strong>${r.sisaStock}</strong></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function renderStockCardTable(movements, code) {
+  const state = ensureInventoryState();
+  const item = state.items.find((r) => r[0] === code);
+  const currentStock = item ? Number(item[4]) || 0 : 0;
+  const itemName = item ? item[1] : code;
+
+  let html = `<div class="sarpras-card-header"><strong>${code} — ${itemName}</strong> &bull; ${t("invRepCurrentStock")}: <b>${currentStock}</b></div>`;
+  html += `<div class="sarpras-report-scroll" style="max-height:60vh"><table class="module-table sarpras-report-table" style="min-width:max-content">`;
+  html += `<thead><tr>
+    <th>${t("invRepNo")}</th>
+    <th>${t("invRepDate")}</th>
+    <th>${t("invRepType")}</th>
+    <th>${t("invRepIn")}</th>
+    <th>${t("invRepOut")}</th>
+    <th>${t("invRepBalance")}</th>
+    <th>${t("invRepToken")}</th>
+    <th>${t("invRepCardOf")}</th>
+  </tr></thead><tbody>`;
+
+  if (!movements.length) {
+    html += `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">${t("invRepCardNoTx")}</td></tr>`;
+  } else {
+    movements.forEach((m, i) => {
+      const isIn = m.type === "Masuk";
+      html += `<tr>
+        <td>${i + 1}</td>
+        <td>${m.date.slice(0, 10)}</td>
+        <td>${m.type}</td>
+        <td class="rep-masuk">${isIn ? m.qty : ""}</td>
+        <td class="rep-keluar">${isIn ? "" : m.qty}</td>
+        <td><strong>${m.balance}</strong></td>
+        <td style="font-family:monospace">${m.token}</td>
+        <td>${m.officer}</td>
+      </tr>`;
+    });
+  }
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
 function buildInventoryReportsPage() {
+  const isCards = invReportSubTab === "cards";
+  const state = ensureInventoryState();
+  const allItems = state.items;
+
+  if (isCards) {
+    const movements = invStockCardCode ? getItemStockCard(invStockCardCode) : [];
+    return `
+      <section class="sarpras-overview">
+        <article class="panel-card" style="padding:1rem 1.5rem">
+          <div class="sarpras-report-controls" style="margin-top:0">
+            <button type="button" class="primary-button${!isCards ? "" : " secondary"}" data-sarpras-action="report-set-subtab" data-value="ledger">${t("invRepLedger")}</button>
+            <button type="button" class="primary-button${isCards ? "" : " secondary"}" data-sarpras-action="report-set-subtab" data-value="cards">${t("invRepCards")}</button>
+            <span style="flex:1"></span>
+            <select data-sarpras-input="stock-card-item" style="min-height:2.2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);min-width:16rem">
+              <option value="">${t("invRepSelectItem")}</option>
+              ${allItems.map((r) => `<option value="${r[0]}" ${r[0] === invStockCardCode ? "selected" : ""}>${r[0]} — ${r[1]}</option>`).join("")}
+            </select>
+            ${invStockCardCode ? `<button type="button" class="primary-button secondary" data-sarpras-action="report-export-card">${t("invRepExportCard")}</button>` : ""}
+            <button type="button" class="primary-button secondary" data-sarpras-action="report-export-all-cards">${t("invRepExportAll")}</button>
+          </div>
+        </article>
+        <section class="panel-card">
+          ${invStockCardCode ? renderStockCardTable(movements, invStockCardCode) : `<div style="padding:2rem;text-align:center;color:var(--muted)">${t("invRepSelectItem")}</div>`}
+        </section>
+      </section>
+    `;
+  }
+
+  const data = buildReportData(invReportType, invReportYear, invReportMonth);
+  const { rows, periods, type } = data;
+  const hasData = rows.some((r) => r.totalMasuk > 0 || r.totalKeluar > 0);
+
   return `
     <section class="sarpras-overview">
-      <article class="sarpras-hero panel-card">
-        <div>
-          <p class="eyebrow">Laporan</p>
-          <h2>Laporan dan analitik Sarpras</h2>
-          <span>Tempat untuk laporan persediaan, transaksi, stock opname, asset, maintenance, peminjaman, dan riwayat aktivitas.</span>
+      <article class="panel-card" style="padding:1rem 1.5rem">
+        <div class="sarpras-report-controls" style="margin-top:0">
+          <button type="button" class="primary-button${!isCards ? "" : " secondary"}" data-sarpras-action="report-set-subtab" data-value="ledger">${t("invRepLedger")}</button>
+          <button type="button" class="primary-button${isCards ? "" : " secondary"}" data-sarpras-action="report-set-subtab" data-value="cards">${t("invRepCards")}</button>
+          <span style="flex:1"></span>
+          <button type="button" class="primary-button${type === "bulanan" ? "" : " secondary"}" data-sarpras-action="report-set-type" data-value="bulanan">${t("invRepMonthly")}</button>
+          <button type="button" class="primary-button${type === "tahunan-3" ? "" : " secondary"}" data-sarpras-action="report-set-type" data-value="tahunan-3">${t("invRepQuarterly")}</button>
+          <button type="button" class="primary-button${type === "tahapan" ? "" : " secondary"}" data-sarpras-action="report-set-type" data-value="tahapan">${t("invRepTahapan")}</button>
+          <span class="rep-period-picker">
+            <select data-sarpras-input="report-month" style="min-height:2.2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft)">
+              ${type !== "tahapan" ? Array.from({length: 12}, (_, i) => `<option value="${i + 1}" ${i + 1 === invReportMonth ? "selected" : ""}>${new Date(2000, i, 1).toLocaleString("default", { month: "long" })}</option>`).join("") : `<option value="1">${t("invRepTahapan1")}</option>`}
+            </select>
+            <select data-sarpras-input="report-year" style="min-height:2.2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft)">
+              ${Array.from({length: 10}, (_, i) => { const y = new Date().getFullYear() - 5 + i; return `<option value="${y}" ${y === invReportYear ? "selected" : ""}>${y}</option>`; }).join("")}
+            </select>
+          </span>
+          <button type="button" class="primary-button" data-sarpras-action="report-generate">${t("invRepGenerate")}</button>
+          ${hasData ? `<button type="button" class="primary-button secondary" data-sarpras-action="report-export">${t("invRepExport")}</button>` : ""}
         </div>
       </article>
-      <section class="panel-card sarpras-roadmap-card">
-        <div class="panel-heading">
-          <h2>Kelompok laporan</h2>
-          <span>Sudah disusun sesuai PRD</span>
-        </div>
-        <div class="sarpras-roadmap-list">
-          ${inventoryOverviewData.reportGroups.map((item, index) => `
-            <div class="sarpras-roadmap-item">
-              <b>0${index + 1}</b>
-              <span>${item}</span>
-            </div>
-          `).join("")}
-        </div>
+
+      <section class="panel-card">
+        ${hasData ? renderReportTable(data) : `<div style="padding:2rem;text-align:center;color:var(--muted)">${t("invRepNoData")}</div>`}
       </section>
     </section>
   `;

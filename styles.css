@@ -682,6 +682,84 @@ td {
   min-width: 48rem;
 }
 
+/* ── Report table ── */
+.sarpras-report-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 80vh;
+  border: 1px solid color-mix(in srgb, var(--line) 90%, transparent);
+  border-radius: var(--radius-md);
+}
+.sarpras-report-table {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.sarpras-report-table th,
+.sarpras-report-table td {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  text-align: center;
+}
+.sarpras-report-table thead th {
+  background: var(--surface-soft);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 600;
+}
+.sarpras-report-table .rep-period-header {
+  text-align: center;
+  font-size: 0.78rem;
+}
+.sarpras-report-table .rep-sub {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.sarpras-report-table .rep-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+.sarpras-report-table thead .rep-sticky {
+  z-index: 3;
+}
+.sarpras-report-table .rep-masuk {
+  color: var(--accent);
+}
+.sarpras-report-table .rep-keluar {
+  color: var(--due-text);
+}
+.sarpras-report-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.sarpras-report-table tbody tr:hover .rep-sticky {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+.sarpras-report-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.rep-period-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sarpras-card-header {
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0;
+}
+.sarpras-card-header b {
+  color: var(--accent);
+}
+
 .module-table th {
   background: var(--surface-soft);
 }
@@ -786,7 +864,7 @@ td {
 }
 
 .sarpras-metric-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .sarpras-metric {
@@ -840,6 +918,26 @@ td {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.9fr);
   gap: 1rem;
+}
+
+.sarpras-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.sarpras-chart-card .panel-heading {
+  align-items: flex-start;
+}
+.sarpras-chart-wrap {
+  padding: 0.75rem 0.75rem 0.5rem;
+  min-height: 6rem;
+}
+.sarpras-chart-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .sarpras-table-panel .panel-heading,
@@ -989,6 +1087,7 @@ td {
   .sarpras-foundation-grid,
   .sarpras-master-summary-grid,
   .sarpras-mini-grid,
+  .sarpras-charts-grid,
   .sarpras-layout,
   .sarpras-bottom-grid {
     grid-template-columns: 1fr 1fr;
@@ -1011,6 +1110,7 @@ td {
   .sarpras-foundation-grid,
   .sarpras-master-summary-grid,
   .sarpras-mini-grid,
+  .sarpras-charts-grid,
   .sarpras-layout,
   .sarpras-bottom-grid {
     grid-template-columns: 1fr;
