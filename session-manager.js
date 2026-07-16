@@ -1,5 +1,5 @@
 // session-manager.js - Session timeout & re-validation
-// ⚠️ CRITICAL: Handles security-critical session management
+// Handles security-critical session management
 
 class SessionManager {
   constructor(authModule, timeoutMinutes = 15) {
@@ -8,20 +8,22 @@ class SessionManager {
     this.lastActivityTime = Date.now();
     this.timeoutId = null;
     this.revalidateIntervalId = null;
+    this._listeners = [];
     
     this.initializeListeners();
     this.startRevalidation();
   }
 
   initializeListeners() {
-    // Reset timeout on user activity
     ['click', 'keypress', 'mousemove', 'touchstart'].forEach(event => {
-      document.addEventListener(event, () => this.resetTimeout(), { passive: true });
+      const handler = () => this.resetTimeout();
+      document.addEventListener(event, handler, { passive: true });
+      this._listeners.push({ event, handler });
     });
   }
 
   resetTimeout() {
-    if (Date.now() - this.lastActivityTime < 5000) return; // Debounce
+    if (Date.now() - this.lastActivityTime < 5000) return;
     
     this.lastActivityTime = Date.now();
     clearTimeout(this.timeoutId);
@@ -33,7 +35,6 @@ class SessionManager {
   }
 
   startRevalidation() {
-    // Re-validate role every 5 minutes (independent of activity)
     this.revalidateIntervalId = setInterval(async () => {
       try {
         const isValid = await this.auth.validateSession();
@@ -67,7 +68,6 @@ class SessionManager {
       userEmail: null
     };
     
-    // Redirect to login
     alert(`Logged out: ${reason}`);
     window.location.reload();
   }
@@ -75,8 +75,11 @@ class SessionManager {
   destroy() {
     clearTimeout(this.timeoutId);
     clearInterval(this.revalidateIntervalId);
+    this._listeners.forEach(({ event, handler }) => {
+      document.removeEventListener(event, handler);
+    });
+    this._listeners = [];
   }
 }
 
-// Export for use in auth.js
 window.SessionManager = SessionManager;

@@ -1,7 +1,7 @@
 const usPayment = (() => {
   const DENDA_PER_STEP = 10000;
   const DENDA_CUTOFF_DAY = 25;
-  const DENDA_START_PERIOD = "2025/07";
+  const DENDA_START_PERIOD = "2026/07";
   const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const MONTH_FULL = [
     "January",
@@ -108,7 +108,7 @@ const usPayment = (() => {
     const currentIndex = allMonths.indexOf(currentPeriod);
     const targetIndex = allMonths.indexOf(targetMonth);
     const cutoffMonth =
-      now.getDate() >= DENDA_CUTOFF_DAY ? targetMonth : allMonths[Math.max(0, currentIndex - 1)] || targetMonth;
+      now.getDate() >= DENDA_CUTOFF_DAY ? targetMonth : currentIndex > 0 ? allMonths[currentIndex - 1] : "0000/00";
     let streak = 0;
 
     for (const month of allMonths) {
@@ -116,8 +116,10 @@ const usPayment = (() => {
         continue;
       }
       const payment = student.payments[month];
-      if (!payment || payment.xoutstanding > 0) streak += 1;
-      else streak = 0;
+      if (payment) {
+        if (payment.xoutstanding > 0) streak += 1;
+        else streak = 0;
+      }
     }
     return streak;
   }
@@ -158,7 +160,7 @@ const usPayment = (() => {
     showToast("Loading database...");
     try {
       // wali_kelas: only fetch students in their assigned class
-      let studentQuery = sb.from("students").select("*");
+      let studentQuery = sb.from("students").select("id, no_induk, name, class, va_bca, va_mandiri, ket");
       if (role === "wali_kelas" && assignedClass) {
         studentQuery = studentQuery.eq("class", assignedClass);
       }
@@ -418,7 +420,19 @@ const usPayment = (() => {
       paymentMap[payment.student_code][payment.monthly_period] = payment;
     });
 
-    allMonths = Array.from(monthSet).sort();
+    // Generate complete month range from DENDA_START_PERIOD to latest payment
+    const latestFromPayments = [...monthSet].sort().pop();
+    const latestPeriod = latestFromPayments && latestFromPayments > currentPeriod ? latestFromPayments : currentPeriod;
+    allMonths = [];
+    const startD = new Date(DENDA_START_PERIOD + "/01");
+    const endD = new Date(latestPeriod + "/01");
+    const d = new Date(startD);
+    while (d <= endD) {
+      allMonths.push(`${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}`);
+      d.setMonth(d.getMonth() + 1);
+    }
+    if (!allMonths.length) allMonths = [DENDA_START_PERIOD];
+
     allClasses = Array.from(new Set(studentsData.map((student) => student.class).filter(Boolean))).sort(sortClasses);
     mergedData = studentsData.map((student) => ({
       ...student,
@@ -533,6 +547,7 @@ const usPayment = (() => {
               })
               .join("");
 
+            const currentStatus = getPaymentStatus(student.payments[currentMonth]);
             html += `
               <tr>
                 <td class="col-name">
@@ -540,6 +555,7 @@ const usPayment = (() => {
                     <strong>${escapeHtml(student.name)}</strong>
                     <span>${escapeHtml(String(student.no_induk || student.id))} - ${escapeHtml(student.class || "-")}</span>
                   </div>
+                  <span class="us-badge us-mobile-status ${currentStatus.className}" data-student="${escapeAttr(student.id)}" data-month="${currentMonth}">${currentStatus.label}</span>
                 </td>
                 ${ketCell}
                 ${monthCells}
@@ -555,6 +571,9 @@ const usPayment = (() => {
     $("us-table").innerHTML = html;
     document.querySelectorAll(".us-month-cell").forEach((cell) => {
       cell.addEventListener("click", () => showDetail(cell.dataset.student, cell.dataset.month));
+    });
+    document.querySelectorAll(".us-mobile-status").forEach((badge) => {
+      badge.addEventListener("click", () => showDetail(badge.dataset.student, badge.dataset.month));
     });
 
     updateStats(filtered);
@@ -636,6 +655,41 @@ const usPayment = (() => {
     const denda = calcDenda(overdue);
     const status = getPaymentStatus(payment);
 
+    // Build denda breakdown
+    const ci = allMonths.indexOf(currentPeriod);
+    const cutM = now.getDate() >= DENDA_CUTOFF_DAY
+      ? currentMonth
+      : ci > 0 ? allMonths[ci - 1] : "0000/00";
+    const steps = [];
+    let streakC = 0;
+    for (const m of allMonths) {
+      if (m < DENDA_START_PERIOD || m > cutM || m > currentMonth) continue;
+      const p = student.payments[m];
+      if (p && p.xoutstanding > 0) {
+        streakC++;
+        steps.push({ month: m, step: streakC });
+      } else {
+        streakC = 0;
+      }
+    }
+    let dendaHtml;
+    if (steps.length) {
+      const fl = monthLabel(steps[0].month).short;
+      const ll = monthLabel(steps[steps.length - 1].month).short;
+      dendaHtml = `
+        ${detailRow("Denda", fmtIDR(denda))}
+        <div class="us-denda-bd">
+          <div class="us-denda-info">Streak: <strong>${steps.length}</strong> bulan (${fl}–${ll})</div>
+          <div class="us-denda-list">
+            <div class="us-denda-row us-denda-hd"><span>Bulan</span><span>Denda</span></div>
+            ${steps.map(s => `<div class="us-denda-row"><span>${monthLabel(s.month).short}</span><span>${fmtIDR(s.step * DENDA_PER_STEP)}</span></div>`).join('')}
+            <div class="us-denda-row us-denda-total"><span>Total Denda</span><span>${fmtIDR(denda)}</span></div>
+          </div>
+        </div>`;
+    } else {
+      dendaHtml = detailRow("Denda", "Rp 0");
+    }
+
     $("us-popup-title").textContent = student.name;
     $("us-popup-meta").textContent = `${student.class || "-"} - ${monthLabel(month).full}`;
     $("us-popup-body").innerHTML = `
@@ -643,7 +697,7 @@ const usPayment = (() => {
       ${detailRow("Fee", payment ? fmtIDR(payment.xfee) : "No record")}
       ${detailRow("Payment Amount", payment ? fmtIDR(payment.payment_amount) : "Rp 0")}
       ${detailRow("Outstanding", fmtIDR(totalOutstanding))}
-      ${detailRow("Denda", fmtIDR(denda))}
+      ${dendaHtml}
       ${detailRow("VA BCA", student.va_bca || "-")}
       ${detailRow("VA Mandiri", student.va_mandiri || "-")}
       ${payment && payment.payment_date ? detailRow("Payment Date", String(payment.payment_date).slice(0, 16).replace("T", " ")) : ""}

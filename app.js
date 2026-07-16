@@ -138,6 +138,7 @@ const translations = {
     invOverviewCategories: "Categories",
     invOverviewLowStock: "Low Stock",
     invOverviewZeroStock: "Out of Stock",
+    invOverviewLoading: "Loading overview...",
     invOverviewTransactionChart: "Transaction Volume",
     invOverviewTopItems: "Top Items by Frequency",
     invOverviewFreqRanking: "Frequency Ranking",
@@ -205,7 +206,31 @@ const translations = {
     invOpSuccess: "success",
     invOpInStock: "Insufficient stock:",
     invOpAvail: "available",
-    invOpRequested: "requested"
+    invOpRequested: "requested",
+    staffOvTotalEmployees: "Total Employees",
+    staffOvAvgAttendance: "Avg Attendance",
+    staffOvTotalLate: "Total Late",
+    staffOvLateMinutes: "Late Minutes",
+    staffOvICC: "ICC",
+    staffOvTotalAbsent: "Total Absent",
+    staffOvAllPeriods: "All periods",
+    staffOvEvents: "events",
+    staffOvMinutes: "minutes",
+    staffOvEmployees: "employees",
+    staffOvAttendanceTrend: "Attendance Trend",
+    staffOvTopLate: "Top 10 Most Late",
+    staffOvTopAbsent: "Top 10 Most Absent",
+    staffOvRank: "Rank",
+    staffOvEmployee: "Employee",
+    staffOvUnit: "Unit",
+    staffOvLateCount: "Late",
+    staffOvLateMin: "Late Min",
+    staffOvAbsentDays: "Absent",
+    staffOvAttendancePct: "Att. %",
+    staffOvNoData: "No attendance data yet. Load from DB or upload JPAYROLL file.",
+    staffOvPD: "PD",
+    staffOvPdEvents: "potongan",
+    staffOvTopPD: "Top PD"
   },
   id: {
     brandSubtitle: "Sistem Admin",
@@ -346,6 +371,7 @@ const translations = {
     invOverviewCategories: "Kategori",
     invOverviewLowStock: "Stok Minimum",
     invOverviewZeroStock: "Stok Habis",
+    invOverviewLoading: "Memuat overview...",
     invOverviewTransactionChart: "Volume Transaksi",
     invOverviewTopItems: "Barang Teratas",
     invOverviewFreqRanking: "Peringkat Frekuensi",
@@ -413,7 +439,31 @@ const translations = {
     invOpSuccess: "berhasil",
     invOpInStock: "Stok tidak mencukupi:",
     invOpAvail: "tersedia",
-    invOpRequested: "diminta"
+    invOpRequested: "diminta",
+    staffOvTotalEmployees: "Total Karyawan",
+    staffOvAvgAttendance: "Rata-rata Hadir",
+    staffOvTotalLate: "Total Terlambat",
+    staffOvLateMinutes: "Menit Terlambat",
+    staffOvICC: "ICC",
+    staffOvTotalAbsent: "Total Tidak Hadir",
+    staffOvAllPeriods: "Semua periode",
+    staffOvEvents: "kejadian",
+    staffOvMinutes: "menit",
+    staffOvEmployees: "karyawan",
+    staffOvAttendanceTrend: "Tren Kehadiran",
+    staffOvTopLate: "Top 10 Terlambat",
+    staffOvTopAbsent: "Top 10 Tidak Hadir",
+    staffOvRank: "Peringkat",
+    staffOvEmployee: "Karyawan",
+    staffOvUnit: "Unit",
+    staffOvLateCount: "Terlambat",
+    staffOvLateMin: "Menit",
+    staffOvAbsentDays: "Absen",
+    staffOvAttendancePct: "Hadir %",
+    staffOvNoData: "Belum ada data kehadiran. Load dari DB atau upload file JPAYROLL.",
+    staffOvPD: "PD",
+    staffOvPdEvents: "potongan",
+    staffOvTopPD: "Top PD"
   }
 };
 
@@ -657,9 +707,8 @@ function ensureInventoryState() {
 }
 
 /* ── Data helpers for live overview dashboard ── */
-function getTransactionTimeline() {
-  const state = ensureInventoryState();
-  const tx = state.transactions;
+/* ── Parameterized compute helpers (work on raw internal arrays) ── */
+function computeTimeline(tx) {
   if (!tx.length) return [];
   const byDay = {};
   let earliest = null, latest = null;
@@ -708,37 +757,85 @@ function getTransactionTimeline() {
   }
   return result;
 }
-function getTopItemsByFreq(n) {
-  const state = ensureInventoryState();
-  return state.items
+function computeTopItems(masterItems, n) {
+  return masterItems
     .filter((row) => Number(row[6]) > 0)
     .sort((a, b) => Number(b[6]) - Number(a[6]))
     .slice(0, n || 3)
     .map((row) => ({ code: row[0], name: row[1], freq: Number(row[6]) }));
 }
-function getFreqRanking(n) {
-  const state = ensureInventoryState();
-  return state.items
+function computeFreqRanking(masterItems, n) {
+  return masterItems
     .filter((row) => Number(row[6]) > 0)
     .sort((a, b) => Number(b[6]) - Number(a[6]))
     .slice(0, n || 10)
     .map((row, i) => ({ rank: i + 1, code: row[0], name: row[1], kategori: row[2] || "—", freq: Number(row[6]) }));
 }
-function getOverviewMetrics() {
+function computeMetrics(masterItems) {
+  const totalItems = masterItems.length;
+  const totalStock = masterItems.reduce((s, r) => s + (Number(r[4]) || 0), 0);
+  const kategoriSet = new Set(masterItems.map((r) => r[2]).filter(Boolean));
+  const lowStockItems = masterItems.filter((r) => Number(r[4]) <= 1 && Number(r[4]) > 0);
+  const zeroStockItems = masterItems.filter((r) => Number(r[4]) === 0);
+  return {
+    cards: [
+      { value: String(totalItems), label: "invOverviewTotalItems", tone: "mint" },
+      { value: String(totalStock), label: "invOverviewTotalStock", tone: "sand" },
+      { value: String(kategoriSet.size), label: "invOverviewCategories", tone: "sky" },
+      { value: String(lowStockItems.length), label: "invOverviewLowStock", tone: "rose" },
+      { value: String(zeroStockItems.length), label: "invOverviewZeroStock", tone: "rose" }
+    ],
+    lowStockItems,
+    zeroStockItems
+  };
+}
+/* ── Normalize Supabase rows to internal raw-array format ── */
+function supabaseMasterToRaw(rows) {
+  return (rows || []).map(r => [r.item_code, r.item_name, r.category, r.location, String(r.stock ?? 0), r.timestamp || null, String(r.freq ?? 0)]);
+}
+function supabaseTxToRaw(rows) {
+  return (rows || []).map(r => [r.token, r.type, r.date, JSON.stringify(r.items ?? []), String(r.total_qty ?? 0), String(r.item_count ?? 0), r.petugas || '', r.status || 'Selesai']);
+}
+/* ── Supabase-backed overview data fetch with cache ── */
+const _invOverviewCache = { data: null, ts: 0 };
+const INV_CACHE_TTL = 60000;
+async function refreshOverviewData() {
+  if (_invOverviewCache.data && Date.now() - _invOverviewCache.ts < INV_CACHE_TTL) return _invOverviewCache.data;
   const state = ensureInventoryState();
-  const items = state.items;
-  const totalItems = items.length;
-  const totalStock = items.reduce((s, r) => s + (Number(r[4]) || 0), 0);
-  const kategoriSet = new Set(items.map((r) => r[2]).filter(Boolean));
-  const lowStock = items.filter((r) => Number(r[4]) <= 1 && Number(r[4]) > 0).length;
-  const zeroStock = items.filter((r) => Number(r[4]) === 0).length;
-  return [
-    { value: String(totalItems), label: "invOverviewTotalItems", tone: "mint" },
-    { value: String(totalStock), label: "invOverviewTotalStock", tone: "sand" },
-    { value: String(kategoriSet.size), label: "invOverviewCategories", tone: "sky" },
-    { value: String(lowStock), label: "invOverviewLowStock", tone: "rose" },
-    { value: String(zeroStock), label: "invOverviewZeroStock", tone: "rose" }
-  ];
+  const sb = getInventorySupabaseClient();
+  if (sb) {
+    try {
+      const [txRes, masterRes] = await Promise.all([
+        sb.from("sarpras_transactions").select("*").order("date", { ascending: false }),
+        sb.from("sarpras_master_items").select("*").order("item_code")
+      ]);
+      if (!txRes.error && !masterRes.error) {
+        const masterRaw = supabaseMasterToRaw(masterRes.data);
+        const txRaw = supabaseTxToRaw(txRes.data);
+        const data = buildOverviewResult(masterRaw, txRaw);
+        _invOverviewCache.data = data;
+        _invOverviewCache.ts = Date.now();
+        return data;
+      }
+    } catch (e) { console.warn("refreshOverviewData: Supabase fetch failed, falling back to local", e); }
+  }
+  const data = buildOverviewResult(state.items, state.transactions);
+  _invOverviewCache.data = data;
+  _invOverviewCache.ts = Date.now();
+  return data;
+}
+function invalidateOverviewCache() { _invOverviewCache.ts = 0; }
+function buildOverviewResult(masterRaw, txRaw) {
+  const metrics = computeMetrics(masterRaw);
+  return {
+    masterRaw, txRaw,
+    metrics: metrics.cards,
+    timeline: computeTimeline(txRaw),
+    topItems: computeTopItems(masterRaw, 3),
+    freqRanking: computeFreqRanking(masterRaw, 10),
+    lowStockItems: metrics.lowStockItems,
+    zeroStockItems: metrics.zeroStockItems
+  };
 }
 
 function getInventorySupabaseClient() {
@@ -754,6 +851,10 @@ const studentRows    = document.querySelector("#studentRows");
 const menuToggle     = document.querySelector("#menuToggle");
 const sidebar        = document.querySelector("#sidebar");
 
+function escapeHtml(v) {
+  const s = String(v ?? "");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 function t(key) {
   return translations[language][key] || translations.en[key] || key;
 }
@@ -781,6 +882,7 @@ function applyLanguage() {
   renderRows();
   renderSimplePages();
   enhanceStaffPage();
+  window.attendanceModule?.buildStaffOverview?.();
   /* Only call enhanceInventoryPage on the first run; language switch uses refreshInventoryLanguage */
   if (!document.querySelector("#inventory .module-page .module-subnav")) {
     enhanceInventoryPage();
@@ -960,6 +1062,16 @@ function enhanceStaffPage() {
         </label>
       </div>
 
+      <input type="file" id="att-file-patch-ket" accept=".xlsx,.xls" style="display:none" />
+      <button type="button" class="primary-button secondary" id="att-patch-ket-btn" style="width:100%" hidden>✎ Update Keterangan (patch active period)</button>
+      <div id="att-pd-bar">
+        <label>PD Cutoff: <input type="text" id="att-pd-cutoff" placeholder="06:23" style="width:5em" /></label>
+        <button type="button" class="primary-button secondary" id="att-pd-compute-btn" style="margin-left:0.5rem">🔄 Compute PD</button>
+        <input type="file" id="att-file-pd" accept=".xlsx,.xls" style="display:none" />
+        <button type="button" class="primary-button secondary" id="att-pd-upload-btn" style="margin-left:0.5rem">✎ Upload PD Excel</button>
+      </div>
+      <button type="button" class="primary-button" id="att-save-btn" style="width:100%" hidden>Save to DB</button>
+
       <div class="att-er-panel">
         <strong>Hari Efektif (ER)</strong>
         <label>Guru <input type="number" id="att-er-guru" min="1" max="31" value="18" /></label>
@@ -978,7 +1090,7 @@ function enhanceStaffPage() {
         <article><span>Rata-rata Hadir</span><strong class="good" id="att-s-pct">0%</strong><small>TotR vs ER</small></article>
         <article><span>Total Tidak Hadir</span><strong class="bad" id="att-s-absen">0</strong><small>Izin / Sakit / Cuti</small></article>
         <article><span>Total Terlambat</span><strong class="warn" id="att-s-late">0</strong><small>kumulatif kejadian</small></article>
-        <article><span>ICC Klarifikasi</span><strong class="orange" id="att-s-icc">0</strong><small>employees with ICC</small></article>
+        <article><span>ICC Klarifikasi</span><strong id="att-s-icc">0</strong><small>employees with ICC</small></article>
         <article><span>Perhatian Khusus</span><strong class="bad" id="att-s-alert">0</strong><small>absen or late</small></article>
       </div>
 
@@ -1060,7 +1172,7 @@ function enhanceInventoryPage() {
   [...page.children].forEach((child) => {
     if (child !== heading) overview.appendChild(child);
   });
-  overview.innerHTML = buildInventoryOverview();
+  buildInventoryOverview(overview);
 
   /* ── Subnav — same markup pattern as Staff ── */
   const subnav = document.createElement("div");
@@ -1468,6 +1580,8 @@ function bindInventoryWorkspace(page) {
       form.elements["stock"].value = item[4];
       document.getElementById("sarpras-master-modal-title").textContent = t("invMasterModalEdit");
       document.getElementById("sarpras-master-modal").style.display = "grid";
+      form.elements["category"].disabled = true;
+      form.elements["item_code"].readOnly = true;
     }
 
     if (action === "export-items") {
@@ -1491,6 +1605,8 @@ function bindInventoryWorkspace(page) {
 
     if (action === "master-modal-close" || actionButton.id === "sarpras-master-modal-close" || actionButton.id === "sarpras-master-modal-cancel") {
       document.getElementById("sarpras-master-modal").style.display = "none";
+      const f = document.getElementById("sarpras-master-form");
+      if (f) { f.elements["category"].disabled = false; f.elements["item_code"].readOnly = false; }
     }
     if (action === "kategori-add-show") {
       document.getElementById("sarpras-kategori-form").reset();
@@ -1661,6 +1777,8 @@ function bindInventoryWorkspace(page) {
       inventorySyncState.master = "Perubahan master tersimpan di browser";
       persistInventoryStore();
       form.reset();
+      form.elements["category"].disabled = false;
+      form.elements["item_code"].readOnly = false;
       document.getElementById("sarpras-master-modal").style.display = "none";
       refreshInventorySubpages(page);
       filterMasterTable("");
@@ -1773,7 +1891,7 @@ function refreshInventorySubpages(page) {
   const overviewPage = page.querySelector("#inv-overview");
   const reportPage = page.querySelector("#inv-reports");
   const activityPage = page.querySelector("#inv-activity");
-  if (overviewPage) overviewPage.innerHTML = buildInventoryOverview();
+  if (overviewPage) buildInventoryOverview(overviewPage);
   if (masterPage) masterPage.innerHTML = buildInventoryMasterPage();
   if (inventoryPage) inventoryPage.innerHTML = buildInventoryOperationsPage();
   if (opnamePage) opnamePage.innerHTML = buildInventoryOpnamePage();
@@ -1878,6 +1996,7 @@ async function saveSingleTransactionToSupabase(page, token, typeLabel, stamp, or
     inventorySyncState.inventory = `Transaksi ${typeLabel.toLowerCase()} tersimpan ke Supabase`;
     inventorySyncState.master = "Stok & frekuensi tersimpan ke Supabase";
     inventoryToast("✓ Transaksi + stok tersimpan ke database Supabase");
+    invalidateOverviewCache();
     console.log("saveSingleTransaction: RPC ok", data);
   } catch (err) {
     inventoryLoading(false);
@@ -2076,110 +2195,181 @@ async function loadOpnameFromSupabase(page) {
   refreshInventorySubpages(page);
 }
 
-function buildInventoryOverview() {
-  const metrics = getOverviewMetrics();
-  const timeline = getTransactionTimeline();
-  const topItems = getTopItemsByFreq(3);
-  const freqRanking = getFreqRanking(10);
-  const isEmpty = !timeline.length && !topItems.length;
+async function buildInventoryOverview(container) {
+  container.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--muted)">${t("invOverviewLoading") || "Loading..."}</div>`;
+  try {
+    const d = await refreshOverviewData();
+    const isEmpty = !d.timeline.length && !d.topItems.length;
+    const metricHtml = d.metrics.map((item) => {
+      const clickAttr = (item.label === "invOverviewLowStock" || item.label === "invOverviewZeroStock") ? `data-metric="${item.label === "invOverviewLowStock" ? "low-stock" : "zero-stock"}"` : "";
+      return `<article class="sarpras-metric sarpras-metric-${item.tone}" ${clickAttr}>
+        <span>${t(item.label)}</span>
+        <strong>${item.value}</strong>
+      </article>`;
+    }).join("");
 
-  return `
-    <section class="sarpras-overview">
-      <article class="sarpras-hero panel-card">
-        <div>
-          <p class="eyebrow">Sarpras workspace</p>
-          <h2>${t("invTabOverview")}</h2>
-          <span>${t("invOverviewNoData")}</span>
+    container.innerHTML = `
+      <section class="sarpras-overview">
+        <article class="sarpras-hero panel-card">
+          <div>
+            <p class="eyebrow">Sarpras workspace</p>
+            <h2>${t("invTabOverview")}</h2>
+            <span>${t("invOverviewNoData")}</span>
+          </div>
+          <div class="sarpras-hero-actions">
+            <button type="button" class="primary-button" data-inv-target="inv-master">${t("invTabMaster")}</button>
+            <button type="button" class="primary-button secondary" data-inv-target="inv-inventory">${t("invTabInventory")}</button>
+            <button type="button" class="primary-button secondary" data-inv-target="inv-activity">${t("invTabActivity")}</button>
+          </div>
+        </article>
+
+        <div class="sarpras-metric-grid">
+          ${metricHtml}
         </div>
-        <div class="sarpras-hero-actions">
-          <button type="button" class="primary-button" data-inv-target="inv-master">${t("invTabMaster")}</button>
-          <button type="button" class="primary-button secondary" data-inv-target="inv-inventory">${t("invTabInventory")}</button>
-          <button type="button" class="primary-button secondary" data-inv-target="inv-activity">${t("invTabActivity")}</button>
-        </div>
-      </article>
 
-      <div class="sarpras-metric-grid">
-        ${metrics.map((item) => `
-          <article class="sarpras-metric sarpras-metric-${item.tone}">
-            <span>${t(item.label)}</span>
-            <strong>${item.value}</strong>
-          </article>
-        `).join("")}
-      </div>
-
-      <div class="sarpras-charts-grid">
-        <section class="panel-card sarpras-chart-card">
-          <div class="panel-heading">
-            <h2>${t("invOverviewTransactionChart")}</h2>
-            <span>${timeline.length ? timeline[0].label + " — " + timeline[timeline.length - 1].label : ""}</span>
-          </div>
-          <div class="sarpras-chart-wrap">
-            ${isEmpty ? `<div class="sarpras-chart-empty">${t("invOverviewNoData")}</div>` : buildLineChartSVG(timeline, { lineColor: "var(--accent)", fillColor: "var(--accent)", width: 600, height: 220 })}
-          </div>
-        </section>
-
-        <section class="panel-card sarpras-chart-card">
-          <div class="panel-heading">
-            <h2>${t("invOverviewTopItems")}</h2>
-          </div>
-          <div class="sarpras-chart-wrap">
-            ${isEmpty ? `<div class="sarpras-chart-empty">${t("invOverviewNoData")}</div>` : buildBarChartSVG(topItems, { barColor: "var(--accent)", width: 260, height: 180 })}
-          </div>
-        </section>
-      </div>
-
-      <div class="sarpras-layout">
-        <section class="table-panel sarpras-table-panel">
-          <div class="panel-heading">
-            <div>
-              <h2>${t("invOverviewFreqRanking")}</h2>
-            </div>
-          </div>
-          <div class="module-table-scroll">
-            <table class="module-table sarpras-table">
-              <thead>
-                <tr>
-                  <th>${t("invOverviewRank")}</th>
-                  <th>${t("invOverviewCode")}</th>
-                  <th>${t("invOverviewName")}</th>
-                  <th>${t("invOverviewCategory")}</th>
-                  <th>${t("invOverviewFreq")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${freqRanking.length ? freqRanking.map((row) => `
-                  <tr>
-                    <td><strong>#${row.rank}</strong></td>
-                    <td>${row.code}</td>
-                    <td>${row.name}</td>
-                    <td>${row.kategori}</td>
-                    <td><b>${row.freq}</b></td>
-                  </tr>
-                `).join("") : `
-                  <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">${t("invOverviewNoData")}</td></tr>
-                `}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <aside class="sarpras-side-stack">
-          <section class="panel-card sarpras-shortcuts-card">
+        <div class="sarpras-charts-grid">
+          <section class="panel-card sarpras-chart-card">
             <div class="panel-heading">
-              <h2>${t("invOverviewQuickActions")}</h2>
+              <h2>${t("invOverviewTransactionChart")}</h2>
+              <span>${d.timeline.length ? d.timeline[0].label + " — " + d.timeline[d.timeline.length - 1].label : ""}</span>
             </div>
-            <div class="module-feature-list">
-              <button type="button" data-inv-target="inv-master">${t("invTabMaster")}</button>
-              <button type="button" data-inv-target="inv-inventory">${t("invTabInventory")}</button>
-              <button type="button" data-inv-target="inv-activity">${t("invTabActivity")}</button>
-              <button type="button" data-inv-target="inv-reports">${t("invTabReports")}</button>
-              <button type="button" data-inv-target="inv-qrocr">${t("invTabQrcr")}</button>
+            <div class="sarpras-chart-wrap">
+              ${isEmpty ? `<div class="sarpras-chart-empty">${t("invOverviewNoData")}</div>` : buildLineChartSVG(d.timeline, { lineColor: "var(--accent)", fillColor: "var(--accent)", width: 600, height: 220 })}
             </div>
           </section>
-        </aside>
-      </div>
-    </section>
-  `;
+
+          <section class="panel-card sarpras-chart-card">
+            <div class="panel-heading">
+              <h2>${t("invOverviewTopItems")}</h2>
+            </div>
+            <div class="sarpras-chart-wrap">
+              ${isEmpty ? `<div class="sarpras-chart-empty">${t("invOverviewNoData")}</div>` : buildBarChartSVG(d.topItems, { barColor: "var(--accent)", width: 260, height: 180 })}
+            </div>
+          </section>
+        </div>
+
+        <div class="sarpras-layout">
+          <section class="table-panel sarpras-table-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>${t("invOverviewFreqRanking")}</h2>
+              </div>
+            </div>
+            <div class="module-table-scroll">
+              <table class="module-table sarpras-table">
+                <thead>
+                  <tr>
+                    <th>${t("invOverviewRank")}</th>
+                    <th>${t("invOverviewCode")}</th>
+                    <th>${t("invOverviewName")}</th>
+                    <th>${t("invOverviewCategory")}</th>
+                    <th>${t("invOverviewFreq")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${d.freqRanking.length ? d.freqRanking.map((row) => `
+                    <tr>
+                      <td><strong>#${row.rank}</strong></td>
+                      <td>${row.code}</td>
+                      <td>${row.name}</td>
+                      <td>${row.kategori}</td>
+                      <td><b>${row.freq}</b></td>
+                    </tr>
+                  `).join("") : `
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">${t("invOverviewNoData")}</td></tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside class="sarpras-side-stack">
+            <section class="panel-card sarpras-shortcuts-card">
+              <div class="panel-heading">
+                <h2>${t("invOverviewQuickActions")}</h2>
+              </div>
+              <div class="module-feature-list">
+                <button type="button" data-inv-target="inv-master">${t("invTabMaster")}</button>
+                <button type="button" data-inv-target="inv-inventory">${t("invTabInventory")}</button>
+                <button type="button" data-inv-target="inv-activity">${t("invTabActivity")}</button>
+                <button type="button" data-inv-target="inv-reports">${t("invTabReports")}</button>
+                <button type="button" data-inv-target="inv-qrocr">${t("invTabQrcr")}</button>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+      <div class="us-popup" id="inv-stock-popup" hidden>
+        <div class="us-popup-card">
+          <button class="us-popup-close" type="button" id="inv-popup-close">&times;</button>
+          <h2 id="inv-popup-title"></h2>
+          <p id="inv-popup-meta"></p>
+          <pre id="inv-popup-list" style="white-space:pre-wrap;color:var(--text);font:inherit;line-height:1.7"></pre>
+          <button class="us-copy" type="button" id="inv-popup-copy">Copy List</button>
+        </div>
+      </div>`;
+
+    /* Attach metric click handler */
+    const grid = container.querySelector(".sarpras-metric-grid");
+    const popup = container.querySelector("#inv-stock-popup");
+    const popupList = container.querySelector("#inv-popup-list");
+    const popupTitle = container.querySelector("#inv-popup-title");
+    const popupMeta = container.querySelector("#inv-popup-meta");
+    const closeBtn = container.querySelector("#inv-popup-close");
+    const copyBtn = container.querySelector("#inv-popup-copy");
+
+    grid?.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-metric]");
+      if (!card || !popup) return;
+      const metric = card.dataset.metric;
+      let items, title, meta;
+      if (metric === "low-stock") {
+        items = d.lowStockItems;
+        title = t("invOverviewLowStock");
+        meta = `${items.length} item${items.length !== 1 ? "s" : ""}`;
+      } else if (metric === "zero-stock") {
+        items = d.zeroStockItems;
+        title = t("invOverviewZeroStock");
+        meta = `${items.length} item${items.length !== 1 ? "s" : ""}`;
+      } else return;
+      const text = items.length ? items.map((r, i) => `${i + 1}. ${r[0]} — ${r[1]} (${r[2] || "—"}) — Stock: ${r[4]}`).join("\n") : "—";
+      popupTitle.textContent = title;
+      popupMeta.textContent = meta;
+      popupList.textContent = text;
+      popup.hidden = false;
+    });
+
+    /* Popup close handlers */
+    function closePopup() {
+      if (popup) popup.hidden = true;
+      document.removeEventListener("keydown", onKeyDown);
+    }
+    function onKeyDown(e) {
+      if (e.key === "Escape" && popup && !popup.hidden) closePopup();
+    }
+    closeBtn?.addEventListener("click", closePopup);
+    popup?.addEventListener("click", (e) => { if (e.target === popup) closePopup(); });
+    document.addEventListener("keydown", onKeyDown);
+
+    /* Copy button */
+    copyBtn?.addEventListener("click", () => {
+      const txt = popupList?.textContent || "";
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(() => inventoryToast("List copied."));
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        inventoryToast("List copied.");
+      }
+    });
+  } catch (err) {
+    container.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--muted)">Error loading overview: ${err.message}</div>`;
+    console.error("buildInventoryOverview:", err);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2271,13 +2461,13 @@ function filterMasterTable(q) {
     ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
-        <td><strong>${row[0]}</strong></td>
-        <td>${row[1]}</td>
-        <td>${row[2]}</td>
-        <td>${row[3]}</td>
+        <td><strong>${escapeHtml(row[0])}</strong></td>
+        <td>${escapeHtml(row[1])}</td>
+        <td>${escapeHtml(row[2])}</td>
+        <td>${escapeHtml(row[3])}</td>
         <td>${row[4]}</td>
         <td style="text-align:center;font-weight:600">${row[6] || "0"}</td>
-        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${row[5] || "—"}</td>
+        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
         <td>
           <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="${t("invMasterEdit")}">✎</button>
           <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="${t("invMasterDelete")}" style="color:var(--due-text)">✕</button>
@@ -2440,13 +2630,13 @@ function buildInventoryMasterPage() {
     ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
-        <td><strong>${row[0]}</strong></td>
-        <td>${row[1]}</td>
-        <td>${row[2]}</td>
-        <td>${row[3]}</td>
+        <td><strong>${escapeHtml(row[0])}</strong></td>
+        <td>${escapeHtml(row[1])}</td>
+        <td>${escapeHtml(row[2])}</td>
+        <td>${escapeHtml(row[3])}</td>
         <td>${row[4]}</td>
         <td style="text-align:center;font-weight:600">${row[6] || "0"}</td>
-        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${row[5] || "—"}</td>
+        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
         <td>
           <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="${t("invMasterEdit")}">✎</button>
           <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="${t("invMasterDelete")}" style="color:var(--due-text)">✕</button>
@@ -2588,7 +2778,7 @@ function buildInventoryOperationsPage() {
     ? `<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:2rem">${t("invOpEmpty")}</td></tr>`
     : invCurrentOrder.map((item, i) => `
       <tr>
-        <td><strong>${item.code}</strong><br><span style="font-size:0.82rem;color:var(--muted)">${item.name}</span></td>
+        <td><strong>${escapeHtml(item.code)}</strong><br><span style="font-size:0.82rem;color:var(--muted)">${escapeHtml(item.name)}</span></td>
         <td><input type="number" min="1" value="${item.qty}" style="width:4.5rem;min-height:2rem;padding:0 0.4rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft)" data-sarpras-action="inventory-update-qty" data-index="${i}" /></td>
         <td><button type="button" class="action-button" data-sarpras-action="inventory-remove-order" data-index="${i}" title="${t("invOpRemove")}" style="color:var(--due-text)">✕</button></td>
       </tr>
@@ -2738,10 +2928,10 @@ function buildInventoryOpnamePage() {
               <tbody>
                 ${inventoryOpnameData.sessions.map((row) => `
                   <tr>
-                    <td><strong>${row[0]}</strong></td>
-                    <td>${row[1]}</td>
-                    <td>${row[2]}</td>
-                    <td>${row[3]}</td>
+                    <td><strong>${escapeHtml(row[0])}</strong></td>
+                    <td>${escapeHtml(row[1])}</td>
+                    <td>${escapeHtml(row[2])}</td>
+                    <td>${escapeHtml(row[3])}</td>
                     <td>${formatInventoryRecordState(row[4])}</td>
                   </tr>
                 `).join("")}
@@ -2770,12 +2960,12 @@ function buildInventoryOpnamePage() {
               <tbody>
                 ${inventoryOpnameData.discrepancies.map((row) => `
                   <tr>
-                    <td><strong>${row[0]}</strong></td>
-                    <td>${row[1]}</td>
-                    <td>${row[2]}</td>
-                    <td>${row[3]}</td>
+                    <td><strong>${escapeHtml(row[0])}</strong></td>
+                    <td>${escapeHtml(row[1])}</td>
+                    <td>${escapeHtml(row[2])}</td>
+                    <td>${escapeHtml(row[3])}</td>
                     <td>${formatInventoryVariance(row[4])}</td>
-                    <td>${row[5]}</td>
+                    <td>${escapeHtml(row[5])}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -2851,12 +3041,12 @@ function buildInventoryActivityPage() {
           : `<span class="module-pill warn">${outLabel}</span>`;
         return `
       <tr data-tx-index="${globalIdx}" style="cursor:pointer">
-        <td><strong>${row[0]}</strong></td>
+        <td><strong>${escapeHtml(row[0])}</strong></td>
         <td>${typeBadge}</td>
-        <td style="white-space:nowrap">${row[2]}</td>
-        <td style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${itemsPreview}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} ${t("invActItem")})</span></td>
+        <td style="white-space:nowrap">${escapeHtml(row[2])}</td>
+        <td style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${escapeHtml(itemsPreview)}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} ${t("invActItem")})</span></td>
         <td>${row[4]}</td>
-        <td>${row[7] || "—"}</td>
+        <td>${escapeHtml(row[7] || "—")}</td>
         <td>${formatInventoryRecordState(row[6] || "Selesai")}</td>
         <td style="display:flex;gap:0.2rem">
           <button type="button" class="action-button" data-sarpras-action="toggle-tx-detail" data-index="${globalIdx}" title="${t("invActDetail")}" style="font-size:0.7rem;padding:0.15rem 0.35rem">▶</button>

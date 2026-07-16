@@ -56,6 +56,35 @@ window.attendanceModule = (() => {
     const pdInput = $("att-pd-cutoff");
     if (pdInput) pdInput.addEventListener("input", onPdCutoffChange);
 
+    // Patch Keterangan button
+    const patchBtn = $("att-patch-ket-btn");
+    const patchInput = $("att-file-patch-ket");
+    if (patchBtn && patchInput) {
+      patchBtn.addEventListener("click", () => patchInput.click());
+      patchInput.addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (f) patchKeterangan(f);
+      });
+    }
+
+    // PD compute button
+    const pdComputeBtn = $("att-pd-compute-btn");
+    if (pdComputeBtn) pdComputeBtn.addEventListener("click", computePd);
+
+    // PD upload button
+    const pdUploadBtn = $("att-pd-upload-btn");
+    const pdFileInput = $("att-file-pd");
+    if (pdUploadBtn && pdFileInput) {
+      pdUploadBtn.addEventListener("click", () => pdFileInput.click());
+      pdFileInput.addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (f) patchPd(f);
+      });
+    }
+    // PD cutoff live update
+    const cutoffEl = $("att-pd-cutoff");
+    if (cutoffEl) cutoffEl.addEventListener("input", onPdCutoffChange);
+
     document.querySelectorAll("[data-att-tab]").forEach((button) => {
       button.addEventListener("click", () => switchTab(button.dataset.attTab));
     });
@@ -133,11 +162,13 @@ window.attendanceModule = (() => {
 
       const rawTime = i >= headerRow + 10 ? String(row[21] || "").trim() : "";
       const fingerIn = normalizeTime(rawTime);
+      const rawSched = String(row[11] || "").trim();
+      const schedIn = normalizeTime(rawSched);
 
       if (!empMap[lastId]) empMap[lastId] = { id: lastId, name: lastName, org: lastOrg, days: [], daily: [] };
       else { if (rawName && !empMap[lastId].name) empMap[lastId].name = rawName; if (rawOrg && !empMap[lastId].org) empMap[lastId].org = rawOrg; }
       empMap[lastId].days.push(codes);
-      empMap[lastId].daily.push({ date: rawDate, codes: codes.join(","), finger_in: fingerIn });
+      empMap[lastId].daily.push({ date: rawDate, codes: codes.join(","), finger_in: fingerIn, sched_in: schedIn });
     }
 
     // Second pass — fill stat from right-side summary col AS/AT
@@ -163,7 +194,8 @@ window.attendanceModule = (() => {
           if (codes.includes("LT")) {
             terlambat++;
             const fi = emp.daily[idx]?.finger_in;
-            if (fi) { const late = timeToMinutes(fi) - timeToMinutes("06:30"); if (late > 0) terlambat_minutes += late; }
+            const si = emp.daily[idx]?.sched_in || "06:30";
+            if (fi) { const late = timeToMinutes(fi) - timeToMinutes(si); if (late > 0) terlambat_minutes += late; }
           }
           if (codes.includes("ER")) er++;
         }
@@ -263,6 +295,7 @@ window.attendanceModule = (() => {
       saveBtn.style.display = "";
     }
     
+    buildStaffOverview();
     toast(`Merged ${summaries.length} employees. Click "Save to DB" to persist data.`);
   }
 
@@ -271,10 +304,9 @@ window.attendanceModule = (() => {
     const sb = window._sb || window.schoolAuth?.sb;
     if (!sb) { toast("Database not connected."); return; }
     
-    if (!state.parsedJpayroll) { toast("No data to save. Upload files first."); return; }
+    const period = state.periods[state.activePeriodIdx] || (state.parsedJpayroll?.meta?.pKey);
+    if (!period) { toast("No period selected. Load or upload data first."); return; }
     
-    const { meta } = state.parsedJpayroll;
-    const period = meta.pKey;
     const summaries = state.dbData[period] || [];
     const dailyRecords = [];
     
@@ -314,6 +346,13 @@ window.attendanceModule = (() => {
       };
       
       await sb.from("period_config").upsert(periodConfig, { onConflict: "period" });
+      
+      // 1.5. Upsert all employees to satisfy FK constraint
+      const empMap = new Map();
+      summaries.forEach((r) => empMap.set(r.employee_id, { id: r.employee_id, name: r.employee_name || "", org: r.org || "", stat: r.stat || "" }));
+      const uniqueEmps = [...empMap.values()];
+      const { error: empError } = await sb.rpc("upsert_employees", { p_employees: uniqueEmps });
+      if (empError) throw empError;
       
       // 2. Delete existing records for this period
       await sb.from("attendance_summary").delete().eq("period", period);
@@ -506,6 +545,7 @@ window.attendanceModule = (() => {
         saveBtn.style.display = "none";
       }
       
+      seed2526I();
       toast(`Loaded ${data.length} attendance records.`);
     } catch (err) {
       toast(`DB error: ${err.message}`);
@@ -593,6 +633,8 @@ window.attendanceModule = (() => {
     $("att-controls").hidden = false;
     $("att-empty").hidden = true;
     $("att-table-scroll").hidden = false;
+    const patchBtn = $("att-patch-ket-btn");
+    if (patchBtn) patchBtn.hidden = false;
     loadErForPeriod(state.periods[state.activePeriodIdx]);
     // Wire Save ER button (DOM may not exist during init if subpage wasn't open yet)
     const erSaveBtn = $("att-er-save-btn");
@@ -600,10 +642,6 @@ window.attendanceModule = (() => {
       erSaveBtn.addEventListener("click", saveErToSupabase);
       erSaveBtn._wired = true;
     }
-    // Show PD bar if any period has a cutoff configured
-    const hasCutoff = Object.values(state.periodConfigs).some((c) => c.cutoff_time);
-    const pdBar = $("att-pd-bar");
-    if (pdBar) pdBar.hidden = !hasCutoff;
     updatePeriodLabel();
     updateStats();
     render();
@@ -631,10 +669,10 @@ window.attendanceModule = (() => {
 
   function renderRekap() {
     $("att-table-head").innerHTML = `<tr>
-      <th>Karyawan</th><th>Unit</th><th>Stat.</th><th>ER</th><th>R</th><th>Add</th>
+      <th>Karyawan</th><th>Stat.</th><th>ER</th><th>R</th><th>Add</th>
       <th style="color:var(--accent)">TotR</th>
       <th style="color:#7c4dff">Izin</th><th style="color:var(--danger)">Sakit</th><th style="color:#9c27b0">Cuti</th>
-      <th style="color:var(--money-warn)">ICC</th><th>Terlambat</th><th>Keterangan</th><th>Status</th>
+      <th style="color:var(--money-warn)">ICC</th><th>Terlambat</th><th style="color:var(--money-warn)">PD</th><th>Keterangan</th><th>Status</th>
     </tr>`;
     const rows = getFiltered();
     if (!rows.length) { emptyRow(14); return; }
@@ -653,7 +691,7 @@ window.attendanceModule = (() => {
     // ICC: orange+bold if icc>0 and no keterangan
     const iccNeedsKet = hasICC && !r.keterangan;
     const iccDisplay = hasICC
-      ? `<span class="att-num orange" style="${iccNeedsKet ? "font-weight:900;text-decoration:underline" : ""}">⚠ ${r.icc}</span>`
+      ? `<span class="att-num" style="${iccNeedsKet ? "font-weight:900;text-decoration:underline" : ""}">⚠ ${r.icc}</span>`
       : `<span class="att-num" style="color:var(--muted)">—</span>`;
     const ketDisplay = r.keterangan
       ? `<span class="att-ket-chip">${escapeHtml(r.keterangan)}</span>`
@@ -664,7 +702,6 @@ window.attendanceModule = (() => {
       + (r.terlambat > 0 ? `<span class="module-pill warn" style="margin-left:2px">LT:${r.terlambat}</span>` : "");
     return `<tr class="${rowCls}">
       <td><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
-      <td><span class="att-org">${escapeHtml(r.org || "—")}</span></td>
       <td><span class="module-pill neutral">${escapeHtml(r.stat || "—")}</span></td>
       <td class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
       <td class="att-num-cell"><span class="att-num">${r.hadir_r}</span></td>
@@ -675,6 +712,7 @@ window.attendanceModule = (() => {
       <td class="att-num-cell"><span class="att-num ${r.cuti > 0 ? "att-purple" : ""}">${r.cuti || "—"}</span></td>
       <td class="att-num-cell">${iccDisplay}</td>
       <td class="att-num-cell"><span class="att-num ${r.terlambat >= 3 ? "bad" : r.terlambat > 0 ? "warn" : ""}">${r.terlambat || "—"}</span></td>
+      <td class="att-num-cell"><span class="att-num">${r.pd_count || "—"}</span></td>
       <td>${ketDisplay}</td>
       <td style="white-space:nowrap">${status}</td>
     </tr>`;
@@ -898,12 +936,6 @@ window.attendanceModule = (() => {
   function switchTab(tab) {
     state.activeTab = tab;
     document.querySelectorAll("[data-att-tab]").forEach((btn) => btn.classList.toggle("active", btn.dataset.attTab === tab));
-    // Show PD bar in alert tab if any cutoff is configured
-    const pdBar = $("att-pd-bar");
-    if (pdBar) {
-      const hasCutoff = Object.values(state.periodConfigs).some((c) => c.cutoff_time);
-      pdBar.hidden = tab !== "alert" || !hasCutoff;
-    }
     render();
   }
 
@@ -1003,7 +1035,528 @@ window.attendanceModule = (() => {
     toast.timer = window.setTimeout(() => el.classList.remove("show"), 3200);
   }
 
-  return { init, loadFromSupabase };
+  // ── SEMESTER HELPERS ────────────────────────────────────────────────────────
+  function getSemester(periodKey) {
+    const parts = periodKey.split("/");
+    if (parts.length < 2) return null;
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    if (month >= 7) {
+      const y1 = String(year).slice(-2);
+      const y2 = String(year + 1).slice(-2);
+      return { label: `${y1}${y2} Semester I`, sortKey: `${year}-1` };
+    } else {
+      const y1 = String(year - 1).slice(-2);
+      const y2 = String(year).slice(-2);
+      return { label: `${y1}${y2} Semester II`, sortKey: `${year - 1}-2` };
+    }
+  }
+
+  function getAvailableSemesters() {
+    const map = new Map();
+    state.periods.forEach((p) => {
+      const sem = getSemester(p);
+      if (sem && !map.has(sem.sortKey)) map.set(sem.sortKey, { label: sem.label, sortKey: sem.sortKey });
+    });
+    if (state.seed2526IActive && !map.has("2526I")) {
+      map.set("2526I", { label: "2526 Semester I", sortKey: "2526I" });
+    }
+    return [...map.values()].sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  }
+
+  function periodsOfSemester(sortKey) {
+    if (sortKey === "2526I" && state.seed2526IActive) {
+      return ["__seed_2526I__"];
+    }
+    return state.periods.filter((p) => {
+      const sem = getSemester(p);
+      return sem && sem.sortKey === sortKey;
+    });
+  }
+
+  // ── STAFF OVERVIEW DASHBOARD ─────────────────────────────────────────────────
+  function buildStaffOverview(semesterKey) {
+    const container = document.getElementById("staff-overview");
+    if (!container) return;
+
+    const allPeriods = state.periods;
+    if (!allPeriods.length && !state.seed2526IActive) {
+      container.innerHTML = `<div class="staff-ov-empty"><strong>${window.t("staffOvTotalEmployees")}</strong><span>${window.t("staffOvNoData")}</span></div>`;
+      return;
+    }
+
+    const semesters = getAvailableSemesters();
+    const activeSem = semesterKey || state.activeSemester || semesters[0]?.sortKey;
+    state.activeSemester = activeSem;
+
+    const periods = periodsOfSemester(activeSem);
+
+    const empMap = new Map();
+    let totalEff = 0, totalPresent = 0, totalLate = 0, totalLateMin = 0, totalAbsent = 0, totalPd = 0;
+    let iccSet = new Set();
+
+    periods.forEach((p) => {
+      const rows = p === "__seed_2526I__" ? (state.seed2526I?.employees || []) : (state.dbData[p] || []);
+      if (!rows.length) return;
+      rows.forEach((r) => {
+        totalEff += r.eff_days;
+        totalPresent += r.hadir_totr;
+        totalLate += r.terlambat;
+        totalLateMin += r.terlambat_minutes;
+        totalAbsent += (r.izin || 0) + (r.sakit || 0);
+        totalPd += r.pd_count || 0;
+        if (r.icc > 0) iccSet.add(r.employee_id);
+        if (!empMap.has(r.employee_id)) {
+          empMap.set(r.employee_id, { name: r.employee_name, org: r.org, stat: r.stat, late: 0, lateMin: 0, izin: 0, sakit: 0, eff: 0, present: 0, pd: 0 });
+        }
+        const e = empMap.get(r.employee_id);
+        e.late += r.terlambat;
+        e.lateMin += r.terlambat_minutes;
+        e.izin += r.izin || 0;
+        e.sakit += r.sakit || 0;
+        e.eff += r.eff_days;
+        e.present += r.hadir_totr;
+        e.pd += r.pd_count || 0;
+      });
+    });
+
+    const totalEmployees = empMap.size;
+    const avgPct = totalEff ? Math.round((totalPresent / totalEff) * 100) : 0;
+    const iccCount = iccSet.size;
+    const activeSemLabel = semesters.find((s) => s.sortKey === activeSem)?.label || activeSem;
+
+    const topLateMin = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam").sort((a, b) => b.lateMin - a.lateMin);
+    const topLateEvt = [...empMap.values()].sort((a, b) => b.late - a.late);
+    const topAbsent = [...empMap.values()].sort((a, b) => (b.izin + b.sakit) - (a.izin + a.sakit));
+    const topPd = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam").sort((a, b) => b.pd - a.pd);
+
+    function t(k) { return window.t(k); }
+
+    function sv(v, unit) {
+      return v ? `<span class="ov-val">${v} <span class="ov-unit">${unit}</span></span>` : "";
+    }
+
+    function empCell(emp) {
+      return `<div class="emp-name">${escapeHtml(emp.name)}</div>`;
+    }
+
+    const avgClass = avgPct >= 90 ? "good" : avgPct >= 75 ? "warn" : "bad";
+    const empty = `<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:1rem">—</td></tr>`;
+
+    function rankCard(title, rows, rowFn) {
+      return `<div class="staff-ov-rank">
+        <h3 tabindex="0" role="button" aria-expanded="false">${title} <span class="ov-caret">▶</span></h3>
+        <div class="ov-body">
+          <table>
+            <thead><tr><th class="rank">#</th><th>${t("staffOvEmployee")}</th></tr></thead>
+            <tbody>${rows.length ? rows.map((emp, i) => rowFn(emp, i)).join("") : empty}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+
+    container.innerHTML = `
+      <div class="staff-ov">
+        <div class="staff-ov-stats">
+          <div class="staff-ov-stat"><span>${t("staffOvTotalEmployees")}</span><strong>${totalEmployees}</strong><small>${activeSemLabel}</small></div>
+          <div class="staff-ov-stat ${avgClass}"><span>${t("staffOvAvgAttendance")}</span><strong>${avgPct}%</strong><small>${totalPresent}/${totalEff}</small></div>
+          <div class="staff-ov-stat warn"><span>${t("staffOvTotalLate")}</span><strong>${totalLate}</strong><small>${t("staffOvEvents")}</small></div>
+          <div class="staff-ov-stat warn"><span>${t("staffOvLateMinutes")}</span><strong>${totalLateMin}</strong><small>${t("staffOvMinutes")}</small></div>
+          <div class="staff-ov-stat"><span>${t("staffOvICC")}</span><strong>${iccCount}</strong><small>${t("staffOvEmployees")}</small></div>
+          <div class="staff-ov-stat bad"><span>${t("staffOvTotalAbsent")}</span><strong>${totalAbsent}</strong><small>${t("staffOvEvents")}</small></div>
+        </div>
+
+        <div class="staff-ov-sem">
+          <select class="staff-ov-sem-select">
+            ${semesters.map((s) => `<option value="${s.sortKey}"${s.sortKey === activeSem ? " selected" : ""}>${s.label}</option>`).join("")}
+          </select>
+          <button type="button" class="primary-button secondary" id="staff-ov-export" style="margin-left:0.5rem">Export Ranking</button>
+        </div>
+
+        <div class="staff-ov-ribbon">
+          <div class="staff-ov-ribbon-hd" tabindex="0" role="button" aria-expanded="false">
+            ⓘ DISCLAIMER <span class="ov-caret">▶</span>
+          </div>
+          <div class="staff-ov-ribbon-body">
+            <p>Data keterlambatan diambil sesuai dengan yang ada di dalam finger.</p>
+            <div class="staff-ov-ribbon-sect">
+              <strong>a. Termasuk</strong>
+              <ul>
+                <li>Keterlambatan berizin</li>
+                <li>Terdata terlambat karena menghadiri kegiatan di luar sekolah yang tidak sesuai dengan jam sekolah<br/><em>cth : Kegiatan di kansek, MGMP, Pelatihan, Dinas, dll.</em></li>
+                <li>Keterlambatan di beda area dengan jam kerja yang berbeda (telah disesuaikan)</li>
+                <li>Keterlambatan beda shift (telah disesuaikan)</li>
+              </ul>
+            </div>
+            <div class="staff-ov-ribbon-sect">
+              <strong>b. Tidak termasuk (telah diperbaiki/disamakan)</strong>
+              <ul>
+                <li>Finger Rusak : Data diedit secara masal</li>
+                <li>Kegiatan menggunakan GPS Cam: dianggap masuk semua dan on time semua seperti ASCE/Upacara</li>
+                <li>Kendala Teknis : finger pegawai mengalami kendala dan perlu disetting ulang.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="staff-ov-rankings">
+          ${rankCard(`${t("staffOvTopLate")} (Menit)`, topLateMin, (emp, i) =>
+            `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(emp.lateMin, "menit")}</td></tr>`)}
+          ${rankCard(`${t("staffOvTopLate")} (Kali)`, topLateEvt, (emp, i) =>
+            `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(emp.late, "kali")}</td></tr>`)}
+          ${rankCard(`${t("staffOvTopAbsent")}`, topAbsent, (emp, i) => {
+            const tot = emp.izin + emp.sakit;
+            return `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(tot, "hari")}</td></tr>`;
+          })}
+          ${rankCard(`${t("staffOvTopPD")}`, topPd, (emp, i) =>
+            `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(emp.pd, "PD")}</td></tr>`)}
+        </div>
+      </div>`;
+
+    const select = container.querySelector(".staff-ov-sem-select");
+    if (select) select.addEventListener("change", () => buildStaffOverview(select.value));
+
+    const exportBtn = container.querySelector("#staff-ov-export");
+    if (exportBtn) exportBtn.addEventListener("click", exportRankings);
+
+    container.querySelectorAll(".staff-ov-rank h3, .staff-ov-ribbon-hd").forEach((hd) => {
+      hd.addEventListener("click", () => {
+        const parent = hd.closest(".staff-ov-rank, .staff-ov-ribbon");
+        const isOpen = parent.classList.toggle("ov-open");
+        hd.setAttribute("aria-expanded", isOpen);
+        const caret = hd.querySelector(".ov-caret");
+        if (caret) caret.textContent = isOpen ? "▼" : "▶";
+      });
+    });
+  }
+
+  // ── PATCH KETERANGON (NO JPAYROLL NEEDED) ──────────────────────────────────
+  function patchKeterangan(file) {
+    if (!window.XLSX) { toast("Excel parser is not loaded."); return; }
+    const pKey = state.periods[state.activePeriodIdx];
+    if (!pKey || !state.dbData[pKey]) { toast("No data for active period. Load from DB first."); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = window.XLSX.read(e.target.result, { type: "binary", cellDates: false });
+        const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
+        let hdr = 0;
+        for (let i = 0; i < Math.min(5, rows.length); i++) {
+          if (rows[i].join(" ").toLowerCase().includes("peg")) { hdr = i; break; }
+        }
+        const h = rows[hdr].map((c) => String(c).trim().toLowerCase());
+        const idx = {
+          peg: h.findIndex((c) => c.includes("peg") || c.includes("id")),
+          add: h.findIndex((c) => c.includes("add")),
+          izin: h.findIndex((c) => c.includes("izin")),
+          sakit: h.findIndex((c) => c.includes("sakit")),
+          cuti: h.findIndex((c) => c.includes("cuti")),
+          ket: h.findIndex((c) => c.includes("ket"))
+        };
+        const targetRows = state.dbData[pKey];
+        let updated = 0;
+        for (let i = hdr + 1; i < rows.length; i++) {
+          const row = rows[i];
+          const id = String(row[idx.peg >= 0 ? idx.peg : 0] || "").trim().replace(/[^0-9]/g, "");
+          if (!id) continue;
+          const t = targetRows.find((r) => r.employee_id === id);
+          if (!t) continue;
+          if (idx.izin >= 0) t.izin = Number(row[idx.izin]) || 0;
+          if (idx.sakit >= 0) t.sakit = Number(row[idx.sakit]) || 0;
+          if (idx.cuti >= 0) t.cuti = Number(row[idx.cuti]) || 0;
+          if (idx.ket >= 0) t.keterangan = String(row[idx.ket] || "").trim();
+          if (idx.add >= 0) {
+            t.hadir_add = Number(row[idx.add]) || 0;
+            t.hadir_totr = t.hadir_r + t.hadir_add;
+          }
+          updated++;
+        }
+        $("att-file-patch-ket").value = "";
+        toast(`Patched ${updated} employees from Keterangan.`);
+        const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
+        const sBtn = $("att-save-btn");
+        if (sBtn && role === "super_admin") { sBtn.hidden = false; sBtn.style.display = ""; }
+        buildStaffOverview();
+        render();
+      } catch (err) { toast(`Error: ${err.message}`); }
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  // ── PATCH PD ─────────────────────────────────────────────────────────────
+  function patchPd(file) {
+    if (!window.XLSX) { toast("Excel parser is not loaded."); return; }
+    const pKey = state.periods[state.activePeriodIdx];
+    if (!pKey || !state.dbData[pKey]) { toast("No data for active period. Load from DB or upload JPAYROLL first."); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = window.XLSX.read(e.target.result, { type: "binary", cellDates: false });
+        const rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
+        let hdr = 0;
+        for (let i = 0; i < Math.min(5, rows.length); i++) {
+          if (rows[i].join(" ").toLowerCase().includes("peg") || rows[i].join(" ").toLowerCase().includes("id")) { hdr = i; break; }
+        }
+        const h = rows[hdr].map((c) => String(c).trim().toLowerCase());
+        const idIdx = h.findIndex((c) => c.includes("peg") || c.includes("id") || c.includes("no"));
+        const pdIdx = h.findIndex((c) => c.includes("pd") || c.includes("potongan") || c.includes("denda") || c.includes("count"));
+        if (idIdx < 0 || pdIdx < 0) { toast("Could not find employee ID and PD count columns."); return; }
+        const targetRows = state.dbData[pKey];
+        let updated = 0;
+        for (let i = hdr + 1; i < rows.length; i++) {
+          const row = rows[i];
+          const id = String(row[idIdx] || "").trim().replace(/[^0-9]/g, "");
+          if (!id) continue;
+          const t = targetRows.find((r) => r.employee_id === id);
+          if (!t) continue;
+          t.pd_count = Number(row[pdIdx]) || 0;
+          updated++;
+        }
+        $("att-file-pd").value = "";
+        toast(`Patched ${updated} employees PD count.`);
+        const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
+        const sBtn = $("att-save-btn");
+        if (sBtn && role === "super_admin") { sBtn.hidden = false; sBtn.style.display = ""; }
+        buildStaffOverview();
+        render();
+      } catch (err) { toast(`Error: ${err.message}`); }
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  // ── COMPUTE PD ───────────────────────────────────────────────────────────
+  function computePd() {
+    const pKey = state.periods[state.activePeriodIdx];
+    if (!pKey) { toast("No period selected."); return; }
+    const rows = state.dbData[pKey];
+    if (!rows || !rows.length) { toast("No data for active period."); return; }
+    const cutoffEl = $("att-pd-cutoff");
+    const cutoff = cutoffEl?.value || "";
+    if (!cutoff) { toast("Set PD Cutoff time first."); return; }
+
+    const daily = state.dailyData[pKey] || {};
+    let updated = 0;
+    rows.forEach((r) => {
+      const days = daily[r.employee_id] || [];
+      const count = days.filter((d) => d.finger_in && d.sched_in === "06:30" && d.finger_in > cutoff && d.finger_in <= "06:30").length;
+      r.pd_count = count;
+      if (count > 0) updated++;
+    });
+    toast(`Computed PD for ${updated} employees (cutoff: ${cutoff}).`);
+    const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
+    const sBtn = $("att-save-btn");
+    if (sBtn && role === "super_admin") { sBtn.hidden = false; sBtn.style.display = ""; }
+    buildStaffOverview();
+    render();
+  }
+
+  // ── SEED 2526 SEMESTER I (ONE-TIME OVERVIEW DATA) ─────────────────────────
+  function seed2526I() {
+    if (!state) state = {};
+
+    const pd = {
+      "202002005":80,"201802002":75,"201510020":73,"202406009":72,
+      "201406001":65,"201405004":61,"201804002":56,"200807002":53,
+      "201511016":51,"201608038":48,"202301004":37,"199207015":35,
+      "201308006":31,"199111002":31,"199607007":28,"202210007":28,
+      "202205012":25,"200407005":24,"199207001":22,"201506003":20,
+      "201407019":18,"201909005":17,"201401003":13,"201807017":12,
+      "201208001":11,"199608006":10,"201908009":7,"202407033":6,
+      "199307005":5,"201901021":3,"201407013":3,"201212002":3,
+      "201501005":3,"201608039":3,"199704001":3,"201909002":2,
+      "199208001":2,"199601003":2,"201305014":1,"201307002":1,
+      "201708008":1,"201306004":1,"199611001":1,"200107009":0,
+      "201505007":0,"199808011":0,"201503002":0,"202007018":0,
+      "201310011":0
+    };
+
+    const late = {
+      "202002005":22,"201406001":18,"201802002":15,"201511016":14,"200807002":13,
+      "201804002":12,"201405004":8,"202406009":8,"201208001":7,"201608038":7,
+      "199111002":7,"201908009":6,"201308006":6,"199207015":6,"199607007":6,
+      "200007004":6,"201510020":5,"200407005":5,"199608006":4,"202301004":4,
+      "201506003":4,"201407019":3,"201305014":2,"201407013":2,"201307002":2,
+      "202205012":2,"199307005":2,"201608039":2,"201909005":2,"199601003":2,
+      "202210007":2,"201807017":1,"201501005":1,"202407033":1,"201306004":1,
+      "199704001":1,"199207001":1,"199608001":1,"199309003":1,"199512004":1,
+      "199808009":1,"201901021":0,"201909002":0,"201708008":0,"200107009":0,
+      "201505007":0,"199808011":0,"201212002":0,"201401003":0,"201503002":0,
+      "202007018":0,"199208001":0,"199611001":0,"201310011":0,"199104001":0,
+      "199308006":0,"199608004":0
+    };
+
+    const mins = {
+      "201802002":527,"201308006":268,"201608038":215,"199607007":213,"201510020":197,
+      "201511016":193,"201407019":158,"201804002":132,"199207001":95,"202406009":88,
+      "199608006":83,"201406001":75,"201208001":71,"202002005":68,"201506003":37,
+      "201608039":37,"200007004":34,"199111002":33,"200807002":30,"199512004":29,
+      "201908009":26,"199601003":24,"199207015":24,"199704001":22,"201307002":22,
+      "200407005":21,"199309003":20,"199608001":20,"201807017":17,"201405004":16,
+      "202407033":10,"202301004":9,"201909005":7,"202205012":6,"201306004":5,
+      "201501005":5,"202210007":2,"199307005":2,"199808009":1,"199608004":0,
+      "199308006":0,"199104001":0,"201310011":0,"199611001":0,"199208001":0,
+      "202007018":0,"201503002":0,"201401003":0,"201212002":0,"199808011":0,
+      "201505007":0,"200107009":0,"201708008":0,"201909002":0,"201407013":0,
+      "201305014":0,"201901021":0
+    };
+
+    const abs = {
+      "199207015":9,"201608038":5,"201407019":5,"199309003":5,"201306004":4,
+      "201908009":3,"201405004":3,"201807017":3,"201802002":3,"201406001":3,
+      "201901021":2,"199608006":2,"199808011":2,"201909005":2,"202002005":2,
+      "202007018":2,"199111002":2,"199601003":2,"199308006":2,"201208001":1,
+      "201708008":1,"201308006":1,"201401003":1,"199607007":1,"201506003":1,
+      "201511016":1,"201310011":1,"202210007":1,"200007004":1,"199808009":1,
+      "201305014":0,"201407013":0,"201307002":0,"201909002":0,"202205012":0,
+      "200107009":0,"201505007":0,"201804002":0,"201510020":0,"200807002":0,
+      "201212002":0,"201503002":0,"199307005":0,"200407005":0,"201501005":0,
+      "201608039":0,"202407033":0,"202406009":0,"202301004":0,"199704001":0,
+      "199207001":0,"199208001":0,"199611001":0,"199608001":0,"199104001":0,
+      "199512004":0,"199608004":0
+    };
+
+    const names = {
+      "202002005":"Evelyn Cahyadi, S.Pd.","201802002":"Seto Hariyanto, S.Pd",
+      "201510020":"Aknes Suparyati, S.Pd","202406009":"Albertus Dwi Anggara, S.Pd.",
+      "201406001":"Ines Firmany, S.Pd.","201405004":"Maria Agustin Mahardika, S.Pd",
+      "201804002":"Yonna Euinike T, S.Si.Teol, M.Sos","200807002":"Endah Fitriningtyas, S.Pd",
+      "201511016":"Dede Candra Putra, Amd. Kom","201608038":"Rosa Anindya Puspitasari, S.Pd",
+      "202301004":"Nora, S.Pd.","199207015":"Maria Johanna S, Dra, M.Si",
+      "201308006":"Yulius Dwi Pramono, S.Pd","199111002":"Chrisdiana",
+      "199607007":"Ninik Suprapti, S.Pd, M.Si.","202210007":"Teresia Findi Oktavia sari, S.Kom",
+      "202205012":"Rio Hardiansyah Pasaribu, S.Pd.","200407005":"Sutji Rahayu, Dra.",
+      "199207001":"Triyanto Hendra Mardani, S.S.","201506003":"Novel Chandra, S.Kom.",
+      "201407019":"Yohanes Yuniatika, S.Si-Teol., M.M.","201909005":"Yosepha Nandya Putra, S.Pd.",
+      "201401003":"Patricia Risdya Pratiwi, S.Pd","201807017":"Anggun Widyaningrum, S.Pd",
+      "201208001":"Cicilia Ratna T, S.Pd., M.Si.","199608006":"Firman Wahju Widiadi Misro, S.Pd",
+      "201908009":"Yahaziela Nawita Dirfa, S.Psi., M.Si.","202407033":"Valentinus Bening Theovani, S.Psi.",
+      "199307005":"Dra. Tri Asih","201901021":"Ndindit Effander, S.Pd.",
+      "201407013":"Yakubus Suwardoyo, S.Pd., M.M.","201212002":"Rani Faranaz, S.Pd",
+      "201501005":"Satria Bayu Aji, S.Pd","201608039":"Loveli Onelia, S.Psi",
+      "199704001":"Heru Bagiyo, S.Sos","201909002":"Elisabeth Evi Alviah, S.Pd.",
+      "199208001":"Ester Ekasari","199601003":"Indra Widjajanti, S.P.",
+      "201305014":"Rahajeng Ayu Habsari, S.Pd","201307002":"Olivia Noratiro Boru Purba, S.Pd",
+      "201708008":"Laorensia Styffany, S.Pd","201306004":"Marcel Samallo, S.Pd.K.,M.M.",
+      "199611001":"Agung Sri Swastoadi, S.Pd.","200107009":"Raden Rara Poedji Rahajoe, S.Pd",
+      "201505007":"Rukmi Arumbi, S.Pd","199808011":"Lanny , SE",
+      "201503002":"Stephanie, S.Sos","202007018":"Natania Wijayanti, S.Psi",
+      "201310011":"Wulan Purwandari, A.Md.Kep.","199104001":"Sarwidi",
+      "199308006":"Sutrisno","199608004":"Dangtjis Abraham Papilaya",
+      "200007004":"Endik Kusumajaya","199608001":"Lourentius Sunarno",
+      "199309003":"Suntoro","199512004":"Bambang Supriyanto",
+      "199808009":"Pardomuan Sinaga"
+    };
+
+    const allIds = [...new Set([...Object.keys(pd), ...Object.keys(late), ...Object.keys(mins), ...Object.keys(abs)])];
+    const employees = allIds.map((id) => {
+      const izin = abs[id] || 0;
+      return {
+        employee_id: id,
+        employee_name: names[id] || id,
+        org: "Guru",
+        stat: "Guru Tetap",
+        eff_days: 24,
+        hadir_r: 24,
+        hadir_add: 0,
+        hadir_totr: 24 - izin,
+        tidak_hadir: izin,
+        terlambat: late[id] || 0,
+        terlambat_minutes: mins[id] || 0,
+        icc: 0,
+        izin,
+        sakit: 0,
+        cuti: 0,
+        keterangan: "",
+        pd_count: pd[id] || 0
+      };
+    });
+
+    state.seed2526I = { employees };
+    state.seed2526IActive = true;
+
+    // Strip any real 2526 Semester I periods from state (seed is the exclusive source)
+    // 2526 Semester I = Jul-Dec 2025 → year=2025, month>=7
+    const is2526SemI = (p) => {
+      const m = p.match(/^(\d{4})\/(\d{2})$/);
+      return m && parseInt(m[1]) === 2025 && parseInt(m[2]) >= 7;
+    };
+    state.periods = state.periods.filter((p) => !is2526SemI(p));
+    Object.keys(state.dbData).forEach((p) => { if (is2526SemI(p)) delete state.dbData[p]; });
+    if (state.activePeriodIdx >= state.periods.length) state.activePeriodIdx = state.periods.length - 1;
+
+    // Switch active semester to the seed's sortKey so periodsOfSemester finds it
+    state.activeSemester = "2526I";
+
+    toast(`2526 Semester I seeded: ${employees.length} employees.`);
+    buildStaffOverview();
+  }
+
+  // ── EXPORT RANKINGS ───────────────────────────────────────────────────────
+  function exportRankings() {
+    if (!window.XLSX) { toast("Excel export library is not loaded."); return; }
+    const semesters = getAvailableSemesters();
+    if (!semesters.length) { toast("No semester data available."); return; }
+
+    const wb = window.XLSX.utils.book_new();
+
+    semesters.forEach((sem) => {
+      const periods = periodsOfSemester(sem.sortKey);
+      if (!periods.length) return;
+
+      const empMap = new Map();
+      periods.forEach((p) => {
+        const rows = p === "__seed_2526I__" ? (state.seed2526I?.employees || []) : (state.dbData[p] || []);
+        if (!rows.length) return;
+        rows.forEach((r) => {
+          if (!empMap.has(r.employee_id)) {
+            empMap.set(r.employee_id, { name: r.employee_name, org: r.org, late: 0, lateMin: 0, izin: 0, sakit: 0, pd: 0 });
+          }
+          const e = empMap.get(r.employee_id);
+          e.late += r.terlambat || 0;
+          e.lateMin += r.terlambat_minutes || 0;
+          e.izin += r.izin || 0;
+          e.sakit += r.sakit || 0;
+          e.pd += r.pd_count || 0;
+        });
+      });
+
+    const topLateMin = [...empMap.values()].sort((a, b) => b.lateMin - a.lateMin);
+      const topLateEvt = [...empMap.values()].sort((a, b) => b.late - a.late);
+      const topAbsent = [...empMap.values()].sort((a, b) => (b.izin + b.sakit) - (a.izin + a.sakit));
+      const topPd = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam").sort((a, b) => b.pd - a.pd);
+
+      const data = [];
+      data.push(["TOP PD", "", ""]);
+      data.push(["Rank", "Nama", "PD"]);
+      topPd.forEach((e, i) => data.push([i + 1, e.name, e.pd]));
+      data.push([]);
+
+      data.push(["LATE (MENIT)", "", ""]);
+      data.push(["Rank", "Nama", "Menit"]);
+      topLateMin.forEach((e, i) => data.push([i + 1, e.name, e.lateMin]));
+      data.push([]);
+
+      data.push(["LATE (KALI)", "", ""]);
+      data.push(["Rank", "Nama", "Kali"]);
+      topLateEvt.forEach((e, i) => data.push([i + 1, e.name, e.late]));
+      data.push([]);
+
+      data.push(["ABSENT", "", ""]);
+      data.push(["Rank", "Nama", "Hari"]);
+      topAbsent.forEach((e, i) => data.push([i + 1, e.name, e.izin + e.sakit]));
+
+      const ws = window.XLSX.utils.aoa_to_sheet(data);
+      ws["!cols"] = [{ wch: 6 }, { wch: 36 }, { wch: 10 }];
+      const label = sem.label.replace(/[:\/\?\*\[\]]/g, "-").slice(0, 31);
+      window.XLSX.utils.book_append_sheet(wb, ws, label);
+    });
+
+    if (wb.SheetNames.length === 0) { toast("No data to export."); return; }
+    window.XLSX.writeFile(wb, `Ranking_Karyawan_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast("Rankings exported successfully.");
+  }
+
+  return { init, loadFromSupabase, buildStaffOverview, seed2526I, exportRankings };
 })();
 
 document.addEventListener("click", (event) => {

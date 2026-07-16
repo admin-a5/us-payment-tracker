@@ -150,6 +150,7 @@ window.authModule = (() => {
 
     $("login-screen").hidden = true;
     $("app-shell").style.display = "";
+    $("app-shell").removeAttribute("hidden");
 
     auditLogger?.logLogin(user.email, currentRole, "");
 
@@ -285,7 +286,16 @@ window.authModule = (() => {
   async function validateSession() {
     if (!sb) return false;
     const { data: { session } } = await sb.auth.getSession();
-    return !!session;
+    if (!session) return false;
+    /* Re-fetch role to detect demotions / access revocation */
+    try {
+      const { data: roleData, error } = await sb.rpc("get_my_role").single();
+      if (error || !roleData?.role) return false;
+      if (roleData.role !== currentRole) return false;
+    } catch (e) {
+      return false;
+    }
+    return true;
   }
 
   clearGlobalAuthState();
