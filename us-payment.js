@@ -729,7 +729,7 @@ const usPayment = (() => {
     text += `Total tagihan : ${fmtIDR(totalOutstanding + denda)} + biaya admin\n`;
     if (student.va_bca) text += `VA BCA : ${student.va_bca}\n`;
     if (student.va_mandiri) text += `VA Mandiri : ${student.va_mandiri}\n`;
-    text += "\nApabila pembayaran melewati tanggal 25 bulan berjalan maka akan dikenakan denda.\nTerima kasih. Tuhan memberkati";
+    text += "\nMohon Perhatian :\n1. Apabila pembayaran melewati tanggal 25 bulan berjalan maka akan dikenakan denda.\n2. Apabila sudah melakukan pembayaran mohon dikonfirmasi dengan bukti pembayaran untuk kami update.\nTerima kasih. Tuhan memberkati";
     copyText(text, "Tagihan copied.");
   }
 

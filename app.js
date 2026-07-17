@@ -644,6 +644,7 @@ let invToken = "000001";
 let invTokenDate = "";
 let invTokenVisible = false;
 let invCurrentOrder = [];
+let invVideoScanner = null;
 
 function loadInvTokenState() {
   const today = nowStampWIB().slice(0, 10);
@@ -1581,6 +1582,14 @@ function enhanceInventoryPage() {
             </div>`;
         });
     }
+    if (id !== "inv-inventory") {
+      if (invVideoScanner) {
+        try { invVideoScanner.stop(); } catch (e) {}
+        invVideoScanner = null;
+      }
+      const area = document.getElementById("sarpras-video-scanner");
+      if (area) area.style.display = "none";
+    }
     if (id === "inv-activity") {
       const ap = page.querySelector("#inv-activity");
       if (ap) ap.innerHTML = buildInventoryActivityPage();
@@ -1966,6 +1975,57 @@ function bindInventoryWorkspace(page) {
     if (event.target.matches("[data-sarpras-input='stock-card-item']")) {
       invStockCardCode = event.target.value;
       refreshInventorySubpages(page);
+    }
+  });
+
+  /* ── Inventory: video scanner ── */
+  page.addEventListener("click", async (event) => {
+    if (event.target.id === "sarpras-video-scan-btn") {
+      if (!window.Html5Qrcode) { inventoryToast("Scanner library not loaded."); return; }
+      const area = document.getElementById("sarpras-video-scanner");
+      if (!area) return;
+      area.style.display = "";
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) { inventoryToast("No camera found."); return; }
+        invVideoScanner = new Html5Qrcode("sarpras-video-viewport");
+        await invVideoScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 150 },
+            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E] },
+          async (decodedText) => {
+            if (invVideoScanner) {
+              try { invVideoScanner.stop(); } catch (e) {}
+              invVideoScanner = null;
+              area.style.display = "none";
+            }
+            const q = decodedText.trim();
+            if (!q) return;
+            const state = ensureInventoryState();
+            const match = state.items.find((row) => row[0].toLowerCase() === q.toLowerCase() || row[1].toLowerCase().includes(q.toLowerCase()));
+            if (match) {
+              invCurrentOrder.push({ code: match[0], name: match[1], qty: 1 });
+              refreshInventorySubpages(page);
+            } else {
+              inventoryToast("✗ Item not found: " + q);
+            }
+          },
+          () => {}
+        );
+      } catch (err) {
+        inventoryToast("Camera error: " + err.message);
+        area.style.display = "none";
+      }
+      return;
+    }
+    if (event.target.id === "sarpras-video-stop") {
+      if (invVideoScanner) {
+        try { invVideoScanner.stop(); } catch (e) {}
+        invVideoScanner = null;
+      }
+      const area = document.getElementById("sarpras-video-scanner");
+      if (area) area.style.display = "none";
+      return;
     }
   });
 
@@ -3094,8 +3154,13 @@ function buildInventoryOperationsPage() {
             <h2>${t("invOpOrderList")}</h2>
             <span id="sarpras-order-count">${invCurrentOrder.length} ${t("invActItem")}</span>
           </div>
-          <div style="padding:0.6rem 1rem;border-bottom:1px solid var(--line)">
-            <input type="text" data-sarpras-input="inventory-item-input" placeholder="${t("invOpSearch")}" style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-size:0.9rem" />
+          <div style="padding:0.6rem 1rem;border-bottom:1px solid var(--line);display:flex;gap:0.4rem">
+            <input type="text" data-sarpras-input="inventory-item-input" placeholder="${t("invOpSearch")}" style="flex:1;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-size:0.9rem" />
+            <button type="button" class="primary-button secondary" id="sarpras-video-scan-btn" style="padding:0 0.6rem;font-size:0.82rem">📷 Scan</button>
+          </div>
+          <div id="sarpras-video-scanner" style="display:none;padding:0.6rem 1rem;border-bottom:1px solid var(--line)">
+            <div id="sarpras-video-viewport" style="width:100%;max-width:360px;margin:0 auto"></div>
+            <button type="button" class="primary-button secondary" id="sarpras-video-stop" style="display:block;margin:0.4rem auto 0;padding:0.3rem 0.8rem;font-size:0.78rem">Stop Scanner</button>
           </div>
           <div class="module-table-scroll">
             <table class="module-table">
@@ -3318,8 +3383,8 @@ function buildInventoryActivityPage() {
         <td style="white-space:nowrap">${escapeHtml(row[2])}</td>
         <td style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${escapeHtml(itemsPreview)}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} ${t("invActItem")})</span></td>
         <td>${row[4]}</td>
-        <td>${escapeHtml(row[7] || "—")}</td>
-        <td>${formatInventoryRecordState(row[6] || "Selesai")}</td>
+        <td>${escapeHtml(row[6] || "—")}</td>
+        <td>${formatInventoryRecordState(row[7] || "Selesai")}</td>
         <td style="display:flex;gap:0.2rem">
           <button type="button" class="action-button" data-sarpras-action="toggle-tx-detail" data-index="${globalIdx}" title="${t("invActDetail")}" style="font-size:0.7rem;padding:0.15rem 0.35rem">▶</button>
           <button type="button" class="action-button" data-sarpras-action="remove-transaction" data-index="${globalIdx}" title="${t("invActConfirmDelete")}" style="color:var(--due-text);font-size:0.78rem;padding:0.15rem 0.35rem">✕</button>
@@ -3383,6 +3448,7 @@ function buildInventoryActivityPage() {
         <div class="module-search" style="flex:1;min-width:10rem"><span>⌕</span><input id="sarpras-activity-search" type="search" placeholder="${searchPlaceholder}" value="${invActivitySearch.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" /></div>
         <div style="display:flex;gap:0.15rem">${filterBtn("semua", lblAll)}${filterBtn("masuk", t("invActIn"))}${filterBtn("keluar", t("invActOut"))}</div>
         <div style="display:flex;gap:0.35rem">
+          <button type="button" class="primary-button secondary" data-sarpras-action="inventory-load" style="font-size:0.78rem;padding:0.35rem 0.75rem">Load DB</button>
           <button type="button" class="primary-button secondary" data-sarpras-action="activity-export" style="font-size:0.78rem;padding:0.35rem 0.75rem">${lblExport}</button>
           <button type="button" class="primary-button secondary" data-sarpras-action="activity-clear" style="font-size:0.78rem;padding:0.35rem 0.75rem;color:var(--due-text)">${lblClear}</button>
         </div>

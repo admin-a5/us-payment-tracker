@@ -126,7 +126,7 @@ window.clientModule = (() => {
           <div class="client-panel" id="client-panel-inventory">
             <div class="client-panel-hd">
               <h2 data-i18n="clientInventory">Inventory</h2>
-              <button class="primary-button secondary" id="client-scan-btn" data-i18n="clientScanBarcode">Scan Barcode</button>
+               <button class="primary-button secondary" id="client-scan-btn">Scan</button>
             </div>
             <div class="client-scanner-area" id="client-scanner-area" style="display:none">
               <div id="client-scanner-viewport"></div>
@@ -146,7 +146,15 @@ window.clientModule = (() => {
                 <button class="primary-button" id="client-checkout-btn" data-i18n="clientCheckout">Check Out</button>
               </div>
             </div>
+            <div class="client-search-wrap" style="position:relative;padding:0.75rem 0">
+              <input type="text" id="client-search-input" placeholder="Search item by code or name..." style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.3rem;background:var(--input-bg);color:var(--text);font-size:0.85rem;box-sizing:border-box" />
+              <div class="client-search-results" id="client-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--line);border-radius:0.3rem;max-height:14rem;overflow-y:auto;z-index:10;margin-top:2px"></div>
+            </div>
             <div class="client-empty-inv" id="client-empty-inv">Scan or search items to start.</div>
+            <div class="client-tx-history" id="client-tx-history" style="margin-top:0.75rem;border-top:1px solid var(--line);padding-top:0.75rem;display:none">
+              <h3 style="font-size:0.85rem;margin:0 0 0.5rem">Recent Check-outs</h3>
+              <div id="client-tx-list" style="font-size:0.78rem"></div>
+            </div>
           </div>
         </div>
         <div class="client-toast" id="client-toast"></div>
@@ -187,6 +195,7 @@ window.clientModule = (() => {
 
     bind();
     loadLetters();
+    loadClientTxHistory();
   }
 
   function bind() {
@@ -199,6 +208,9 @@ window.clientModule = (() => {
     $("client-scan-stop")?.addEventListener("click", stopScanner);
     $("client-clear-btn")?.addEventListener("click", clearOrder);
     $("client-checkout-btn")?.addEventListener("click", doCheckout);
+    $("client-search-input")?.addEventListener("input", onSearchInput);
+    $("client-search-input")?.addEventListener("blur", () => setTimeout(() => hideSearchResults(), 200));
+    $("client-search-input")?.addEventListener("focus", () => { if ($("client-search-input").value.trim()) onSearchInput(); });
 
     document.addEventListener("click", (e) => {
       if (e.target.closest(".client-req-remove")) {
@@ -444,28 +456,24 @@ window.clientModule = (() => {
     }
   }
 
-  async function onScanSuccess(decodedText) {
-    if (!scannerActive) return;
-    stopScanner();
-
+  async function lookupAndAddItem(code) {
     try {
       if (!sb) sb = getSupabaseClient();
-      const code = decodedText.trim();
+      const q = code.trim();
+      if (!q) return;
 
-      const { data, error } = await sb
-        .from("sarpras_master_items")
-        .select("*")
-        .or(`item_code.eq.${code},name.ilike.%${code}%`)
-        .limit(1);
+      const { data, error } = await sb.rpc("client_lookup_items", { search_query: q });
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
-        showToast(`Item not found: ${code}`);
+      const items = Array.isArray(data) ? data : [];
+      const item = items.find(i => i.item_code === q) || items[0];
+
+      if (!item) {
+        showToast(`Item not found: ${q}`);
         return;
       }
 
-      const item = data[0];
       const existing = orderItems.find(o => o.code === item.item_code);
       if (existing) {
         existing.qty += 1;
@@ -481,6 +489,67 @@ window.clientModule = (() => {
     } catch (err) {
       showToast(`Error: ${err.message}`);
     }
+  }
+
+  let searchTimer = null;
+
+  function onSearchInput() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => doSearch(), 250);
+  }
+
+  function hideSearchResults() {
+    const el = $("client-search-results");
+    if (el) el.style.display = "none";
+  }
+
+  async function doSearch() {
+    const input = $("client-search-input");
+    const results = $("client-search-results");
+    if (!input || !results) return;
+    const q = input.value.trim();
+    if (!q) { results.style.display = "none"; return; }
+
+    try {
+      if (!sb) sb = getSupabaseClient();
+      const { data, error } = await sb.rpc("client_lookup_items", { search_query: q });
+
+      if (error) throw error;
+
+      const items = Array.isArray(data) ? data : [];
+
+      if (!items || items.length === 0) {
+        results.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">No items found.</div>';
+        results.style.display = "";
+        return;
+      }
+
+      results.innerHTML = items.map(item => `
+        <div class="client-search-item" data-code="${escapeHtml(item.item_code)}" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid var(--line);font-size:0.82rem;display:flex;justify-content:space-between;gap:0.5rem">
+          <span><strong>${escapeHtml(item.item_code)}</strong> — ${escapeHtml(item.name || "")} <small style="color:var(--muted)">${escapeHtml(item.kategori || "")}</small></span>
+          <small style="color:var(--muted);white-space:nowrap">stock: ${item.stock}</small>
+        </div>
+      `).join("");
+      results.style.display = "";
+
+      results.querySelectorAll(".client-search-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const code = el.dataset.code;
+          input.value = "";
+          results.style.display = "none";
+          lookupAndAddItem(code);
+        });
+      });
+    } catch (err) {
+      results.innerHTML = `<div style="padding:0.5rem;color:var(--due-text);font-size:0.78rem">${escapeHtml(err.message)}</div>`;
+      results.style.display = "";
+    }
+  }
+
+  async function onScanSuccess(decodedText) {
+    if (!scannerActive) return;
+    stopScanner();
+    await lookupAndAddItem(decodedText);
   }
 
   function stopScanner() {
@@ -539,6 +608,33 @@ window.clientModule = (() => {
     });
   }
 
+  async function loadClientTxHistory() {
+    try {
+      if (!sb) sb = getSupabaseClient();
+      const { data, error } = await sb
+        .from("sarpras_transactions")
+        .select("*")
+        .order("date", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      if (!data || data.length === 0) return;
+      const container = $("client-tx-history");
+      const list = $("client-tx-list");
+      if (!container || !list) return;
+      container.style.display = "";
+      list.innerHTML = data.map(tx => {
+        const items = Array.isArray(tx.items) ? tx.items : [];
+        const summary = items.map(i => `${i.name || i.code} x${i.qty}`).join(", ");
+        return `<div style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.25rem 0;border-bottom:1px solid var(--line)">
+          <span><strong>${escapeHtml(tx.token)}</strong> — ${escapeHtml(summary)}</span>
+          <small style="color:var(--muted);white-space:nowrap">${escapeHtml(tx.petugas)} — ${formatWIB(tx.date)}</small>
+        </div>`;
+      }).join("");
+    } catch (e) {
+      // silently ignore — history is optional
+    }
+  }
+
   function clearOrder() {
     orderItems = [];
     renderOrder();
@@ -557,28 +653,23 @@ window.clientModule = (() => {
       if (!sb) sb = getSupabaseClient();
 
       const todayStr = nowDateStr();
-      const { data: lastTx } = await sb
-        .from("sarpras_transactions")
-        .select("token")
-        .like("token", `${todayStr}%`)
-        .order("token", { ascending: false })
-        .limit(1);
-
-      const lastToken = lastTx?.length ? parseInt(lastTx[0].token) : parseInt(`${todayStr}000`);
-      const token = String(lastToken + 1);
-
-      const { data: invData, error: invError } = await sb
-        .from("sarpras_master_items")
-        .select("item_code, name")
-        .in("item_code", orderItems.map(o => o.code));
-
-      if (invError) throw invError;
-      const nameMap = {};
-      (invData || []).forEach(i => { nameMap[i.item_code] = i.name; });
+      let token;
+      try {
+        const { data: lastTx } = await sb
+          .from("sarpras_transactions")
+          .select("token")
+          .like("token", `${todayStr}%`)
+          .order("token", { ascending: false })
+          .limit(1);
+        const lastSeq = lastTx?.length ? parseInt(lastTx[0].token.slice(-3)) : 0;
+        token = `${todayStr}${String(lastSeq + 1).padStart(3, "0")}`;
+      } catch {
+        token = `${todayStr}001`;
+      }
 
       const items = orderItems.map(o => ({
         code: o.code,
-        name: nameMap[o.code] || o.name || o.code,
+        name: o.name || o.code,
         qty: o.qty
       }));
 
@@ -601,6 +692,7 @@ window.clientModule = (() => {
       showToast(`Check-out complete. Token: ${token}`);
       orderItems = [];
       renderOrder();
+      loadClientTxHistory();
       if (btn) { btn.disabled = false; btn.textContent = t("clientCheckout"); }
     } catch (err) {
       showToast(`Check-out error: ${err.message}`);
