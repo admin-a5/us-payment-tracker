@@ -488,7 +488,7 @@ const usPayment = (() => {
       .filter((student) => {
         const haystack = `${student.name} ${student.no_induk} ${student.class} ${student.va_bca} ${student.va_mandiri}`.toLowerCase();
         if (query && !haystack.includes(query)) return false;
-        if (grade && !String(student.class).startsWith(grade)) return false;
+        if (grade && String(student.class).split("-")[0] !== grade) return false;
         if (classFilter && student.class !== classFilter) return false;
         if (status === "outstanding") return visibleMonths.some((month) => !student.payments[month] || student.payments[month].xoutstanding > 0);
         if (status === "paid") return visibleMonths.every((month) => student.payments[month] && student.payments[month].xoutstanding === 0);
@@ -701,9 +701,10 @@ const usPayment = (() => {
       ${detailRow("VA BCA", student.va_bca || "-")}
       ${detailRow("VA Mandiri", student.va_mandiri || "-")}
       ${payment && payment.payment_date ? detailRow("Payment Date", String(payment.payment_date).slice(0, 16).replace("T", " ")) : ""}
-      <button class="us-copy" type="button" id="us-copy-bill">Copy Tagihan</button>
+      ${student.ket && /^PEG/i.test(student.ket) ? "" : '<button class="us-copy" type="button" id="us-copy-bill">Copy Tagihan</button>'}
     `;
-    $("us-copy-bill").addEventListener("click", () => copyTagihan(student, currentMonth));
+    var copyBtn = $("us-copy-bill");
+    if (copyBtn) copyBtn.addEventListener("click", function () { copyTagihan(student, currentMonth); });
     $("us-popup").hidden = false;
   }
 
@@ -748,8 +749,7 @@ const usPayment = (() => {
     const currentMonth = allMonths[activeMonthIdx] || currentPeriod;
     const rows = mergedData
       .filter((student) => {
-        // Exclude students with Ket=PEGAWAI
-        if (student.ket && student.ket.toUpperCase() === "PEGAWAI") return false;
+        if (student.ket && /^PEG/i.test(student.ket)) return false;
         const payment = student.payments[currentMonth];
         return !payment || payment.xoutstanding > 0;
       })

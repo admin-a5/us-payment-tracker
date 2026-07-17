@@ -648,16 +648,14 @@ let invVideoScanner = null;
 
 function loadInvTokenState() {
   const today = nowStampWIB().slice(0, 10);
-  const storedDate = localStorage.getItem("reload_sarpras_token_date");
-  const storedToken = localStorage.getItem("reload_sarpras_token");
-  if (storedDate === today && storedToken) {
-    invToken = storedToken;
+  const stored = Store.getInvToken();
+  if (stored.date === today && stored.token) {
+    invToken = stored.token;
     invTokenDate = today;
   } else {
     invToken = "000001";
     invTokenDate = today;
-    localStorage.setItem("reload_sarpras_token_date", today);
-    localStorage.setItem("reload_sarpras_token", invToken);
+    Store.saveInvToken(invToken, today);
   }
 }
 function saveInvTokenState() {
@@ -666,8 +664,7 @@ function saveInvTokenState() {
     invToken = "000001";
     invTokenDate = today;
   }
-  localStorage.setItem("reload_sarpras_token_date", invTokenDate);
-  localStorage.setItem("reload_sarpras_token", invToken);
+  Store.saveInvToken(invToken, invTokenDate);
 }
 
 const inventoryMasterData = {
@@ -747,30 +744,13 @@ const inventorySyncState = {
 
 let inventoryState = null;
 
-function cloneInventoryData(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
 function loadInventoryStore(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : cloneInventoryData(fallback);
-  } catch {
-    return cloneInventoryData(fallback);
-  }
+  return Store.loadInvData(key, fallback);
 }
 
 function persistInventoryStore() {
   if (!inventoryState) return;
-  localStorage.setItem(inventoryStorageKeys.items, JSON.stringify(inventoryState.items));
-  localStorage.setItem(inventoryStorageKeys.categories, JSON.stringify(inventoryState.categories));
-  localStorage.setItem(inventoryStorageKeys.kategoriList, JSON.stringify(inventoryState.kategoriList));
-  localStorage.setItem(inventoryStorageKeys.locations, JSON.stringify(inventoryState.locations));
-  localStorage.setItem(inventoryStorageKeys.units, JSON.stringify(inventoryState.units));
-  localStorage.setItem(inventoryStorageKeys.suppliers, JSON.stringify(inventoryState.suppliers));
-  localStorage.setItem(inventoryStorageKeys.transactions, JSON.stringify(inventoryState.transactions));
-  localStorage.setItem(inventoryStorageKeys.opnames, JSON.stringify(inventoryState.opnames));
-  localStorage.setItem(inventoryStorageKeys.discrepancies, JSON.stringify(inventoryState.discrepancies));
+  Store.persistAllInventory(inventoryState);
 }
 
 function ensureInventoryState() {
@@ -929,7 +909,7 @@ function getInventorySupabaseClient() {
   return window.authModule?.getSupabaseClient?.() || window.schoolAuth?.sb || window._sb || null;
 }
 
-let language = localStorage.getItem("schoolos_language") || "en";
+let language = Store.getLanguage();
 
 const languageSelect = document.querySelector("#languageSelect");
 const themeMode      = document.querySelector("#themeMode");
@@ -3827,14 +3807,14 @@ function setTheme(value) {
   document.documentElement.style.setProperty("--bg", value);
   document.documentElement.style.setProperty("--page", value);
   themeColor.value = value;
-  localStorage.setItem("schoolos_bg", value);
+  Store.setBg(value);
 }
 
 function setThemeMode(value) {
   document.documentElement.dataset.theme = value;
   themeMode.value = value;
-  localStorage.setItem("schoolos_theme", value);
-  if (!localStorage.getItem("schoolos_bg")) {
+  Store.setTheme(value);
+  if (!Store.getBg()) {
     themeColor.value = value === "light" ? "#f8faf9" : "#071315";
   }
 }
@@ -3851,12 +3831,12 @@ document.querySelectorAll(".nav-item").forEach((button) => {
 
 languageSelect.addEventListener("change", (event) => {
   language = event.target.value;
-  localStorage.setItem("schoolos_language", language);
+  Store.setLanguage(language);
   applyLanguage();
 });
 
 themeMode.addEventListener("change", (event) => {
-  localStorage.removeItem("schoolos_bg");
+  Store.removeBg();
   document.documentElement.style.removeProperty("--bg");
   document.documentElement.style.removeProperty("--page");
   setThemeMode(event.target.value);
@@ -3864,7 +3844,7 @@ themeMode.addEventListener("change", (event) => {
 themeColor.addEventListener("input", (event) => setTheme(event.target.value));
 menuToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
 
-setThemeMode(localStorage.getItem("schoolos_theme") || "dark");
-const savedBg = localStorage.getItem("schoolos_bg");
+setThemeMode(Store.getTheme());
+const savedBg = Store.getBg();
 if (savedBg) setTheme(savedBg);
 applyLanguage();

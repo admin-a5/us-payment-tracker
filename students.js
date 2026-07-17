@@ -52,7 +52,7 @@ window.studentsModule = (() => {
   let detectedTas    = [];   // e.g. ["2324","2425","2526"]
   let taColMap       = {};   // { "2526": {kls:12, no:13}, … }
 
-  const lang = () => window._studentsLang || localStorage.getItem("schoolos_language") || "en";
+  const lang = () => window._studentsLang || Store.getLanguage();
   const T    = (k)  => (I18N[lang()] || I18N.en)[k] || k;
   const $    = (id) => document.getElementById(id);
 
