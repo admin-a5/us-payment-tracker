@@ -8,11 +8,12 @@ window.authModule = (() => {
   }
 
   const ROLE_NAV = {
-    super_admin: ["dashboard", "students", "finance", "staff", "inventory", "letters", "users", "audit"],
-    admin: ["dashboard", "students", "finance", "audit"],
-    sarpras: ["dashboard", "students", "inventory", "audit"],
-    kurikulum: ["dashboard", "students", "audit"],
-    wali_kelas: ["dashboard", "students", "finance", "audit"],
+    super_admin: ["dashboard", "students", "finance", "staff", "inventory", "letters", "users", "audit", "diagnostics"],
+    admin: ["dashboard", "students", "finance", "audit", "diagnostics"],
+    sarpras: ["dashboard", "students", "inventory", "audit", "diagnostics"],
+    kurikulum: ["dashboard", "students", "audit", "diagnostics"],
+    wali_kelas: ["dashboard", "students", "finance", "audit", "diagnostics"],
+    client: ["client"],
     user: ["dashboard", "staff", "audit"]
   };
 
@@ -22,6 +23,7 @@ window.authModule = (() => {
     sarpras: "Sarpras",
     kurikulum: "Kurikulum",
     wali_kelas: "Wali Kelas",
+    client: "Client",
     user: "User"
   };
 
@@ -178,6 +180,12 @@ window.authModule = (() => {
     }
     if (STUDENT_ROLES.includes(currentRole)) {
       autoLoadStudentsDB();
+    }
+
+    /* Re-run page enhancements now that role is known (avoids dummy data flash) */
+    if (typeof enhanceLettersPage === "function") enhanceLettersPage();
+    if (typeof enhanceInventoryPage === "function" && !document.querySelector("#inventory .module-page .module-subnav")) {
+      enhanceInventoryPage();
     }
   }
 

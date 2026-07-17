@@ -35,6 +35,7 @@ window.userManagementModule = (() => {
           <article><span>Super Admin</span><strong id="users-super">0</strong></article>
           <article><span>Admin</span><strong id="users-admin">0</strong></article>
           <article><span>Class Viewer</span><strong id="users-viewer">0</strong></article>
+          <article><span>Client</span><strong id="users-client">0</strong></article>
         </div>
 
         <div class="users-layout">
@@ -56,6 +57,7 @@ window.userManagementModule = (() => {
                   <option value="wali_kelas">Wali Kelas</option>
                   <option value="sarpras">Sarpras</option>
                   <option value="kurikulum">Kurikulum</option>
+                  <option value="client">Client</option>
                   <option value="user">User</option>
                 </select>
               </label>
@@ -173,6 +175,7 @@ window.userManagementModule = (() => {
     $("users-super").textContent = users.filter((user) => user.role === "super_admin").length;
     $("users-admin").textContent = users.filter((user) => user.role === "admin").length;
     $("users-viewer").textContent = users.filter((user) => user.role === "user").length;
+    $("users-client").textContent = users.filter((user) => user.role === "client").length;
 
     if (!users.length) {
       $("users-list").innerHTML = '<tr><td colspan="5" class="users-empty">No users yet.</td></tr>';
@@ -334,7 +337,7 @@ window.userManagementModule = (() => {
   }
 
   function rolePill(role) {
-    const label = { super_admin: "Super Admin", admin: "Admin", user: "User" }[role] || role || "-";
+    const label = { super_admin: "Super Admin", admin: "Admin", wali_kelas: "Wali Kelas", sarpras: "Sarpras", kurikulum: "Kurikulum", client: "Client", user: "User" }[role] || role || "-";
     const cls = role === "super_admin" ? "super" : role === "admin" ? "admin" : "viewer";
     return `<span class="users-role ${cls}">${escapeHtml(label)}</span>`;
   }

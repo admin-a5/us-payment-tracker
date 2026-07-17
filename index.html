@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>School SaaS Dashboard</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -81,6 +82,14 @@
           <button class="nav-item" data-page="audit">
             <span class="icon" aria-hidden="true">◌</span>
             <span data-i18n="navAudit">Log Audit</span>
+          </button>
+          <button class="nav-item" data-page="diagnostics">
+            <span class="icon" aria-hidden="true">⚙</span>
+            <span data-i18n="navDiagnostics">Diagnostics</span>
+          </button>
+          <button class="nav-item" data-page="client">
+            <span class="icon" aria-hidden="true">☰</span>
+            <span data-i18n="navClient">Client</span>
           </button>
         </nav>
       </aside>
@@ -326,6 +335,8 @@
           <section class="page" id="letters" data-simple-page="letters"></section>
           <section class="page" id="users" data-simple-page="users"></section>
           <section class="page" id="audit" data-simple-page="audit"></section>
+          <section class="page" id="diagnostics" data-simple-page="diagnostics"></section>
+          <section class="page" id="client"></section>
         </main>
       </div>
     </div>
@@ -339,5 +350,8 @@
     <script src="attendance.js"></script>
     <script src="users.js"></script>
     <script src="inventory.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
+    <script src="diagnostics.js"></script>
+    <script src="client.js"></script>
   </body>
 </html>
