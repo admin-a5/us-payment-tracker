@@ -159,6 +159,16 @@ window.studentsModule = (() => {
         <style>@keyframes pd-spin{to{transform:rotate(360deg)}}</style>`;
       document.body.appendChild(overlay);
     }
+    const sectionEl = $("students");
+    if (sectionEl) {
+      const obs = new MutationObserver(() => {
+        if (sectionEl.classList.contains("active") && activeTab === "overview") {
+          drawCharts();
+        }
+      });
+      obs.observe(sectionEl, { attributes: true, attributeFilter: ["class"] });
+      window._pdChartObserver = obs;
+    }
     hideLoading();
   }
 
@@ -722,6 +732,7 @@ window.studentsModule = (() => {
     const rect = canvas.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
+    if (!w || !h) return;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
@@ -795,6 +806,7 @@ window.studentsModule = (() => {
     const rect = canvas.getBoundingClientRect();
     const w = rect.width;
     const h = rect.height;
+    if (!w || !h) return;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
@@ -1385,7 +1397,7 @@ window.studentsModule = (() => {
       ["NO", "NO INDUK", "NISN", "STUDENT CODE", "KELAS", "NAMA", "JK"],
       ...rows
     ]);
-    window.XLSX.utils.book_append_sheet(wb, ws, `Data Siswa ${taStr.slice(0,20)}`);
+    window.XLSX.utils.book_append_sheet(wb, ws, `Data Siswa ${taStr.slice(0,20)}`.replace(/[\/\\\?\*\[\]]/g, ""));
 
     window.XLSX.writeFile(wb, `Data_PD_${taStr.replace(/\//g,"-")}.xlsx`);
     window.auditLog?.("EXPORT", "students", `Data_PD_${taStr}`, null, { count: base.length, ta: taStr });

@@ -1564,11 +1564,13 @@ function buildLineChartSVG(data, opts) {
   const w = opts.width || 600, h = opts.height || 220;
   const pad = { t: 20, r: 20, b: 30, l: 50 };
   const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+  if (!data.length) return "";
+
   const values = data.map((d) => d.value);
   const maxV = Math.max(...values, 1);
   const niceMax = Math.ceil(maxV / 5) * 5 || 5;
   const ySteps = 5;
-  const xMin = 0, xMax = data.length - 1;
+  const xMax = Math.max(data.length - 1, 1);
 
   const toX = (i) => pad.l + (i / xMax) * cw;
   const toY = (v) => pad.t + ch - (v / niceMax) * ch;
