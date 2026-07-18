@@ -127,10 +127,11 @@ window.auditModule = (() => {
   /* ─── wait for auth to be ready ─────────────────── */
   function loadWhenReady() {
     const check = () => {
-      if (window.schoolAuth?.sb && window.schoolAuth?.role) {
-        sb     = window.schoolAuth.sb;
-        role   = window.schoolAuth.role;
-        userId = window.schoolAuth.userId;
+      const auth = window.authModule;
+      if (auth?.getSupabaseClient() && auth?.getRole()) {
+        sb     = auth.getSupabaseClient();
+        role   = auth.getRole();
+        userId = auth.getUser()?.id;
         applyScopeLabel();
         load();
       } else {
@@ -195,6 +196,14 @@ window.auditModule = (() => {
     applyFilters();
     updateStats();
     setLoading(false);
+
+    // Cleanup old logs (once per session, super_admin only)
+    if (role === "super_admin" && !window._auditCleanupDone) {
+      window._auditCleanupDone = true;
+      try {
+        await sb.rpc("cleanup_old_audit_logs");
+      } catch { /* non-critical */ }
+    }
   }
 
   /* ─── filter & render ────────────────────────────── */
@@ -457,9 +466,7 @@ window.auditModule = (() => {
     return map[action] || "muted";
   }
 
-  function escHtml(v) {
-    return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
+  const escHtml = (v) => window.escapeHtml(v);
 
   function escAttr(v) {
     return escHtml(v).replace(/`/g, "&#096;");
@@ -480,25 +487,20 @@ window.auditModule = (() => {
   }
 
   /* ─── public write helper ────────────────────────── */
-  /**
-   * Log an action to audit_logs table.
-   * Call from any module: window.auditLog("INSERT", "students", studentId, null, newRow)
-   */
   async function logAction(action, module, recordId = null, oldData = null, newData = null) {
-    const _sb     = window.schoolAuth?.sb     || window._sb;
-    const _userId = window.schoolAuth?.userId;
-    const _email  = window.schoolAuth?.userEmail;
-
+    const auth = window.authModule;
+    const _sb  = auth?.getSupabaseClient();
     if (!_sb) return;
+    const user = auth?.getUser();
 
     await _sb.from("audit_logs").insert({
-      user_id:    _userId || null,
-      user_email: _email  || null,
+      user_id:    user?.id || null,
+      user_email: user?.email || null,
       action:     action,
       module:     module,
       record_id:  recordId ? String(recordId) : null,
-      old_data:   oldData  || null,
-      new_data:   newData  || null,
+      old_data:   oldData || null,
+      new_data:   newData || null,
     });
   }
 

@@ -66,13 +66,6 @@ window.clientModule = (() => {
     return fallback[key] || key;
   }
 
-  function escapeHtml(str) {
-    if (str == null) return "";
-    const d = document.createElement("div");
-    d.textContent = String(str);
-    return d.innerHTML;
-  }
-
   function nowStampWIB() {
     const d = new Date();
     const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
@@ -164,10 +157,10 @@ window.clientModule = (() => {
           <button class="client-modal-close" id="client-modal-close">&times;</button>
           <h2 data-i18n="clientNewRequest">New Request</h2>
           <form id="client-req-form">
-            <label data-i18n="clientId">ID <input type="text" id="req-id" required /></label>
-            <label data-i18n="clientName">Name <input type="text" id="req-name" required /></label>
-            <label data-i18n="clientClass">Class <input type="text" id="req-class" required /></label>
-            <label data-i18n="clientAcademicYear">Academic Year <input type="text" id="req-year" required /></label>
+            <label><span data-i18n="clientId">ID</span> <input type="text" id="req-id" required /></label>
+            <label><span data-i18n="clientName">Name</span> <input type="text" id="req-name" required /></label>
+            <label><span data-i18n="clientClass">Class</span> <input type="text" id="req-class" required /></label>
+            <label><span data-i18n="clientAcademicYear">Academic Year</span> <input type="text" id="req-year" required /></label>
             <hr />
             <div class="client-req-items" id="client-req-items">
               <div class="client-req-item">
@@ -378,6 +371,7 @@ window.clientModule = (() => {
 
       if (error) throw error;
 
+      window.auditLog?.("INSERT", "client", orderNumber, null, { requestor: name, class: cls, year, items });
       closeRequestForm();
       resetForm();
       showToast(`Request ${orderNumber} submitted.`);

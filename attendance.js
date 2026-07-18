@@ -27,18 +27,20 @@ window.attendanceModule = (() => {
     } else {
       bindUpload("jpayroll");
       bindUpload("ket");
-      ["att-er-guru", "att-er-karyawan", "att-er-satpam"].forEach((id) =>
-        $(id).addEventListener("input", onErChange)
-      );
+      ["att-er-guru", "att-er-karyawan", "att-er-satpam"].forEach((id) => {
+        const el = $(id);
+        if (el) el.addEventListener("input", onErChange);
+      });
     }
 
-    ["att-search", "att-unit", "att-stat", "att-status"].forEach((id) =>
-      $(id).addEventListener("input", render)
-    );
-    $("att-prev-period").addEventListener("click", () => shiftPeriod(-1));
-    $("att-next-period").addEventListener("click", () => shiftPeriod(1));
-    $("att-latest-period").addEventListener("click", goLatest);
-    $("att-export").addEventListener("click", exportExcel);
+    ["att-search", "att-unit", "att-stat", "att-status"].forEach((id) => {
+      const el = $(id);
+      if (el) el.addEventListener("input", debouncedRender);
+    });
+    $("att-prev-period")?.addEventListener("click", () => shiftPeriod(-1));
+    $("att-next-period")?.addEventListener("click", () => shiftPeriod(1));
+    $("att-latest-period")?.addEventListener("click", goLatest);
+    $("att-export")?.addEventListener("click", exportExcel);
     
     // Add save button handler
     const saveBtn = $("att-save-btn");
@@ -46,11 +48,7 @@ window.attendanceModule = (() => {
       saveBtn.addEventListener("click", saveToSupabase);
     }
 
-    // Save ER config button — available whenever periods are loaded
-    const erSaveBtn = $("att-er-save-btn");
-    if (erSaveBtn) {
-      erSaveBtn.addEventListener("click", saveErToSupabase);
-    }
+    $("att-er-save-btn")?.addEventListener("click", saveErToSupabase);
 
     // PD cutoff input (in alert tab bar)
     const pdInput = $("att-pd-cutoff");
@@ -189,14 +187,11 @@ window.attendanceModule = (() => {
         const hasPRS = codes.includes("PRS"), hasICC = codes.includes("ICC"), hasABS = codes.includes("ABS");
         if (hasABS) tidak_hadir++;
         else if (hasICC) icc++;
-        else if (hasPRS) {
+        else         if (hasPRS) {
           hadir_r++;
-          if (codes.includes("LT")) {
-            terlambat++;
-            const fi = emp.daily[idx]?.finger_in;
-            const si = emp.daily[idx]?.sched_in || "06:30";
-            if (fi) { const late = timeToMinutes(fi) - timeToMinutes(si); if (late > 0) terlambat_minutes += late; }
-          }
+          const fi = emp.daily[idx]?.finger_in;
+          const si = emp.daily[idx]?.sched_in || "06:30";
+          if (fi) { const late = timeToMinutes(fi) - timeToMinutes(si); if (late > 0) { terlambat++; terlambat_minutes += late; } }
           if (codes.includes("ER")) er++;
         }
       });
@@ -590,6 +585,7 @@ window.attendanceModule = (() => {
 
   // ── PD COUNTING ──────────────────────────────────────────────────────────────
   function getPdCount(employeeId) {
+    if (!employeeId) return 0;
     const pKey = state.periods[state.activePeriodIdx];
     const cutoffEl = $("att-pd-cutoff");
     if (!cutoffEl || !cutoffEl.value) return 0;
@@ -598,7 +594,7 @@ window.attendanceModule = (() => {
     // Prefer live dailyData (from attendance_daily table)
     const days = (state.dailyData[pKey] || {})[employeeId] || [];
     if (days.length) {
-      return days.filter((d) => d.finger_in && d.finger_in > cutoff).length;
+      return days.filter((d) => d.finger_in && d.sched_in === "06:30" && d.finger_in > cutoff && d.finger_in <= "06:30").length;
     }
 
     // Fall back to stored pd_count in attendance_summary
@@ -659,12 +655,22 @@ window.attendanceModule = (() => {
   }
 
   // ── RENDER ───────────────────────────────────────────────────────────────────
+  let _debounceTimer = null;
   function render() {
-    if (state.activeTab === "unit") renderUnit();
-    else if (state.activeTab === "alert") renderAlert();
-    else if (state.activeTab === "icc") renderICC();
-    else renderRekap();
-    updateStats();
+    try {
+      if (state.activeTab === "unit") renderUnit();
+      else if (state.activeTab === "alert") renderAlert();
+      else if (state.activeTab === "icc") renderICC();
+      else renderRekap();
+      updateStats();
+    } catch (e) {
+      console.error("attendance render error:", e);
+      $("att-table-body") && ($("att-table-body").innerHTML = `<tr><td colspan="14" style="text-align:center;padding:2rem;color:var(--due-text)">Render error — check console</td></tr>`);
+    }
+  }
+  function debouncedRender() {
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(render, 100);
   }
 
   function renderRekap() {
@@ -831,12 +837,12 @@ window.attendanceModule = (() => {
   // ── STATS ────────────────────────────────────────────────────────────────────
   function updateStats() {
     const rows = getFiltered();
-    const totalEff = rows.reduce((a, r) => a + r.eff_days, 0);
-    const totalPresent = rows.reduce((a, r) => a + r.hadir_totr, 0);
+    const totalEff = rows.reduce((a, r) => a + (r.eff_days || 0), 0);
+    const totalPresent = rows.reduce((a, r) => a + (r.hadir_totr || 0), 0);
     $("att-s-total").textContent = rows.length;
     $("att-s-pct").textContent = totalEff ? `${Math.round((totalPresent / totalEff) * 100)}%` : "0%";
-    $("att-s-absen").textContent = rows.reduce((a, r) => a + r.tidak_hadir, 0);
-    $("att-s-late").textContent = rows.reduce((a, r) => a + r.terlambat, 0);
+    $("att-s-absen").textContent = rows.reduce((a, r) => a + (r.tidak_hadir || 0), 0);
+    $("att-s-late").textContent = rows.reduce((a, r) => a + (r.terlambat || 0), 0);
     // ICC tab button — add urgent indicator if any ICC has no keterangan
     const iccCount = rows.filter((r) => r.icc > 0).length;
     const iccUrgent = rows.filter((r) => r.icc > 0 && !r.keterangan).length;
@@ -1021,10 +1027,6 @@ window.attendanceModule = (() => {
   function markLoaded(type, filename, info) {
     $(`att-card-${type}`).classList.add("loaded");
     $(`att-filename-${type}`).textContent = `${filename} - ${info}`;
-  }
-
-  function escapeHtml(v) {
-    return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
   function toast(message) {
@@ -1272,6 +1274,7 @@ window.attendanceModule = (() => {
           updated++;
         }
         $("att-file-patch-ket").value = "";
+        window.auditLog?.("UPDATE", "staff", pKey, null, { action: "patch_keterangan", period: pKey, updated });
         toast(`Patched ${updated} employees from Keterangan.`);
         const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
         const sBtn = $("att-save-btn");
@@ -1313,6 +1316,7 @@ window.attendanceModule = (() => {
           updated++;
         }
         $("att-file-pd").value = "";
+        window.auditLog?.("UPDATE", "staff", pKey, null, { action: "patch_pd", period: pKey, updated });
         toast(`Patched ${updated} employees PD count.`);
         const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
         const sBtn = $("att-save-btn");
@@ -1342,6 +1346,7 @@ window.attendanceModule = (() => {
       r.pd_count = count;
       if (count > 0) updated++;
     });
+    window.auditLog?.("UPDATE", "staff", pKey, null, { action: "compute_pd", period: pKey, cutoff, updated });
     toast(`Computed PD for ${updated} employees (cutoff: ${cutoff}).`);
     const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
     const sBtn = $("att-save-btn");

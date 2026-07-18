@@ -2560,6 +2560,21 @@ td {
 }
 
 /* ── PROFILE ROLE BADGE ── */
+.sidebar-version {
+  text-align: center;
+  font-size: 0.6rem;
+  color: var(--muted);
+  padding: 0.3rem 0 0.15rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.sidebar:hover .sidebar-version,
+.sidebar:focus-within .sidebar-version,
+.sidebar.open .sidebar-version {
+  opacity: 0.5;
+}
+
 .profile-role-badge {
   display: inline-flex;
   align-items: center;

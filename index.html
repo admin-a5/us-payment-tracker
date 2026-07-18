@@ -18,10 +18,10 @@
       <div class="login-overlay">
         <div class="login-box">
           <div class="login-brand">
-            <div class="brand-mark">S</div>
+            <div class="brand-mark">A5</div>
             <div>
-              <strong>SchoolOS</strong>
-              <span>Admin System</span>
+              <strong>Alima OS</strong>
+              <span>Admin A5</span>
             </div>
           </div>
           <h2>Sign In</h2>
@@ -43,13 +43,14 @@
     <div class="app-shell" id="app-shell" hidden>
       <aside class="sidebar" id="sidebar">
         <div class="brand">
-          <div class="brand-mark">S</div>
+          <div class="brand-mark">A5</div>
           <div>
-            <strong>SchoolOS</strong>
-            <span data-i18n="brandSubtitle">Admin System</span>
+            <strong>Alima OS</strong>
+            <span data-i18n="brandSubtitle">Admin A5</span>
           </div>
         </div>
 
+        <div class="sidebar-version" id="sidebar-version"></div>
         <nav class="main-nav" aria-label="Main navigation">
           <button class="nav-item active" data-page="dashboard">
             <span class="icon" aria-hidden="true">⌂</span>
@@ -342,11 +343,17 @@
     </div>
     <!-- END APP SHELL -->
     <script src="config.js"></script>
-    <script src="audit-logger.js"></script>
+    <script>const APP_VERSION = "a5.19.07.2026.1";</script>
     <script src="session-manager.js"></script>
     <script src="local-store.js"></script>
+    <script src="utils.js"></script>
+    <script src="translations.js"></script>
     <script src="app.js"></script>
+    <script src="staff-module.js"></script>
+    <script src="letters-admin.js"></script>
+    <script src="inventory-module.js"></script>
     <script src="auth.js"></script>
+    <script src="students.js"></script>
     <script src="us-payment.js"></script>
     <script src="attendance.js"></script>
     <script src="users.js"></script>

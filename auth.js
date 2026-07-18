@@ -36,8 +36,6 @@ window.authModule = (() => {
   let currentRole = null;
   let currentClass = null;
   let sessionManager = null;
-  let auditLogger = null;
-
   const $ = (id) => document.getElementById(id);
 
   function syncGlobalAuthState() {
@@ -85,10 +83,6 @@ window.authModule = (() => {
 
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     syncGlobalAuthState();
-
-    if (window.AuditLogger) {
-      auditLogger = new window.AuditLogger(sb);
-    }
 
     $("app-shell").style.display = "none";
     $("login-screen").hidden = false;
@@ -154,13 +148,14 @@ window.authModule = (() => {
     $("app-shell").style.display = "";
     $("app-shell").removeAttribute("hidden");
 
-    auditLogger?.logLogin(user.email, currentRole, "");
+    window.auditLog?.("LOGIN", "auth", null, null, { email: user.email, role: currentRole });
 
     const displayName = roleData.full_name || user.email.split("@")[0];
     $("profile-name").textContent = displayName;
     $("profile-email").textContent = user.email;
     $("profile-role-badge").textContent = ROLE_LABELS[currentRole] || currentRole;
     $("profile-avatar").textContent = getAvatarInitials(displayName, user.email);
+    if (typeof APP_VERSION !== "undefined") $("sidebar-version").textContent = APP_VERSION;
 
     if (window.SessionManager) {
       sessionManager = new window.SessionManager(window.authModule, 15);
@@ -247,7 +242,7 @@ window.authModule = (() => {
   }
 
   async function doLogout() {
-    auditLogger?.logLogout("User logout");
+    window.auditLog?.("LOGOUT", "auth");
 
     if (sessionManager) {
       sessionManager.destroy();
@@ -287,21 +282,22 @@ window.authModule = (() => {
     return currentUser ? { id: currentUser.id, email: currentUser.email } : null;
   }
 
-  function getAuditLogger() {
-    return auditLogger;
-  }
-
   async function validateSession() {
     if (!sb) return false;
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) return false;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return false;
+    } catch { return false; }
     /* Re-fetch role to detect demotions / access revocation */
     try {
       const { data: roleData, error } = await sb.rpc("get_my_role").single();
-      if (error || !roleData?.role) return false;
+      if (error || !roleData?.role) {
+        /* Transient RPC failure — don't log out, retry next interval */
+        return true;
+      }
       if (roleData.role !== currentRole) return false;
     } catch (e) {
-      return false;
+      return true;
     }
     return true;
   }
@@ -315,7 +311,6 @@ window.authModule = (() => {
     getAssignedClass,
     getSupabaseClient,
     getUser,
-    getAuditLogger,
     validateSession
   };
 })();

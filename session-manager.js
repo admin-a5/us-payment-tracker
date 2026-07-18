@@ -15,7 +15,7 @@ class SessionManager {
   }
 
   initializeListeners() {
-    ['click', 'keypress', 'mousemove', 'touchstart'].forEach(event => {
+    ['click', 'keydown', 'mousemove', 'touchstart'].forEach(event => {
       const handler = () => this.resetTimeout();
       document.addEventListener(event, handler, { passive: true });
       this._listeners.push({ event, handler });
@@ -39,12 +39,13 @@ class SessionManager {
       try {
         const isValid = await this.auth.validateSession();
         if (!isValid) {
+          console.warn('Session revalidation failed — logging out');
           await this.logout('Session invalidated by server');
         }
       } catch (err) {
-        console.error('Session revalidation error:', err);
+        console.warn('Session revalidation error (transient, ignoring):', err);
       }
-    }, 5 * 60 * 1000);
+    }, 10 * 60 * 1000);
   }
 
   async logout(reason = 'Manual logout') {
@@ -67,9 +68,12 @@ class SessionManager {
       userId: null,
       userEmail: null
     };
-    
-    alert(`Logged out: ${reason}`);
-    window.location.reload();
+
+    const loginScreen = document.getElementById("login-screen");
+    const appShell = document.getElementById("app-shell");
+    if (loginScreen) loginScreen.hidden = false;
+    if (appShell) { appShell.style.display = "none"; appShell.setAttribute("hidden", ""); }
+    console.warn(`Logged out: ${reason}`);
   }
 
   destroy() {
