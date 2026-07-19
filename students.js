@@ -173,6 +173,7 @@ window.studentsModule = (() => {
   }
 
   function buildShell() {
+    const isAdmin = ["super_admin", "admin"].includes(window.authModule?.getRole?.());
     return `
     <div class="module-page" id="students-app">
 
@@ -184,6 +185,7 @@ window.studentsModule = (() => {
         </div>
         <div class="module-actions">
           <span id="pd-last-updated" style="color:var(--muted);font-size:0.78rem;align-self:center"></span>
+          ${isAdmin ? `
           <button class="primary-button secondary" type="button" id="pd-load-db">Load DB</button>
           <button class="primary-button secondary" type="button" id="pd-clear-db" style="color:var(--due-text);border-color:var(--due-border)" hidden>Clear DB</button>
           <button class="primary-button secondary" type="button" id="pd-save-db" hidden>Save to DB</button>
@@ -191,6 +193,7 @@ window.studentsModule = (() => {
             <input type="file" id="pd-file" accept=".xlsx,.xls" style="display:none"/>
             <span id="pd-upload-label">${T("btnUpload")}</span>
           </label>
+          ` : ""}
           <button class="primary-button" id="pd-export">${T("btnExport")}</button>
         </div>
       </div>
