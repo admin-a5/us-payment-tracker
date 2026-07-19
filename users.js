@@ -31,11 +31,11 @@ window.userManagementModule = (() => {
         </div>
 
         <div class="users-stat-grid">
-          <article><span>Total Users</span><strong id="users-total">0</strong></article>
-          <article><span>Super Admin</span><strong id="users-super">0</strong></article>
-          <article><span>Admin</span><strong id="users-admin">0</strong></article>
-          <article><span>Class Viewer</span><strong id="users-viewer">0</strong></article>
-          <article><span>Client</span><strong id="users-client">0</strong></article>
+          <article class="module-stat tone-filled-teal"><span>Total Users</span><strong id="users-total">0</strong></article>
+          <article class="module-stat tone-filled-violet"><span>Super Admin</span><strong id="users-super">0</strong></article>
+          <article class="module-stat tone-filled-sand"><span>Admin</span><strong id="users-admin">0</strong></article>
+          <article class="module-stat tone-filled-mint"><span>Class Viewer</span><strong id="users-viewer">0</strong></article>
+          <article class="module-stat tone-filled-orange"><span>Client</span><strong id="users-client">0</strong></article>
         </div>
 
         <div class="users-layout">

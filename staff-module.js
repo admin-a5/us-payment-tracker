@@ -104,12 +104,12 @@ function enhanceStaffPage() {
       </div>
 
       <div class="att-stats" id="att-stats" hidden>
-        <article><span>Total Karyawan</span><strong id="att-s-total">0</strong><small id="att-s-period">-</small></article>
-        <article><span>Rata-rata Hadir</span><strong class="good" id="att-s-pct">0%</strong><small>TotR vs ER</small></article>
-        <article><span>Total Tidak Hadir</span><strong class="bad" id="att-s-absen">0</strong><small>Izin / Sakit / Cuti</small></article>
-        <article><span>Total Terlambat</span><strong class="warn" id="att-s-late">0</strong><small>kumulatif kejadian</small></article>
-        <article><span>ICC Klarifikasi</span><strong id="att-s-icc">0</strong><small>employees with ICC</small></article>
-        <article><span>Perhatian Khusus</span><strong class="bad" id="att-s-alert">0</strong><small>absen or late</small></article>
+        <article class="module-stat"><span>Total Karyawan</span><strong id="att-s-total">0</strong><small id="att-s-period">-</small></article>
+        <article class="module-stat"><span>Rata-rata Hadir</span><strong class="good" id="att-s-pct">0%</strong><small>TotR vs ER</small></article>
+        <article class="module-stat"><span>Total Tidak Hadir</span><strong class="bad" id="att-s-absen">0</strong><small>Izin / Sakit / Cuti</small></article>
+        <article class="module-stat"><span>Total Terlambat</span><strong class="warn" id="att-s-late">0</strong><small>kumulatif kejadian</small></article>
+        <article class="module-stat"><span>ICC Klarifikasi</span><strong id="att-s-icc">0</strong><small>employees with ICC</small></article>
+        <article class="module-stat"><span>Perhatian Khusus</span><strong class="bad" id="att-s-alert">0</strong><small>absen or late</small></article>
       </div>
 
       <div class="att-controls" id="att-controls" hidden>

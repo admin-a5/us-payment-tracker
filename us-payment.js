@@ -535,7 +535,7 @@ const usPayment = (() => {
             const totalOutstanding = allMonths
               .filter((month) => month <= currentMonth)
               .reduce((total, month) => total + (student.payments[month] ? student.payments[month].xoutstanding : 0), 0);
-            const ketCell = hasKet ? `<td>${student.ket || "-"}</td>` : "";
+            const ketCell = hasKet ? `<td class="col-ket">${student.ket || "-"}</td>` : "";
             const monthCells = visibleMonths
               .map((month) => {
                 const payment = student.payments[month];
@@ -548,9 +548,17 @@ const usPayment = (() => {
               .join("");
 
             const currentStatus = getPaymentStatus(student.payments[currentMonth]);
+            const mobileInfo = [
+              String(student.no_induk || student.id),
+              student.class || "-",
+              hasKet ? (student.ket || "-") : null,
+              monthLabel(currentMonth).short,
+              denda ? fmtIDR(denda) : "Rp 0",
+              totalOutstanding ? fmtIDR(totalOutstanding) : "Rp 0"
+            ].filter(Boolean).join(" - ");
             html += `
               <tr>
-                <td class="col-name">
+                <td class="col-name" data-mobile-info="${escapeAttr(mobileInfo)}">
                   <div class="us-student-name">
                     <strong>${escapeHtml(student.name)}</strong>
                     <span>${escapeHtml(String(student.no_induk || student.id))} - ${escapeHtml(student.class || "-")}</span>

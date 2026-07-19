@@ -213,18 +213,18 @@ window.studentsModule = (() => {
 
         <!-- Stat cards: row 1 -->
         <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.85rem" id="pd-stat-row1">
-          <article class="module-stat" style="background:linear-gradient(135deg,#13bbb2,#0f756f);border:none;color:#fff">
-            <span style="color:rgba(255,255,255,.78);font-size:0.72rem;font-weight:800;text-transform:uppercase" id="pd-lbl-total">${T("statTotal")}</span>
-            <strong style="font-size:2.4rem;color:#fff;margin-top:.5rem" id="pd-s-total">0</strong>
-            <small style="color:rgba(255,255,255,.65);font-size:0.75rem" id="pd-s-ta-label">\u2014</small>
+          <article class="module-stat tone-filled-teal">
+            <span id="pd-lbl-total">${T("statTotal")}</span>
+            <strong style="font-size:2.4rem;margin-top:.5rem" id="pd-s-total">0</strong>
+            <small style="font-size:0.75rem" id="pd-s-ta-label">\u2014</small>
           </article>
-          <article class="module-stat" style="background:linear-gradient(135deg,#7b5cff,#271184);border:none;color:#fff">
-            <span style="color:rgba(255,255,255,.78);font-size:0.72rem;font-weight:800;text-transform:uppercase" id="pd-lbl-classes">${T("statClasses")}</span>
-            <strong style="font-size:2.4rem;color:#fff;margin-top:.5rem" id="pd-s-classes">0</strong>
-            <small style="color:rgba(255,255,255,.65);font-size:0.75rem" id="pd-s-class-detail">X: 0 / XI: 0 / XII: 0</small>
+          <article class="module-stat tone-filled-violet">
+            <span id="pd-lbl-classes">${T("statClasses")}</span>
+            <strong style="font-size:2.4rem;margin-top:.5rem" id="pd-s-classes">0</strong>
+            <small style="font-size:0.75rem" id="pd-s-class-detail">X: 0 / XI: 0 / XII: 0</small>
           </article>
-          <article class="module-stat" style="background:linear-gradient(135deg,#f65aa0,#77113e);border:none;color:#fff">
-            <span style="color:rgba(255,255,255,.78);font-size:0.72rem;font-weight:800;text-transform:uppercase" id="pd-lbl-gender">${T("statGender")}</span>
+          <article class="module-stat tone-filled-pink">
+            <span id="pd-lbl-gender">${T("statGender")}</span>
             <div style="display:flex;gap:1.2rem;margin-top:.5rem;align-items:flex-end">
               <div>
                 <div style="font-size:1.85rem;font-weight:800;color:#fff;line-height:1" id="pd-s-male">0</div>
@@ -240,9 +240,9 @@ window.studentsModule = (() => {
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.85rem" id="pd-stat-row2">
-          ${buildGradeCard("X",  "pd-gx",  "#13bbb2")}
-          ${buildGradeCard("XI", "pd-gxi", "#7b5cff")}
-          ${buildGradeCard("XII","pd-gxii","#ff9b54")}
+          ${buildGradeCard("X",  "pd-gx",  "tone-outline-teal")}
+          ${buildGradeCard("XI", "pd-gxi", "tone-outline-violet")}
+          ${buildGradeCard("XII","pd-gxii","tone-outline-orange")}
         </div>
 
         <!-- Charts -->
@@ -280,29 +280,29 @@ window.studentsModule = (() => {
 
         <!-- Stats cards -->
         <div id="pd-students-stats" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0.65rem;margin-bottom:0.85rem">
-          <article class="module-stat" style="border:none;background:linear-gradient(135deg,#13bbb2,#0f756f);color:#fff;gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="color:rgba(255,255,255,.7);font-size:0.65rem;font-weight:800;text-transform:uppercase">${T("statTotal")}</span>
-            <strong style="font-size:1.5rem;color:#fff;line-height:1.2" id="pd-st-total">0</strong>
+          <article class="module-stat tone-filled-teal" style="gap:0.15rem;padding:0.65rem 0.85rem">
+            <span style="font-size:0.65rem">${T("statTotal")}</span>
+            <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-total">0</strong>
           </article>
-          <article class="module-stat" style="border:1px solid #13bbb240;background:#13bbb212;gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="color:var(--muted);font-size:0.65rem;font-weight:800;text-transform:uppercase">X</span>
-            <strong style="font-size:1.5rem;line-height:1.2;color:#13bbb2" id="pd-st-x">0</strong>
+          <article class="module-stat tone-outline-teal" style="gap:0.15rem;padding:0.65rem 0.85rem">
+            <span style="font-size:0.65rem">X</span>
+            <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-x">0</strong>
           </article>
-          <article class="module-stat" style="border:1px solid #7b5cff40;background:#7b5cff12;gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="color:var(--muted);font-size:0.65rem;font-weight:800;text-transform:uppercase">XI</span>
-            <strong style="font-size:1.5rem;line-height:1.2;color:#7b5cff" id="pd-st-xi">0</strong>
+          <article class="module-stat tone-outline-violet" style="gap:0.15rem;padding:0.65rem 0.85rem">
+            <span style="font-size:0.65rem">XI</span>
+            <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-xi">0</strong>
           </article>
-          <article class="module-stat" style="border:1px solid #ff9b5440;background:#ff9b5412;gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="color:var(--muted);font-size:0.65rem;font-weight:800;text-transform:uppercase">XII</span>
-            <strong style="font-size:1.5rem;line-height:1.2;color:#ff9b54" id="pd-st-xii">0</strong>
+          <article class="module-stat tone-outline-orange" style="gap:0.15rem;padding:0.65rem 0.85rem">
+            <span style="font-size:0.65rem">XII</span>
+            <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-xii">0</strong>
           </article>
-          <article class="module-stat" style="border:1px solid #3ecf8e40;background:#3ecf8e12;gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="color:var(--muted);font-size:0.65rem;font-weight:800;text-transform:uppercase">\u2642 L/P</span>
-            <strong style="font-size:1.5rem;line-height:1.2;color:#3ecf8e" id="pd-st-l">0</strong>
+          <article class="module-stat tone-outline-green" style="gap:0.15rem;padding:0.65rem 0.85rem">
+            <span style="font-size:0.65rem">\u2642 L/P</span>
+            <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-l">0</strong>
           </article>
-          <article class="module-stat" style="border:1px solid #f65aa040;background:#f65aa012;gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="color:var(--muted);font-size:0.65rem;font-weight:800;text-transform:uppercase">\u2640 P/F</span>
-            <strong style="font-size:1.5rem;line-height:1.2;color:#f65aa0" id="pd-st-p">0</strong>
+          <article class="module-stat tone-outline-pink" style="gap:0.15rem;padding:0.65rem 0.85rem">
+            <span style="font-size:0.65rem">\u2640 P/F</span>
+            <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-p">0</strong>
           </article>
         </div>
 
@@ -387,15 +387,15 @@ window.studentsModule = (() => {
     </div>`;
   }
 
-  function buildGradeCard(grade, prefix, color) {
+  function buildGradeCard(grade, prefix, toneClass) {
     return `
-      <article class="module-stat" style="border:1px solid ${color}40;background:${color}12;gap:0.5rem">
-        <span style="color:var(--muted);font-size:0.72rem;font-weight:800;text-transform:uppercase">Kelas ${grade}</span>
-        <strong style="font-size:1.7rem;line-height:1.1;color:${color}" id="${prefix}-total">0</strong>
+      <article class="module-stat ${toneClass}" style="gap:0.5rem">
+        <span>Kelas ${grade}</span>
+        <strong style="font-size:1.7rem;line-height:1.1" id="${prefix}-total">0</strong>
         <div style="display:flex;gap:.85rem">
-          <span style="font-size:0.78rem;color:var(--muted)">\u2642 <b style="color:var(--text)" id="${prefix}-l">0</b></span>
-          <span style="font-size:0.78rem;color:var(--muted)">\u2640 <b style="color:var(--text)" id="${prefix}-p">0</b></span>
-          <span style="font-size:0.78rem;color:var(--muted)" id="${prefix}-kelas-count"></span>
+          <span style="font-size:0.78rem">\u2642 <b style="color:var(--text)" id="${prefix}-l">0</b></span>
+          <span style="font-size:0.78rem">\u2640 <b style="color:var(--text)" id="${prefix}-p">0</b></span>
+          <span style="font-size:0.78rem" id="${prefix}-kelas-count"></span>
         </div>
       </article>`;
   }

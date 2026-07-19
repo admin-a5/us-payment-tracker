@@ -128,87 +128,19 @@
           <section class="page active" id="dashboard">
             <div class="page-heading">
               <div>
-                <p class="eyebrow" data-i18n="moduleSuperAdmin">Super Admin</p>
+                <p class="eyebrow" data-i18n="moduleSuperAdmin">Dashboard</p>
                 <h1 data-i18n="dashboardTitle">Admin Dashboard</h1>
               </div>
-              <div class="segmented">
-                <button class="active" data-i18n="overview">Overview</button>
-                <button data-i18n="today">Today</button>
-                <button data-i18n="reports">Reports</button>
+            </div>
+            <div class="dashboard-grid">
+              <div class="dashboard-main">
+                <div class="dashboard-placeholder">
+                  <div class="dashboard-placeholder-icon">⚙</div>
+                  <h2>Under Development</h2>
+                  <p>AI-powered chatbot coming soon</p>
+                </div>
               </div>
             </div>
-
-            <div class="stat-grid">
-              <article class="stat-card teal">
-                <span data-i18n="studentsTotal">Total Students</span>
-                <strong>842</strong>
-                <small>+4.2% <span data-i18n="thisMonth">this month</span></small>
-              </article>
-              <article class="stat-card violet">
-                <span data-i18n="activeClasses">Active Classes</span>
-                <strong>27</strong>
-                <small>+2 <span data-i18n="thisTerm">this term</span></small>
-              </article>
-              <article class="stat-card orange">
-                <span data-i18n="schoolFees">School Fees</span>
-                <strong>76%</strong>
-                <small data-i18n="paidStatus">paid this month</small>
-              </article>
-              <article class="stat-card pink">
-                <span data-i18n="staffAttendance">Staff Attendance</span>
-                <strong>94%</strong>
-                <small data-i18n="todayAttendance">today</small>
-              </article>
-            </div>
-
-            <div class="card-grid">
-              <article class="panel-card">
-                <h2 data-i18n="recentStudents">Recent Students</h2>
-                <ul class="status-list">
-                  <li><span>Raka Pratama</span><b class="pill green" data-i18n="active">Active</b></li>
-                  <li><span>Nabila Putri</span><b class="pill green" data-i18n="active">Active</b></li>
-                  <li><span>Galih Saputra</span><b class="pill yellow" data-i18n="pending">Pending</b></li>
-                </ul>
-              </article>
-              <article class="panel-card">
-                <h2 data-i18n="pendingRequests">Pending Requests</h2>
-                <ul class="status-list">
-                  <li><span data-i18n="studentMutation">Student mutation</span><b class="pill yellow">2</b></li>
-                  <li><span data-i18n="dataRevision">Data revision</span><b class="pill yellow">5</b></li>
-                  <li><span data-i18n="borrowApproval">Borrow approval</span><b class="pill green">1</b></li>
-                </ul>
-              </article>
-              <article class="panel-card">
-                <h2 data-i18n="recentLetters">Recent Letters</h2>
-                <ul class="status-list">
-                  <li><span>SK/034/IV/2026</span><b class="pill green" data-i18n="done">Done</b></li>
-                  <li><span>IN/119/IV/2026</span><b class="pill yellow" data-i18n="review">Review</b></li>
-                  <li><span>OUT/054/IV/2026</span><b class="pill green" data-i18n="sent">Sent</b></li>
-                </ul>
-              </article>
-            </div>
-
-            <section class="table-panel">
-              <div class="panel-heading">
-                <h2 data-i18n="studentOverview">Student Overview</h2>
-                <button class="primary-button" data-i18n="export">Export</button>
-              </div>
-              <div class="responsive-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th data-i18n="name">Name</th>
-                      <th data-i18n="class">Class</th>
-                      <th data-i18n="guardian">Guardian</th>
-                      <th data-i18n="feeStatus">Fee Status</th>
-                      <th data-i18n="status">Status</th>
-                      <th data-i18n="actions">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="studentRows"></tbody>
-                </table>
-              </div>
-            </section>
           </section>
 
           <section class="page" id="students" data-simple-page="students"></section>
@@ -246,34 +178,34 @@
               </div>
 
               <div class="us-stats">
-                <button class="us-stat" type="button">
+                <button class="module-stat tone-filled-teal" type="button">
                   <span>Total Students</span>
                   <strong id="us-s-total">0</strong>
                   <small id="us-s-month">No month selected</small>
                 </button>
-                <button class="us-stat" type="button">
+                <button class="module-stat tone-filled-violet" type="button">
                   <span>Paid</span>
-                  <strong class="good" id="us-s-paid">0</strong>
+                  <strong id="us-s-paid">0</strong>
                   <small id="us-s-paid-pct">0%</small>
                 </button>
-                <button class="us-stat" type="button" id="us-open-outstanding">
+                <button class="module-stat tone-filled-orange" type="button" id="us-open-outstanding">
                   <span>Outstanding</span>
-                  <strong class="bad" id="us-s-out">0</strong>
+                  <strong id="us-s-out">0</strong>
                   <small id="us-s-out-pct">0%</small>
                 </button>
-                <button class="us-stat" type="button">
+                <button class="module-stat tone-filled-pink" type="button">
                   <span>Total Outstanding</span>
-                  <strong class="bad" id="us-s-out-total">Rp 0</strong>
+                  <strong id="us-s-out-total">Rp 0</strong>
                   <small>Selected period</small>
                 </button>
-                <button class="us-stat" type="button">
+                <button class="module-stat tone-filled-sand" type="button">
                   <span>Denda</span>
-                  <strong class="warn" id="us-s-denda">Rp 0</strong>
+                  <strong id="us-s-denda">Rp 0</strong>
                   <small>After cutoff</small>
                 </button>
-                <button class="us-stat" type="button" id="us-open-today">
+                <button class="module-stat tone-filled-green" type="button" id="us-open-today">
                   <span>Paid Today</span>
-                  <strong class="good" id="us-s-today">0</strong>
+                  <strong id="us-s-today">0</strong>
                   <small>Click to view</small>
                 </button>
               </div>
@@ -343,7 +275,7 @@
     </div>
     <!-- END APP SHELL -->
     <script src="config.js"></script>
-    <script>const APP_VERSION = "a5.19.07.2026.1";</script>
+    <script>const APP_VERSION = "a5.19.07.2026.2";</script>
     <script src="session-manager.js"></script>
     <script src="local-store.js"></script>
     <script src="utils.js"></script>
@@ -352,6 +284,7 @@
     <script src="staff-module.js"></script>
     <script src="letters-admin.js"></script>
     <script src="inventory-module.js"></script>
+    <script src="audit.js"></script>
     <script src="auth.js"></script>
     <script src="students.js"></script>
     <script src="us-payment.js"></script>

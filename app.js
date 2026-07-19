@@ -1,13 +1,5 @@
 ﻿const translations = window.translations;
 
-const students = [
-  ["Raka Pratama", "XI IPA 1", "Siti Aminah", "paid", "active"],
-  ["Nabila Putri", "X IPS 2", "Budi Santoso", "partial", "active"],
-  ["Galih Saputra", "XII IPA 3", "Ratna Dewi", "overdue", "pending"],
-  ["Alya Kirana", "IX A", "Dimas Putra", "paid", "active"],
-  ["Fajar Nugraha", "VIII C", "Lina Marlina", "partial", "active"]
-];
-
 const pageData = {
   students: {
     features: ["Ledger", "Daftar Kelas", "Rekap", "Mutasi", "Buku Induk", "Request Update"],
@@ -101,7 +93,6 @@ let language = Store.getLanguage();
 const languageSelect = document.querySelector("#languageSelect");
 const themeMode      = document.querySelector("#themeMode");
 const themeColor     = document.querySelector("#themeColor");
-const studentRows    = document.querySelector("#studentRows");
 const menuToggle     = document.querySelector("#menuToggle");
 const sidebar        = document.querySelector("#sidebar");
 
@@ -118,7 +109,6 @@ function applyLanguage() {
   document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
     node.placeholder = t(node.dataset.i18nPlaceholder);
   });
-  renderRows();
   renderSimplePages();
   enhanceStaffPage();
   window.attendanceModule?.buildStaffOverview?.();
@@ -130,25 +120,6 @@ function applyLanguage() {
   }
   window.userManagementModule?.mount?.();
   window.diagnosticsModule?.mount?.();
-}
-
-function renderRows() {
-  studentRows.innerHTML = students
-    .map(([name, className, guardian, fee, status]) => {
-      const feeClass    = fee === "paid" ? "green" : fee === "partial" ? "yellow" : "gray";
-      const statusClass = status === "active" ? "green" : "yellow";
-      return `
-        <tr>
-          <td data-label="${t("name")}">${name}</td>
-          <td data-label="${t("class")}">${className}</td>
-          <td data-label="${t("guardian")}">${guardian}</td>
-          <td data-label="${t("feeStatus")}"><b class="pill ${feeClass}">${t(fee)}</b></td>
-          <td data-label="${t("status")}"><b class="pill ${statusClass}">${t(status)}</b></td>
-          <td data-label="${t("actions")}"><button class="action-button" aria-label="${t("view")}">⋯</button></td>
-        </tr>
-      `;
-    })
-    .join("");
 }
 
 function renderSimplePages() {
@@ -287,7 +258,8 @@ document.querySelectorAll(".nav-item").forEach((button) => {
     document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
     document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
     button.classList.add("active");
-    document.querySelector(`#${button.dataset.page}`).classList.add("active");
+    const pageId = button.dataset.page;
+    document.querySelector(`#${pageId}`).classList.add("active");
     sidebar.classList.remove("open");
   });
 });

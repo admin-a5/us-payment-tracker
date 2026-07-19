@@ -51,10 +51,10 @@ window.auditModule = (() => {
         </div>
 
         <div class="audit-stat-grid">
-          <article><span>Total Entries</span><strong id="audit-s-total">—</strong></article>
-          <article><span>Today</span><strong id="audit-s-today">—</strong></article>
-          <article><span>This Week</span><strong id="audit-s-week">—</strong></article>
-          <article><span>Unique Modules</span><strong id="audit-s-modules">—</strong></article>
+          <article class="module-stat tone-filled-teal"><span>Total Entries</span><strong id="audit-s-total">—</strong></article>
+          <article class="module-stat tone-filled-violet"><span>Today</span><strong id="audit-s-today">—</strong></article>
+          <article class="module-stat tone-filled-sand"><span>This Week</span><strong id="audit-s-week">—</strong></article>
+          <article class="module-stat tone-filled-orange"><span>Unique Modules</span><strong id="audit-s-modules">—</strong></article>
         </div>
 
         <div class="audit-controls">
@@ -486,28 +486,73 @@ window.auditModule = (() => {
     toast._t = setTimeout(() => el.classList.remove("show"), 3000);
   }
 
+  /* ─── pending log queue (auth not yet ready) ────── */
+  const _pending = [];
+  let _flushing = false;
+
+  async function _flush() {
+    if (_flushing) return;
+    _flushing = true;
+    const auth = window.authModule;
+    const _sb  = auth?.getSupabaseClient();
+    if (!_sb) { _flushing = false; return; }
+    const user = auth?.getUser();
+    const batch = _pending.splice(0);
+    for (const entry of batch) {
+      try {
+        await _sb.from("audit_logs").insert({
+          user_id:    user?.id || null,
+          user_email: user?.email || null,
+          action:     entry.action,
+          module:     entry.module,
+          record_id:  entry.recordId ? String(entry.recordId) : null,
+          old_data:   entry.oldData || null,
+          new_data:   entry.newData || null,
+        });
+      } catch (e) {
+        console.warn("auditLog write failed:", e.message);
+      }
+    }
+    _flushing = false;
+  }
+
   /* ─── public write helper ────────────────────────── */
   async function logAction(action, module, recordId = null, oldData = null, newData = null) {
     const auth = window.authModule;
     const _sb  = auth?.getSupabaseClient();
-    if (!_sb) return;
+    if (!_sb) {
+      _pending.push({ action, module, recordId, oldData, newData });
+      return;
+    }
     const user = auth?.getUser();
-
-    await _sb.from("audit_logs").insert({
-      user_id:    user?.id || null,
-      user_email: user?.email || null,
-      action:     action,
-      module:     module,
-      record_id:  recordId ? String(recordId) : null,
-      old_data:   oldData || null,
-      new_data:   newData || null,
-    });
+    try {
+      await _sb.from("audit_logs").insert({
+        user_id:    user?.id || null,
+        user_email: user?.email || null,
+        action:     action,
+        module:     module,
+        record_id:  recordId ? String(recordId) : null,
+        old_data:   oldData || null,
+        new_data:   newData || null,
+      });
+    } catch (e) {
+      console.warn("auditLog write failed:", e.message);
+    }
   }
 
-  return { mount, load, logAction };
+  return { mount, load, logAction, _flushPending: _flush };
 })();
 
 /* ─── global shorthand ───────────────────────────── */
 window.auditLog = window.auditModule.logAction;
+window._auditFlush = () => window.auditModule._flushPending();
+
+// Periodically try to flush queued logs until auth is ready
+let _flushTimer = setInterval(() => {
+  if (window.authModule?.getSupabaseClient()) {
+    clearInterval(_flushTimer);
+    window._auditFlush();
+  }
+}, 500);
 
 window.addEventListener("load", () => window.auditModule.mount());
