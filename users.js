@@ -187,11 +187,11 @@ window.userManagementModule = (() => {
         const isSelf = user.id === currentUserId;
         return `
           <tr>
-            <td><strong>${escapeHtml(user.full_name || "-")}</strong><small>${escapeHtml(user.email || "-")}</small></td>
-            <td>${rolePill(user.role)}</td>
-            <td>${escapeHtml(user.assigned_class || "-")}</td>
-            <td>${formatDate(user.created_at)}</td>
-            <td>
+            <td data-label="Name / Email"><strong>${escapeHtml(user.full_name || "-")}</strong><small>${escapeHtml(user.email || "-")}</small></td>
+            <td data-label="Role">${rolePill(user.role)}</td>
+            <td data-label="Class">${escapeHtml(user.assigned_class || "-")}</td>
+            <td data-label="Created">${formatDate(user.created_at)}</td>
+            <td data-label="">
               <div class="users-actions">
                 <button type="button" data-pwd="${escapeAttr(user.id)}" data-email="${escapeAttr(user.email || "")}" ${isSelf ? "disabled" : ""}>Password</button>
                 <button class="danger" type="button" data-delete="${escapeAttr(user.id)}" data-email="${escapeAttr(user.email || "")}" ${isSelf ? "disabled" : ""}>Remove</button>

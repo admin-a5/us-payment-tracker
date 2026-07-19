@@ -1444,7 +1444,7 @@ async function buildInventoryOverview(container) {
               </div>
             </div>
             <div class="module-table-scroll">
-              <table class="module-table sarpras-table">
+              <table class="module-table sarpras-table" id="sarpras-overview-table">
                 <thead>
                   <tr>
                     <th>${t("invOverviewRank")}</th>
@@ -1457,11 +1457,11 @@ async function buildInventoryOverview(container) {
                 <tbody>
                   ${d.freqRanking.length ? d.freqRanking.map((row) => `
                     <tr>
-                      <td><strong>#${row.rank}</strong></td>
-                      <td>${row.code}</td>
-                      <td>${row.name}</td>
-                      <td>${row.kategori}</td>
-                      <td><b>${row.freq}</b></td>
+                      <td data-label="${t("invOverviewRank")}"><strong>#${row.rank}</strong></td>
+                      <td data-label="${t("invOverviewCode")}">${row.code}</td>
+                      <td data-label="${t("invOverviewName")}">${row.name}</td>
+                      <td data-label="${t("invOverviewCategory")}">${row.kategori}</td>
+                      <td data-label="${t("invOverviewFreq")}"><b>${row.freq}</b></td>
                     </tr>
                   `).join("") : `
                     <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">${t("invOverviewNoData")}</td></tr>
@@ -1647,14 +1647,14 @@ function filterMasterTable(q) {
     ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
-        <td><strong>${escapeHtml(row[0])}</strong></td>
-        <td>${escapeHtml(row[1])}</td>
-        <td>${escapeHtml(row[2])}</td>
-        <td>${escapeHtml(row[3])}</td>
-        <td>${row[4]}</td>
-        <td style="text-align:center;font-weight:600">${row[6] || "0"}</td>
-        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
-        <td>
+        <td data-label="${t("invMasterCode")}"><strong>${escapeHtml(row[0])}</strong></td>
+        <td data-label="${t("invMasterName")}">${escapeHtml(row[1])}</td>
+        <td data-label="${t("invMasterCategory")}">${escapeHtml(row[2])}</td>
+        <td data-label="${t("invMasterLocation")}">${escapeHtml(row[3])}</td>
+        <td data-label="${t("invMasterStock")}">${row[4]}</td>
+        <td data-label="${t("invMasterFreq")}" style="text-align:center;font-weight:600">${row[6] || "0"}</td>
+        <td data-label="${t("invMasterTimestamp")}" style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
+        <td data-label="">
           <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="${t("invMasterEdit")}">✎</button>
           <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="${t("invMasterDelete")}" style="color:var(--due-text)">✕</button>
         </td>
@@ -1816,14 +1816,14 @@ function buildInventoryMasterPage() {
     ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
-        <td><strong>${escapeHtml(row[0])}</strong></td>
-        <td>${escapeHtml(row[1])}</td>
-        <td>${escapeHtml(row[2])}</td>
-        <td>${escapeHtml(row[3])}</td>
-        <td>${row[4]}</td>
-        <td style="text-align:center;font-weight:600">${row[6] || "0"}</td>
-        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
-        <td>
+        <td data-label="${t("invMasterCode")}"><strong>${escapeHtml(row[0])}</strong></td>
+        <td data-label="${t("invMasterName")}">${escapeHtml(row[1])}</td>
+        <td data-label="${t("invMasterCategory")}">${escapeHtml(row[2])}</td>
+        <td data-label="${t("invMasterLocation")}">${escapeHtml(row[3])}</td>
+        <td data-label="${t("invMasterStock")}">${row[4]}</td>
+        <td data-label="${t("invMasterFreq")}" style="text-align:center;font-weight:600">${row[6] || "0"}</td>
+        <td data-label="${t("invMasterTimestamp")}" style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
+        <td data-label="">
           <button type="button" class="action-button" data-sarpras-action="edit-item" data-index="${i}" title="${t("invMasterEdit")}">✎</button>
           <button type="button" class="action-button" data-sarpras-action="remove-item" data-index="${i}" title="${t("invMasterDelete")}" style="color:var(--due-text)">✕</button>
         </td>
@@ -1868,7 +1868,7 @@ function buildInventoryMasterPage() {
 
       <div class="table-panel" style="padding:0;position:relative">
         <div class="responsive-table">
-          <table class="module-table">
+          <table class="module-table" id="sarpras-master-table">
             <thead>
               <tr>
                 <th>${t("invMasterCode")}</th>
@@ -2232,14 +2232,14 @@ function buildInventoryActivityPage() {
           : `<span class="module-pill warn">${outLabel}</span>`;
         return `
       <tr data-tx-index="${globalIdx}" style="cursor:pointer">
-        <td><strong>${escapeHtml(row[0])}</strong></td>
-        <td>${typeBadge}</td>
-        <td style="white-space:nowrap">${escapeHtml(row[2])}</td>
-        <td style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${escapeHtml(itemsPreview)}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} ${t("invActItem")})</span></td>
-        <td>${row[4]}</td>
-        <td>${escapeHtml(row[6] || "—")}</td>
-        <td>${formatInventoryRecordState(row[7] || "Selesai")}</td>
-        <td style="display:flex;gap:0.2rem">
+        <td data-label="${t("invActToken")}"><strong>${escapeHtml(row[0])}</strong></td>
+        <td data-label="${t("invActType")}">${typeBadge}</td>
+        <td data-label="${t("invActDate")}" style="white-space:nowrap">${escapeHtml(row[2])}</td>
+        <td data-label="${t("invActItems")}" style="max-width:18rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="tx-items-preview">${escapeHtml(itemsPreview)}</span> <span style="color:var(--muted);font-size:0.72rem">(${items.length} ${t("invActItem")})</span></td>
+        <td data-label="${t("invActTotalQty")}">${row[4]}</td>
+        <td data-label="${t("invActOfficer")}">${escapeHtml(row[6] || "—")}</td>
+        <td data-label="${t("invActStatus")}">${formatInventoryRecordState(row[7] || "Selesai")}</td>
+        <td data-label="">
           <button type="button" class="action-button" data-sarpras-action="toggle-tx-detail" data-index="${globalIdx}" title="${t("invActDetail")}" style="font-size:0.7rem;padding:0.15rem 0.35rem">▶</button>
           <button type="button" class="action-button" data-sarpras-action="remove-transaction" data-index="${globalIdx}" title="${t("invActConfirmDelete")}" style="color:var(--due-text);font-size:0.78rem;padding:0.15rem 0.35rem">✕</button>
         </td>
@@ -2309,7 +2309,7 @@ function buildInventoryActivityPage() {
       </div>
       <div class="table-panel" style="padding:0;position:relative">
         <div class="responsive-table">
-          <table class="module-table">
+          <table class="module-table" id="sarpras-activity-table">
             <thead>
               <tr>
                 <th>${t("invActToken")}</th>

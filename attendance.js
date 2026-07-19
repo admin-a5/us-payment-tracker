@@ -688,7 +688,6 @@ window.attendanceModule = (() => {
   function renderRekapRow(r) {
     const hasICC = r.icc > 0;
     const isAlert = r.tidak_hadir >= 1 || r.terlambat >= 1;
-    const rowCls = hasICC ? "att-row-icc" : isAlert ? "att-row-alert" : "";
     const pct = r.eff_days ? Math.round((r.hadir_totr / r.eff_days) * 100) : 0;
     const tClr = r.hadir_totr >= r.eff_days ? "good" : r.hadir_totr >= r.eff_days - 2 ? "warn" : "bad";
     const addH = r.hadir_add !== 0
@@ -706,21 +705,21 @@ window.attendanceModule = (() => {
       + (isAlert ? `<span class="module-pill warn">Perhatian</span> ` : "")
       + (!hasICC && !isAlert ? `<span class="module-pill good">✓ Normal</span>` : "")
       + (r.terlambat > 0 ? `<span class="module-pill warn" style="margin-left:2px">LT:${r.terlambat}</span>` : "");
-    return `<tr class="${rowCls}">
-      <td><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
-      <td><span class="module-pill neutral">${escapeHtml(r.stat || "—")}</span></td>
-      <td class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
-      <td class="att-num-cell"><span class="att-num">${r.hadir_r}</span></td>
-      <td class="att-num-cell">${addH}</td>
-      <td class="att-num-cell"><span class="att-num ${tClr}" title="${pct}% hadir">${r.hadir_totr}</span></td>
-      <td class="att-num-cell"><span class="att-num ${r.izin > 0 ? "att-blue" : ""}">${r.izin || "—"}</span></td>
-      <td class="att-num-cell"><span class="att-num ${r.sakit > 0 ? "bad" : ""}">${r.sakit || "—"}</span></td>
-      <td class="att-num-cell"><span class="att-num ${r.cuti > 0 ? "att-purple" : ""}">${r.cuti || "—"}</span></td>
-      <td class="att-num-cell">${iccDisplay}</td>
-      <td class="att-num-cell"><span class="att-num ${r.terlambat >= 3 ? "bad" : r.terlambat > 0 ? "warn" : ""}">${r.terlambat || "—"}</span></td>
-      <td class="att-num-cell"><span class="att-num">${r.pd_count || "—"}</span></td>
-      <td>${ketDisplay}</td>
-      <td style="white-space:nowrap">${status}</td>
+    return `<tr>
+      <td data-label="Karyawan"><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
+      <td data-label="Stat."><span class="module-pill neutral">${escapeHtml(r.stat || "—")}</span></td>
+      <td data-label="ER" class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
+      <td data-label="R" class="att-num-cell"><span class="att-num">${r.hadir_r}</span></td>
+      <td data-label="Add" class="att-num-cell">${addH}</td>
+      <td data-label="TotR" class="att-num-cell"><span class="att-num ${tClr}" title="${pct}% hadir">${r.hadir_totr}</span></td>
+      <td data-label="Izin" class="att-num-cell"><span class="att-num ${r.izin > 0 ? "att-blue" : ""}">${r.izin || "—"}</span></td>
+      <td data-label="Sakit" class="att-num-cell"><span class="att-num ${r.sakit > 0 ? "bad" : ""}">${r.sakit || "—"}</span></td>
+      <td data-label="Cuti" class="att-num-cell"><span class="att-num ${r.cuti > 0 ? "att-purple" : ""}">${r.cuti || "—"}</span></td>
+      <td data-label="ICC" class="att-num-cell">${iccDisplay}</td>
+      <td data-label="Terlambat" class="att-num-cell"><span class="att-num ${r.terlambat >= 3 ? "bad" : r.terlambat > 0 ? "warn" : ""}">${r.terlambat || "—"}</span></td>
+      <td data-label="PD" class="att-num-cell"><span class="att-num">${r.pd_count || "—"}</span></td>
+      <td data-label="Keterangan">${ketDisplay}</td>
+      <td data-label="Status" style="white-space:nowrap">${status}</td>
     </tr>`;
   }
 
@@ -745,16 +744,16 @@ window.attendanceModule = (() => {
         const pct = u.eff ? Math.round((u.totr / u.eff) * 100) : 0;
         const pClr = pct >= 90 ? "good" : pct >= 75 ? "warn" : "bad";
         return `<tr>
-          <td><strong>${escapeHtml(u.org)}</strong></td>
-          <td class="att-num-cell"><span class="att-num">${u.count}</span></td>
-          <td class="att-num-cell"><span class="att-num">${u.eff}</span></td>
-          <td class="att-num-cell"><span class="att-num good">${u.totr}</span></td>
-          <td class="att-num-cell"><span class="att-num ${u.izin > 0 ? "att-blue" : ""}">${u.izin || "—"}</span></td>
-          <td class="att-num-cell"><span class="att-num ${u.sakit > 0 ? "bad" : ""}">${u.sakit || "—"}</span></td>
-          <td class="att-num-cell"><span class="att-num ${u.cuti > 0 ? "att-purple" : ""}">${u.cuti || "—"}</span></td>
-          <td class="att-num-cell"><span class="att-num ${u.icc > 0 ? "orange" : ""}">${u.icc || "—"}</span></td>
-          <td class="att-num-cell"><span class="att-num ${u.late > 0 ? "warn" : ""}">${u.late || "—"}</span></td>
-          <td class="att-num-cell"><span class="att-num ${pClr}">${pct}%</span></td>
+          <td data-label="Unit"><strong>${escapeHtml(u.org)}</strong></td>
+          <td data-label="Karyawan" class="att-num-cell"><span class="att-num">${u.count}</span></td>
+          <td data-label="ER" class="att-num-cell"><span class="att-num">${u.eff}</span></td>
+          <td data-label="TotR" class="att-num-cell"><span class="att-num good">${u.totr}</span></td>
+          <td data-label="Izin" class="att-num-cell"><span class="att-num ${u.izin > 0 ? "att-blue" : ""}">${u.izin || "—"}</span></td>
+          <td data-label="Sakit" class="att-num-cell"><span class="att-num ${u.sakit > 0 ? "bad" : ""}">${u.sakit || "—"}</span></td>
+          <td data-label="Cuti" class="att-num-cell"><span class="att-num ${u.cuti > 0 ? "att-purple" : ""}">${u.cuti || "—"}</span></td>
+          <td data-label="ICC" class="att-num-cell"><span class="att-num ${u.icc > 0 ? "orange" : ""}">${u.icc || "—"}</span></td>
+          <td data-label="Terlambat" class="att-num-cell"><span class="att-num ${u.late > 0 ? "warn" : ""}">${u.late || "—"}</span></td>
+          <td data-label="% Hadir" class="att-num-cell"><span class="att-num ${pClr}">${pct}%</span></td>
         </tr>`;
       }).join("");
   }
@@ -778,16 +777,16 @@ window.attendanceModule = (() => {
       const tags = (r.tidak_hadir >= 1 ? `<span class="module-pill warn" style="margin:1px">Absen:${r.tidak_hadir}</span>` : "")
         + (r.terlambat >= 1 ? `<span class="module-pill warn" style="margin:1px">LT:${r.terlambat}x</span>` : "")
         + (pdCount > 0 ? `<span class="module-pill warn" style="margin:1px;color:var(--money-warn)">PD:${pdCount}</span>` : "");
-      return `<tr class="att-row-alert">
-        <td><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
-        <td class="att-num-cell"><span class="att-num good">${r.hadir_totr}</span></td>
-        <td class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
-        <td class="att-num-cell"><span class="att-num bad">${r.tidak_hadir || "—"}</span></td>
-        <td class="att-num-cell"><span class="att-num ${r.terlambat >= 3 ? "bad" : "warn"}">${r.terlambat || "—"}</span></td>
-        <td class="att-num-cell"><span class="att-num ${menit > 0 ? "warn" : ""}">${menit > 0 ? menit + "m" : "—"}</span></td>
-        ${cutoff ? `<td class="att-num-cell"><span class="att-num ${pdCount > 0 ? "orange" : ""}">${pdCount || "—"}</span></td>` : ""}
-        <td>${r.keterangan ? `<span class="att-ket-chip">${escapeHtml(r.keterangan)}</span>` : "—"}</td>
-        <td style="white-space:nowrap">${tags}</td>
+      return `<tr>
+        <td data-label="Karyawan"><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
+        <td data-label="TotR" class="att-num-cell"><span class="att-num good">${r.hadir_totr}</span></td>
+        <td data-label="ER" class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
+        <td data-label="Tdk Hadir" class="att-num-cell"><span class="att-num bad">${r.tidak_hadir || "—"}</span></td>
+        <td data-label="Terlambat" class="att-num-cell"><span class="att-num ${r.terlambat >= 3 ? "bad" : "warn"}">${r.terlambat || "—"}</span></td>
+        <td data-label="Menit" class="att-num-cell"><span class="att-num ${menit > 0 ? "warn" : ""}">${menit > 0 ? menit + "m" : "—"}</span></td>
+        ${cutoff ? `<td data-label="PD >${cutoff}" class="att-num-cell"><span class="att-num">${pdCount || "—"}</span></td>` : ""}
+        <td data-label="Keterangan">${r.keterangan ? `<span class="att-ket-chip">${escapeHtml(r.keterangan)}</span>` : "—"}</td>
+        <td data-label="Status" style="white-space:nowrap">${tags}</td>
       </tr>`;
     }).join("");
   }
@@ -803,16 +802,16 @@ window.attendanceModule = (() => {
     if (!rows.length) { $("att-table-body").innerHTML = `<tr><td colspan="9" style="text-align:center;padding:3rem;color:var(--muted)">✓ Tidak ada ICC yang perlu diklarifikasi</td></tr>`; return; }
     $("att-table-body").innerHTML = rows.map((r) => {
       const iccNeedsKet = !r.keterangan;
-      return `<tr class="att-row-icc">
-        <td><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
-        <td><span class="att-org">${escapeHtml(r.org || "—")}</span></td>
-        <td><span class="module-pill neutral">${escapeHtml(r.stat || "—")}</span></td>
-        <td class="att-num-cell"><span class="att-num">${r.hadir_r}</span></td>
-        <td class="att-num-cell"><span class="att-icc-chip${iccNeedsKet ? " att-icc-urgent" : ""}">⚠ ${r.icc}</span></td>
-        <td class="att-num-cell"><span class="att-num good">${r.hadir_totr}</span></td>
-        <td class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
-        <td>${r.keterangan ? `<span class="att-ket-chip">${escapeHtml(r.keterangan)}</span>` : `<span style="color:var(--danger);font-size:0.72rem;font-weight:700">Belum ada ket.</span>`}</td>
-        <td style="font-size:0.72rem;color:var(--money-warn)">${r.icc} hari finger tidak lengkap — minta klarifikasi</td>
+      return `<tr>
+        <td data-label="Karyawan"><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
+        <td data-label="Unit"><span class="att-org">${escapeHtml(r.org || "—")}</span></td>
+        <td data-label="Stat."><span class="module-pill neutral">${escapeHtml(r.stat || "—")}</span></td>
+        <td data-label="R" class="att-num-cell"><span class="att-num">${r.hadir_r}</span></td>
+        <td data-label="ICC" class="att-num-cell"><span class="att-icc-chip${iccNeedsKet ? " att-icc-urgent" : ""}">⚠ ${r.icc}</span></td>
+        <td data-label="TotR" class="att-num-cell"><span class="att-num good">${r.hadir_totr}</span></td>
+        <td data-label="ER" class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
+        <td data-label="Keterangan">${ketDisplay}</td>
+        <td data-label="Catatan">${catatanDisplay}</td>
       </tr>`;
     }).join("");
   }
@@ -1203,15 +1202,15 @@ window.attendanceModule = (() => {
 
         <div class="staff-ov-rankings">
           ${rankCard(`${t("staffOvTopLate")} (Menit)`, topLateMin, (emp, i) =>
-            `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(emp.lateMin, "menit")}</td></tr>`)}
+            `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(emp.lateMin, "menit")}</td></tr>`)}
           ${rankCard(`${t("staffOvTopLate")} (Kali)`, topLateEvt, (emp, i) =>
-            `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(emp.late, "kali")}</td></tr>`)}
+            `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(emp.late, "kali")}</td></tr>`)}
           ${rankCard(`${t("staffOvTopAbsent")}`, topAbsent, (emp, i) => {
             const tot = emp.izin + emp.sakit;
-            return `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(tot, "hari")}</td></tr>`;
+            return `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(tot, "hari")}</td></tr>`;
           })}
           ${rankCard(`${t("staffOvTopPD")}`, topPd, (emp, i) =>
-            `<tr><td class="rank">${i + 1}</td><td>${empCell(emp)}${sv(emp.pd, "PD")}</td></tr>`)}
+            `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(emp.pd, "PD")}</td></tr>`)}
         </div>
       </div>`;
 

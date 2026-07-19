@@ -1338,6 +1338,23 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
   .sarpras-master-item b {
     text-align: left;
   }
+
+  .tone-filled-pink > div {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  .tone-filled-pink > div > div:nth-child(2) {
+    display: none;
+  }
+
+  .module-stat[class*="tone-outline"] > div {
+    flex-wrap: wrap;
+  }
+
+  .letters-stat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  }
 }
 
 .module-subpage {
@@ -1606,14 +1623,6 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
   display: block;
   color: var(--muted);
   margin-top: 0.15rem;
-}
-
-.att-row-icc td {
-  background: color-mix(in srgb, var(--partial-bg) 58%, transparent);
-}
-
-.att-row-alert td {
-  background: color-mix(in srgb, var(--due-bg) 58%, transparent);
 }
 
 .sarpras-loading {
@@ -2659,6 +2668,345 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
     color: var(--muted);
     font-size: 0.75rem;
     font-weight: 700;
+  }
+
+  /* Letters admin table — light card style (overrides generic dark card above) */
+  #letters-admin-table,
+  #letters-admin-table tbody,
+  #letters-admin-table tr,
+  #letters-admin-table td {
+    display: block;
+    min-width: 0;
+    border: none;
+    background: none;
+    grid-template-columns: none;
+    gap: 0;
+    align-items: normal;
+    padding: 0;
+    white-space: normal;
+    word-break: break-word;
+  }
+  #letters-admin-table thead { display: none; }
+  #letters-admin-table tbody {
+    display: grid;
+    gap: 0.65rem;
+  }
+  #letters-admin-table tr {
+    padding: 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+  }
+  #letters-admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--line);
+    gap: 0.4rem;
+  }
+  #letters-admin-table td[data-label="Items"] {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  #letters-admin-table td[data-label="Items"]::before {
+    margin-right: auto;
+  }
+  #letters-admin-table td:last-child { border-bottom: 0; }
+  #letters-admin-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  #letters-admin-table td:last-child::before { display: none; } /* actions column */
+
+  /* Users table — light card style (ID selector overrides generic table:not(.us-table)) */
+  #users-list,
+  #users-list tr,
+  #users-list td {
+    all: unset;
+    display: block;
+    min-width: 0;
+  }
+  #users-list { display: grid; gap: 0.65rem; }
+  #users-list tr {
+    padding: 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    display: grid;
+    gap: 0;
+  }
+  #users-list td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--line);
+    gap: 0.4rem;
+  }
+  #users-list td:last-child { border-bottom: 0; }
+  #users-list td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  #users-list td:last-child::before { display: none; }
+  #users-list td[data-label="Name / Email"] { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+  #users-list td[data-label="Name / Email"]::before { align-self: stretch; }
+  #users-list td[data-label="Name / Email"] strong { font-size: 0.85rem; }
+  #users-list td[data-label="Name / Email"] small { color: var(--muted); font-size: 0.72rem; }
+  #users-list .users-actions { display: flex; gap: 0.4rem; }
+
+  /* Inventory master table mobile cards */
+  #sarpras-master-table,
+  #sarpras-master-table tbody,
+  #sarpras-master-table tr,
+  #sarpras-master-table td {
+    display: block;
+  }
+  #sarpras-master-table thead { display: none; }
+  #sarpras-master-table tbody { display: grid; gap: 0.65rem; }
+  #sarpras-master-table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  #sarpras-master-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  #sarpras-master-table td:last-child { border-bottom: 0; }
+  #sarpras-master-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #sarpras-master-table td:last-child::before,
+  #sarpras-master-table td[data-label=""]::before { display: none; }
+  #sarpras-master-table td[data-label=""] { justify-content: flex-end; }
+  #sarpras-master-table td[data-label=""] .action-button { font-size: 0.82rem; padding: 0.25rem 0.45rem; }
+
+  /* Inventory activity table mobile cards */
+  #sarpras-activity-table,
+  #sarpras-activity-table tbody,
+  #sarpras-activity-table tr,
+  #sarpras-activity-table td {
+    display: block;
+  }
+  #sarpras-activity-table thead { display: none; }
+  #sarpras-activity-table tbody { display: grid; gap: 0.65rem; }
+  #sarpras-activity-table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  #sarpras-activity-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  #sarpras-activity-table td:last-child { border-bottom: 0; }
+  #sarpras-activity-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #sarpras-activity-table td:last-child::before,
+  #sarpras-activity-table td[data-label=""]::before { display: none; }
+  #sarpras-activity-table td[data-label=""] { justify-content: flex-end; }
+  #sarpras-activity-table td[data-label=""] .action-button { font-size: 0.82rem; padding: 0.25rem 0.45rem; }
+  #sarpras-activity-table .tx-detail-row td { all: revert; display: revert; border-bottom: 0; padding: 0; }
+
+  /* Inventory overview table mobile cards */
+  #sarpras-overview-table,
+  #sarpras-overview-table tbody,
+  #sarpras-overview-table tr,
+  #sarpras-overview-table td {
+    display: block;
+  }
+  #sarpras-overview-table thead { display: none; }
+  #sarpras-overview-table tbody { display: grid; gap: 0.65rem; }
+  #sarpras-overview-table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  #sarpras-overview-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  #sarpras-overview-table td:last-child { border-bottom: 0; }
+  #sarpras-overview-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Staff attendance table mobile cards */
+  .att-table {
+    min-width: 0;
+  }
+  .att-table-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+  .att-table,
+  .att-table tbody,
+  .att-table tr,
+  .att-table td {
+    display: block;
+  }
+  .att-table thead { display: none; }
+  .att-table tbody { display: grid; gap: 0.65rem; }
+  .att-table > tbody > tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .att-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  .att-table td:last-child { border-bottom: 0; }
+  .att-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .att-table .att-emp-cell small { margin-top: 0; }
+
+  /* Student table mobile cards */
+  #pd-students-table,
+  #pd-students-table tbody,
+  #pd-students-table tr,
+  #pd-students-table td {
+    display: block;
+  }
+  #pd-students-table thead { display: none; }
+  #pd-students-table tbody { display: grid; gap: 0.65rem; }
+  #pd-students-table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  #pd-students-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  #pd-students-table td:last-child { border-bottom: 0; }
+  #pd-students-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* pd-pagination is inside pd-table-wrap's sibling — shown on mobile too */
+
+  /* Mutation table mobile cards */
+  #pd-mutation-table,
+  #pd-mutation-table tbody,
+  #pd-mutation-table tr,
+  #pd-mutation-table td {
+    display: block;
+  }
+  #pd-mutation-table thead { display: none; }
+  #pd-mutation-table tbody { display: grid; gap: 0.65rem; }
+  #pd-mutation-table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  #pd-mutation-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  #pd-mutation-table td:last-child { border-bottom: 0; }
+  #pd-mutation-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* Staff overview ranking tables */
+  .staff-ov-rank table,
+  .staff-ov-rank table tbody,
+  .staff-ov-rank table tr,
+  .staff-ov-rank table td {
+    display: block;
+  }
+  .staff-ov-rank table thead { display: none; }
+  .staff-ov-rank table tbody { display: grid; gap: 0.4rem; }
+  .staff-ov-rank table tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.65rem;
+  }
+  .staff-ov-rank table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+  .staff-ov-rank table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 

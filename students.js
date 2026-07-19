@@ -279,7 +279,7 @@ window.studentsModule = (() => {
         </div>
 
         <!-- Stats cards -->
-        <div id="pd-students-stats" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0.65rem;margin-bottom:0.85rem">
+        <div id="pd-students-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(7rem,1fr));gap:0.65rem;margin-bottom:0.85rem">
           <article class="module-stat tone-filled-teal" style="gap:0.15rem;padding:0.65rem 0.85rem">
             <span style="font-size:0.65rem">${T("statTotal")}</span>
             <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-total">0</strong>
@@ -297,11 +297,11 @@ window.studentsModule = (() => {
             <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-xii">0</strong>
           </article>
           <article class="module-stat tone-outline-green" style="gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="font-size:0.65rem">\u2642 L/P</span>
+            <span style="font-size:0.65rem">\u2642 ${lang() === "id" ? "L" : "M"}</span>
             <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-l">0</strong>
           </article>
           <article class="module-stat tone-outline-pink" style="gap:0.15rem;padding:0.65rem 0.85rem">
-            <span style="font-size:0.65rem">\u2640 P/F</span>
+            <span style="font-size:0.65rem">\u2640 ${lang() === "id" ? "P" : "F"}</span>
             <strong style="font-size:1.5rem;line-height:1.2" id="pd-st-p">0</strong>
           </article>
         </div>
@@ -330,7 +330,7 @@ window.studentsModule = (() => {
             <span id="pd-empty2-hint">${T("noDataHint")}</span>
           </div>
           <div class="responsive-table" id="pd-table-wrap" hidden>
-            <table class="module-table">
+            <table class="module-table" id="pd-students-table">
               <thead id="pd-thead"></thead>
               <tbody id="pd-tbody"></tbody>
             </table>
@@ -954,13 +954,13 @@ window.studentsModule = (() => {
     $("pd-tbody").innerHTML = pageRows.map((s,i) => {
       const c = effectiveClass(s);
       return `<tr>
-        <td>${start + i + 1}</td>
-        <td style="font-family:monospace;font-size:0.78rem">${escH(s.noInduk)}</td>
-        <td style="font-family:monospace;font-size:0.78rem">${escH(s.nisn)}</td>
-        <td style="font-family:monospace;font-size:0.78rem">${escH(s.code)}</td>
-        <td><span class="module-pill neutral">${escH(c||"\u2014")}</span></td>
-        <td><strong>${escH(s.name)}</strong></td>
-        <td>${genderLabel(s)}</td>
+        <td data-label="${T("colNo")}">${start + i + 1}</td>
+        <td data-label="${T("colInduk")}" style="font-family:monospace;font-size:0.78rem">${escH(s.noInduk)}</td>
+        <td data-label="${T("colNisn")}" style="font-family:monospace;font-size:0.78rem">${escH(s.nisn)}</td>
+        <td data-label="${T("colStudentCode")}" style="font-family:monospace;font-size:0.78rem">${escH(s.code)}</td>
+        <td data-label="${T("colClass")}"><span class="module-pill neutral">${escH(c||"\u2014")}</span></td>
+        <td data-label="${T("colName")}"><strong>${escH(s.name)}</strong></td>
+        <td data-label="${T("colGender")}">${genderLabel(s)}</td>
       </tr>`;
     }).join("");
   }
@@ -1039,7 +1039,7 @@ window.studentsModule = (() => {
       return sortClasses(cA, cB) || (Number(studentNoForTa(a, ta))||999) - (Number(studentNoForTa(b, ta))||999);
     });
     return `<div style="overflow-x:auto;border:1px solid var(--line);border-radius:.5rem">
-      <table class="module-table" style="min-width:36rem">
+      <table class="module-table" style="min-width:36rem" id="pd-mutation-table">
         <thead><tr>
           <th>${T("colNo")}</th><th>${T("colInduk")}</th><th>${T("colNisn")}</th>
           <th>${T("colStudentCode")}</th><th>${T("colClass")}</th>
@@ -1048,13 +1048,13 @@ window.studentsModule = (() => {
         <tbody>${sorted.map((s,i) => {
           const cls = studentClassForTa(s, ta);
           return `<tr>
-            <td>${i+1}</td>
-            <td style="font-family:monospace;font-size:0.78rem">${escH(s.noInduk)}</td>
-            <td style="font-family:monospace;font-size:0.78rem">${escH(s.nisn)}</td>
-            <td style="font-family:monospace;font-size:0.78rem">${escH(s.code)}</td>
-            <td><span class="module-pill neutral">${escH(cls)}</span></td>
-            <td><strong>${escH(s.name)}</strong></td>
-            <td>${genderLabel(s)}</td>
+            <td data-label="${T("colNo")}">${i+1}</td>
+            <td data-label="${T("colInduk")}" style="font-family:monospace;font-size:0.78rem">${escH(s.noInduk)}</td>
+            <td data-label="${T("colNisn")}" style="font-family:monospace;font-size:0.78rem">${escH(s.nisn)}</td>
+            <td data-label="${T("colStudentCode")}" style="font-family:monospace;font-size:0.78rem">${escH(s.code)}</td>
+            <td data-label="${T("colClass")}"><span class="module-pill neutral">${escH(cls)}</span></td>
+            <td data-label="${T("colName")}"><strong>${escH(s.name)}</strong></td>
+            <td data-label="${T("colGender")}">${genderLabel(s)}</td>
           </tr>`;
         }).join("")}</tbody>
       </table>
