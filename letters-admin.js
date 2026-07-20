@@ -5,7 +5,7 @@ function enhanceLettersPage() {
   if (!section || !page || !heading || page.querySelector(".letters-admin")) return;
 
   const role = window.schoolAuth?.role || "";
-  if (role !== "super_admin" && role !== "admin") return;
+  if (!["super_admin", "admin", "tu"].includes(role)) return;
 
   const isSuper = role === "super_admin";
 
