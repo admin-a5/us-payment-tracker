@@ -54,48 +54,50 @@
         <nav class="main-nav" aria-label="Main navigation">
           <button class="nav-item active" data-page="dashboard">
             <span class="icon" aria-hidden="true">⌂</span>
-            <span data-i18n="navDashboard">Dashboard</span>
+            <span class="nav-label" data-i18n="navDashboard">Dashboard</span>
           </button>
           <button class="nav-item" data-page="students">
             <span class="icon" aria-hidden="true">◫</span>
-            <span data-i18n="navStudents">Peserta Didik</span>
+            <span class="nav-label" data-i18n="navStudents">Peserta Didik</span>
           </button>
           <button class="nav-item" data-page="finance">
             <span class="icon" aria-hidden="true">◇</span>
-            <span data-i18n="navFinance">Uang Sekolah</span>
+            <span class="nav-label" data-i18n="navFinance">Uang Sekolah</span>
           </button>
           <button class="nav-item" data-page="staff">
             <span class="icon" aria-hidden="true">◎</span>
-            <span data-i18n="navStaff">Kepegawaian</span>
+            <span class="nav-label" data-i18n="navStaff">Kepegawaian</span>
           </button>
           <button class="nav-item" data-page="inventory">
             <span class="icon" aria-hidden="true">▣</span>
-            <span data-i18n="navInventory">Sarpras</span>
+            <span class="nav-label" data-i18n="navInventory">Sarpras</span>
           </button>
           <button class="nav-item" data-page="letters">
             <span class="icon" aria-hidden="true">✉</span>
-            <span data-i18n="navLetters">Surat</span>
+            <span class="nav-label" data-i18n="navLetters">Surat</span>
+            <span class="nav-badge" id="letters-badge"></span>
           </button>
           <button class="nav-item" data-page="users">
             <span class="icon" aria-hidden="true">◉</span>
-            <span data-i18n="navUsers">Users</span>
+            <span class="nav-label" data-i18n="navUsers">Users</span>
           </button>
           <button class="nav-item" data-page="audit">
             <span class="icon" aria-hidden="true">◌</span>
-            <span data-i18n="navAudit">Log Audit</span>
+            <span class="nav-label" data-i18n="navAudit">Log Audit</span>
           </button>
           <button class="nav-item" data-page="diagnostics">
             <span class="icon" aria-hidden="true">⚙</span>
-            <span data-i18n="navDiagnostics">Diagnostics</span>
+            <span class="nav-label" data-i18n="navDiagnostics">Diagnostics</span>
           </button>
           <button class="nav-item" data-page="client">
             <span class="icon" aria-hidden="true">☰</span>
-            <span data-i18n="navClient">Client</span>
+            <span class="nav-label" data-i18n="navClient">Client</span>
           </button>
         </nav>
       </aside>
 
       <div class="workspace">
+        <div id="app-toast" aria-live="polite"></div>
         <header class="topbar">
           <button class="icon-button mobile-menu" id="menuToggle" aria-label="Open menu">☰</button>
           <div class="search-wrap">
@@ -130,15 +132,14 @@
               <div>
                 <p class="eyebrow" data-i18n="moduleSuperAdmin">Dashboard</p>
                 <h1 data-i18n="dashboardTitle">Admin Dashboard</h1>
+                <span id="dash-greeting" style="font-size:0.85rem;color:var(--muted)"></span>
               </div>
             </div>
-            <div class="dashboard-grid">
-              <div class="dashboard-main">
-                <div class="dashboard-placeholder">
-                  <div class="dashboard-placeholder-icon">⚙</div>
-                  <h2>Under Development</h2>
-                  <p>AI-powered chatbot coming soon</p>
-                </div>
+            <div id="dash-content" style="display:grid;gap:1rem;padding:0 2rem 2rem">
+              <div class="module-stat-grid" id="dash-stats" style="grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))"></div>
+              <div class="dash-panels" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="module-table-card" id="dash-recent" style="padding:1rem;min-height:8rem"></div>
+                <div class="module-table-card" id="dash-alerts" style="padding:1rem;min-height:8rem"></div>
               </div>
             </div>
           </section>

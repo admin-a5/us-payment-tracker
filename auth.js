@@ -14,6 +14,7 @@ window.authModule = (() => {
     kurikulum: ["dashboard", "students", "audit", "diagnostics"],
     wali_kelas: ["dashboard", "students", "finance", "audit", "diagnostics"],
     client: ["client"],
+    tu: ["dashboard", "students", "letters", "audit"],
     user: ["dashboard", "staff", "audit"]
   };
 
@@ -24,11 +25,12 @@ window.authModule = (() => {
     kurikulum: "Kurikulum",
     wali_kelas: "Wali Kelas",
     client: "Client",
+    tu: "TU Staff",
     user: "User"
   };
 
   const FINANCE_ROLES = ["super_admin", "admin", "wali_kelas"];
-  const STUDENT_ROLES = ["super_admin", "admin", "sarpras", "kurikulum", "wali_kelas"];
+  const STUDENT_ROLES = ["super_admin", "admin", "sarpras", "kurikulum", "wali_kelas", "tu"];
   const ATTENDANCE_ROLES = ["super_admin", "user"];
 
   let sb = null;
@@ -176,6 +178,8 @@ window.authModule = (() => {
     if (STUDENT_ROLES.includes(currentRole)) {
       autoLoadStudentsDB();
     }
+
+    setTimeout(() => { if (typeof renderDashboard === "function") renderDashboard(); }, 100);
 
     /* Re-run page enhancements now that role is known (avoids dummy data flash) */
     if (typeof enhanceLettersPage === "function") enhanceLettersPage();

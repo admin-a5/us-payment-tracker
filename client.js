@@ -84,6 +84,7 @@ window.clientModule = (() => {
   }
 
   function showToast(msg) {
+    if (window.showToast) { window.showToast(msg); return; }
     const el = $("client-toast");
     if (!el) return;
     el.textContent = msg;
@@ -150,7 +151,6 @@ window.clientModule = (() => {
             </div>
           </div>
         </div>
-        <div class="client-toast" id="client-toast"></div>
       </div>
       <div class="client-modal" id="client-modal" hidden>
         <div class="client-modal-card">
@@ -683,6 +683,7 @@ window.clientModule = (() => {
 
       if (rpcError) throw rpcError;
 
+      window.auditLog?.("CHECKOUT", "inventory", token, null, { petugas: name.trim(), items, totalQty });
       showToast(`Check-out complete. Token: ${token}`);
       orderItems = [];
       renderOrder();

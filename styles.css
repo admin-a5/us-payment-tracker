@@ -138,7 +138,7 @@ button {
 }
 
 .brand > div:not(.brand-mark),
-.nav-item span:last-child {
+.nav-item .nav-label {
   opacity: 0;
   transition: opacity 130ms ease;
 }
@@ -146,10 +146,26 @@ button {
 .sidebar:hover .brand > div:not(.brand-mark),
 .sidebar:focus-within .brand > div:not(.brand-mark),
 .sidebar.open .brand > div:not(.brand-mark),
-.sidebar:hover .nav-item span:last-child,
-.sidebar:focus-within .nav-item span:last-child,
-.sidebar.open .nav-item span:last-child {
+.sidebar:hover .nav-item .nav-label,
+.sidebar:focus-within .nav-item .nav-label,
+.sidebar.open .nav-item .nav-label {
   opacity: 1;
+}
+
+.nav-badge {
+  display: none;
+  margin-left: auto;
+  padding: 0.08rem 0.45rem;
+  border-radius: 0.6rem;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  font-weight: 700;
+  background: var(--warn);
+  color: #fff;
+  white-space: nowrap;
+}
+.nav-badge:not(:empty) {
+  display: inline-block;
 }
 
 .brand strong,
@@ -4143,7 +4159,6 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
 .client-remove-btn:hover { opacity: 0.7; }
 .client-order-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
 .client-empty-inv { text-align: center; padding: 2rem; color: var(--muted); font-style: italic; }
-.client-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--card-bg); border: 1px solid var(--line); padding: 0.75rem 1.5rem; border-radius: 0.4rem; font-size: 0.85rem; z-index: 9999; display: none; opacity: 0; transition: opacity 0.3s; box-shadow: 0 0.25rem 1rem rgba(0,0,0,0.25); }
 
 /* Client modal (new request form) */
 .client-modal { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
@@ -4176,51 +4191,31 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
   .client-letters-table th:nth-child(6), .client-letters-table td:nth-child(6) { display: none; }
 }
 
-/* ── Dashboard placeholder ── */
-.dashboard-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 5rem 2rem;
-  text-align: center;
-  color: var(--muted);
-}
-.dashboard-placeholder-icon {
-  font-size: 3.5rem;
-  margin-bottom: 0.75rem;
-  opacity: 0.35;
-}
-.dashboard-placeholder h2 {
-  font-size: 1.1rem;
-  margin: 0 0 0.4rem;
-  color: var(--text);
-}
-.dashboard-placeholder p {
+/* ── Global toast ── */
+#app-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 0.6rem 1.4rem;
+  border-radius: 0.6rem;
+  background: var(--text);
+  color: var(--page);
   font-size: 0.85rem;
-  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  pointer-events: none;
+}
+#app-toast.show {
+  opacity: 1;
 }
 
-/* ── Dashboard Grid ── */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  padding: 1rem 0;
-}
-
-@media (min-width: 900px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+/* ── Dashboard panels responsive ── */
+@media (max-width: 720px) {
+  .dash-panels {
+    grid-template-columns: 1fr !important;
   }
-}
-
-@media (min-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.dashboard-main {
-  min-height: 500px;
 }

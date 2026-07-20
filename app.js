@@ -100,6 +100,17 @@ function t(key) {
   return translations[language][key] || translations.en[key] || key;
 }
 
+async function updateNavBadges() {
+  const sb = window.authModule?.getSupabaseClient?.() || window._sb;
+  if (!sb) return;
+  const badge = document.getElementById("letters-badge");
+  if (!badge) return;
+  try {
+    const { count } = await sb.from("client_requests").select("*", { count: "exact", head: true }).eq("status", "pending");
+    badge.textContent = count > 0 ? String(count) : "";
+  } catch { badge.textContent = ""; }
+}
+
 function applyLanguage() {
   document.documentElement.lang = language;
   languageSelect.value = language;
@@ -215,6 +226,15 @@ function renderSimplePages() {
   }
 }
 
+window.showToast = function (msg) {
+  const el = document.getElementById("app-toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(window.showToast._t);
+  window.showToast._t = setTimeout(() => el.classList.remove("show"), 3000);
+};
+
 function formatModuleCell(value, index) {
   const normalized = String(value);
   if (["Active", "Done", "Sent"].includes(normalized))
@@ -232,6 +252,81 @@ function formatModuleCell(value, index) {
 
 
 
+
+window.refreshDashboard = async () => renderDashboard();
+
+async function renderDashboard() {
+  const sb = window.authModule?.getSupabaseClient?.() || window._sb;
+  const role = window.authModule?.getRole?.() || window.schoolAuth?.role || null;
+  if (!sb || !role) return;
+
+  const name = document.getElementById("profile-name")?.textContent || "User";
+  const roleLabel = {super_admin:"Super Admin",admin:"US/PSB",sarpras:"Sarpras",kurikulum:"Kurikulum",wali_kelas:"Wali Kelas",client:"Client",tu:"TU Staff",user:"User"}[role]||role;
+  const greeting = document.getElementById("dash-greeting");
+  if (greeting) greeting.textContent = `${t("welcome") || "Welcome"}, ${name} — ${roleLabel}`;
+
+  const statsEl = document.getElementById("dash-stats");
+  const recentEl = document.getElementById("dash-recent");
+  const alertsEl = document.getElementById("dash-alerts");
+  if (!statsEl) return;
+
+  statsEl.innerHTML = `<article class="module-stat"><span>${t("invOverviewLoading")}</span><strong>—</strong></article>`;
+
+  async function qc(table, filter) {
+    try {
+      let q = sb.from(table).select("*", { count: "exact", head: true });
+      if (filter) q = filter(q);
+      const { count, error } = await q;
+      return error ? null : count;
+    } catch { return null; }
+  }
+
+  const [studentCount, lowStockCount, pendingLetters] = await Promise.all([
+    qc("pd_students"),
+    qc("sarpras_master_items", (q) => q.lte("stock", 2)),
+    qc("client_requests", (q) => q.eq("status", "pending"))
+  ]);
+
+  /* Read today's payments from DOM after US Payment module computes it */
+  const usTodayEl = document.getElementById("us-s-today");
+  const todayPayments = usTodayEl ? (parseInt(usTodayEl.textContent) || 0) : null;
+
+  statsEl.innerHTML = [
+    ["blue",   t("studentsTotal"),       studentCount],
+    ["orange", t("invOverviewLowStock"), lowStockCount],
+    ["yellow", t("pendingRequests"),     pendingLetters],
+    ["green",  t("dashPaymentsToday"),   todayPayments],
+  ].filter(([,,v]) => v !== null)
+   .map(([color, label, value]) =>
+      `<article class="module-stat tone-filled-${color}"><span>${label}</span><strong>${value}</strong></article>`
+    ).join("") || `<article class="module-stat"><span>${t("invOverviewLoading")}</span><strong>…</strong></article>`;
+
+  if (recentEl) {
+    try {
+      const { data: logs } = await sb.from("audit_logs")
+        .select("user_email, action, module, created_at")
+        .order("created_at", { ascending: false }).limit(5);
+      if (logs?.length) {
+        recentEl.innerHTML = `<h3 style="margin:0 0 .5rem">${t("dashRecentActivity")}</h3>` +
+          logs.map(l => `<div style="display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid var(--border);gap:1rem"><span><strong>${l.action}</strong> — ${l.module}</span><small style="color:var(--muted);white-space:nowrap">${l.user_email}</small></div>`).join("");
+      } else recentEl.innerHTML = `<p style="color:var(--muted);margin:0">${t("dashNoActivity")}</p>`;
+    } catch { recentEl.innerHTML = `<p style="color:var(--muted);margin:0">${t("dashNoActivity")}</p>`; }
+  }
+
+  if (alertsEl) {
+    const alerts = [];
+    if (lowStockCount > 0) alerts.push(`${lowStockCount} ${t("invOverviewLowStock")}`);
+    if (pendingLetters > 0) alerts.push(`${pendingLetters} ${t("pendingRequests")}`);
+    if (alerts.length) {
+      alertsEl.innerHTML = `<h3 style="margin:0 0 .5rem;color:var(--warn)">⚠ ${t("dashAlerts")}</h3>` +
+        alerts.map(a => `<div style="padding:.35rem 0">${a}</div>`).join("");
+    } else {
+      alertsEl.innerHTML = `<p style="color:var(--muted);margin:0">${t("dashAllGood")}</p>`;
+    }
+  }
+
+  updateNavBadges();
+}
 
 function capitalize(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);

@@ -648,6 +648,7 @@ const usPayment = (() => {
     $("us-s-out-total").textContent = fmtIDR(outstandingTotal);
     $("us-s-denda").textContent = fmtIDR(dendaTotal);
     $("us-s-today").textContent = paidToday;
+    window.refreshDashboard?.();
   }
 
   function showDetail(studentId, month) {
