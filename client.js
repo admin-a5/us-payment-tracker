@@ -41,6 +41,7 @@ window.clientModule = (() => {
       clientItems: "Items",
       clientStatus: "Status",
       clientDate: "Date",
+      clientNotes: "Notes",
       clientSubmitted: "submitted",
       clientPending: "pending",
       clientApproved: "approved",
@@ -236,32 +237,34 @@ window.clientModule = (() => {
       }
 
       wrap.innerHTML = `
-        <table class="client-letters-table">
-          <thead>
-            <tr>
-              <th>${t("clientOrderNo")}</th>
-              <th>${t("clientRequestor")}</th>
-              <th>${t("clientId")}</th>
-              <th>${t("clientItems")}</th>
-              <th>${t("clientStatus")}</th>
-              <th>${t("clientAcademicYear")}</th>
-              <th>${t("clientDate")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.map(r => `
+          <table class="client-letters-table">
+            <thead>
               <tr>
-                <td><code>${escapeHtml(r.order_number)}</code></td>
-                <td>${escapeHtml(r.requestor_name)}<br/><small>${escapeHtml(r.requestor_class)}</small></td>
-                <td><small>${escapeHtml(r.requestor_id)}</small></td>
-                <td>${renderItemsSummary(r.items)}</td>
-                <td><span class="client-status-badge" style="color:${LETTER_TYPE_COLORS[r.status] || 'var(--muted)'}">${t("client" + r.status.charAt(0).toUpperCase() + r.status.slice(1))}</span></td>
-                <td><small>${escapeHtml(r.academic_year)}</small></td>
-                <td><small>${formatWIB(r.updated_at || r.created_at)}</small></td>
+                <th>${t("clientOrderNo")}</th>
+                <th>${t("clientRequestor")}</th>
+                <th>${t("clientId")}</th>
+                <th>${t("clientItems")}</th>
+                <th>${t("clientStatus")}</th>
+                <th>${t("clientNotes")}</th>
+                <th>${t("clientAcademicYear")}</th>
+                <th>${t("clientDate")}</th>
               </tr>
-            `).join("")}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${data.map(r => `
+                <tr>
+                  <td><code>${escapeHtml(r.order_number)}</code></td>
+                  <td>${escapeHtml(r.requestor_name)}<br/><small>${escapeHtml(r.requestor_class)}</small></td>
+                  <td><small>${escapeHtml(r.requestor_id)}</small></td>
+                  <td>${renderItemsSummary(r.items)}</td>
+                  <td><span class="client-status-badge" style="color:${LETTER_TYPE_COLORS[r.status] || 'var(--muted)'}">${t("client" + r.status.charAt(0).toUpperCase() + r.status.slice(1))}</span></td>
+                  <td><small style="color:var(--warn)">${r.notes ? escapeHtml(r.notes) : ""}</small></td>
+                  <td><small>${escapeHtml(r.academic_year)}</small></td>
+                  <td><small>${formatWIB(r.updated_at || r.created_at)}</small></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
       `;
     } catch (err) {
       wrap.innerHTML = `<div class="client-error">${escapeHtml(err.message)}</div>`;
