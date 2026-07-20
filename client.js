@@ -42,6 +42,7 @@ window.clientModule = (() => {
       clientStatus: "Status",
       clientDate: "Date",
       clientSubmitted: "submitted",
+      clientPending: "pending",
       clientApproved: "approved",
       clientDone: "done",
       clientId: "ID",
@@ -272,7 +273,8 @@ window.clientModule = (() => {
     return items.map(i => {
       const label = i.type === "__custom__" && i.description ? i.description : i.type;
       const desc = i.description && i.type !== "__custom__" ? i.description : "";
-      return `<span class="client-item-pill">${escapeHtml(label)}${desc ? ` <small style="color:var(--muted)">(${escapeHtml(desc)})</small>` : ""}</span>`;
+      const lang = i.lang ? ` [${i.lang}]` : "";
+      return `<span class="client-item-pill">${escapeHtml(label)}${lang}${desc ? ` <small style="color:var(--muted)">(${escapeHtml(desc)})</small>` : ""}</span>`;
     }).join(" ");
   }
 
