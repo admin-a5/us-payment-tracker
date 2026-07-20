@@ -68,6 +68,18 @@ function enhanceLettersPage() {
         </div>
       </div>
     </div>
+
+    <div class="letters-modal" id="letters-pending-modal" hidden>
+      <div class="letters-modal-card">
+        <h3 style="margin:0 0 0.5rem">Alasan Pending</h3>
+        <p style="margin:0 0 0.75rem;font-size:0.85rem;color:var(--muted)">Berikan alasan mengapa request ini dipending:</p>
+        <textarea id="letters-pending-reason" rows="3" style="width:100%;padding:0.5rem;border:1px solid var(--line);border-radius:0.4rem;background:var(--input-bg);color:var(--text);font-size:0.85rem;resize:vertical;box-sizing:border-box"></textarea>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem">
+          <button class="primary-button secondary" id="letters-pending-cancel">Batal</button>
+          <button class="primary-button" id="letters-pending-save">Simpan</button>
+        </div>
+      </div>
+    </div>
   `;
 
   loadLettersAdmin();
@@ -103,6 +115,25 @@ async function loadLettersAdmin() {
 
   const role = window.schoolAuth?.role || "";
   const isSuper = role === "super_admin";
+
+  async function doStatusUpdate(sel, status, notes) {
+    try {
+      const id = sel.dataset.id;
+      const order = sel.dataset.order;
+      const prevStatus = sel.dataset.prevStatus;
+      const updateData = { status, updated_at: new Date().toISOString() };
+      if (status === "pending" && notes.trim()) updateData.notes = notes.trim();
+      const { error: upErr } = await sb.from("client_requests").update(updateData).eq("id", id);
+      if (upErr) throw upErr;
+      sel.dataset.prevStatus = status;
+      sel.className = "letters-status-select status-" + status;
+      window.auditLog?.("UPDATE", "letters", id, { status: prevStatus }, { status, notes: notes.trim() || undefined });
+      showToastGlobal(`Request ${order} → ${status}${notes.trim() ? ` (${notes.trim()})` : ""}`);
+      loadLettersAdmin();
+    } catch (e) {
+      showToastGlobal(`Error: ${e.message}`);
+    }
+  }
 
   try {
     const { data, error } = await sb
@@ -172,34 +203,42 @@ async function loadLettersAdmin() {
       </tr>
     `).join("");
 
+    let pendingTarget = null;
+
     tbody.querySelectorAll(".letters-status-select").forEach(sel => {
       sel.addEventListener("change", async () => {
-        const id = sel.dataset.id;
-        const order = sel.dataset.order;
         const status = sel.value;
-        let notes = "";
-        if (status === "pending") {
-          notes = prompt("Alasan pending / Reason for pending:");
-          if (notes === null) { sel.value = sel.dataset.prevStatus; return; }
+        if (status !== "pending") {
+          doStatusUpdate(sel, status, "");
+          return;
         }
-        try {
-          const prevStatus = sel.dataset.prevStatus;
-          const updateData = { status, updated_at: new Date().toISOString() };
-          if (status === "pending" && notes.trim()) updateData.notes = notes.trim();
-          const { error: upErr } = await sb
-            .from("client_requests")
-            .update(updateData)
-            .eq("id", id);
-          if (upErr) throw upErr;
-          sel.dataset.prevStatus = status;
-          sel.className = "letters-status-select status-" + status;
-          window.auditLog?.("UPDATE", "letters", id, { status: prevStatus }, { status, notes: notes.trim() || undefined });
-          showToastGlobal(`Request ${order} → ${status}${notes.trim() ? ` (${notes.trim()})` : ""}`);
-          loadLettersAdmin();
-        } catch (e) {
-          showToastGlobal(`Error: ${e.message}`);
+        pendingTarget = sel;
+        const modal = document.getElementById("letters-pending-modal");
+        const reason = document.getElementById("letters-pending-reason");
+        if (modal && reason) {
+          reason.value = "";
+          modal.hidden = false;
         }
       });
+    });
+
+    document.getElementById("letters-pending-save")?.addEventListener("click", () => {
+      const reason = document.getElementById("letters-pending-reason");
+      if (pendingTarget) {
+        doStatusUpdate(pendingTarget, "pending", reason?.value || "");
+        pendingTarget = null;
+      }
+      const modal = document.getElementById("letters-pending-modal");
+      if (modal) modal.hidden = true;
+    });
+
+    document.getElementById("letters-pending-cancel")?.addEventListener("click", () => {
+      if (pendingTarget) {
+        pendingTarget.value = pendingTarget.dataset.prevStatus;
+        pendingTarget = null;
+      }
+      const modal = document.getElementById("letters-pending-modal");
+      if (modal) modal.hidden = true;
     });
 
     tbody.querySelectorAll(".letters-order-link").forEach(a => {
