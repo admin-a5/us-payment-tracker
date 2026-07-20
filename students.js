@@ -404,12 +404,12 @@ window.studentsModule = (() => {
   }
 
   function bindEvents() {
-    $("pd-file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) processFile(f); });
+    $("pd-file")?.addEventListener("change", (e) => { const f = e.target.files[0]; if (f) processFile(f); });
     $("pd-export").addEventListener("click", exportData);
-    $("pd-load-db").addEventListener("click", loadFromSupabase);
-    $("pd-save-db").addEventListener("click", saveToSupabase);
-    $("pd-clear-db").addEventListener("click", clearDb);
-    $("pd-export-hadir").addEventListener("click", exportDaftarHadir);
+    $("pd-load-db")?.addEventListener("click", loadFromSupabase);
+    $("pd-save-db")?.addEventListener("click", saveToSupabase);
+    $("pd-clear-db")?.addEventListener("click", clearDb);
+    $("pd-export-hadir")?.addEventListener("click", exportDaftarHadir);
 
     $("pd-ta-select").addEventListener("change", (e) => {
       activeTa = e.target.value;
