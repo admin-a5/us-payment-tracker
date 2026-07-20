@@ -57,11 +57,12 @@ function enhanceLettersPage() {
                 <th>Status</th>
                 <th>Date</th>
                 <th>TA</th>
+                <th>Notes</th>
                 ${isSuper ? "<th>Actions</th>" : ""}
               </tr>
             </thead>
             <tbody id="letters-admin-body">
-              <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr>
             </tbody>
           </table>
         </div>
@@ -116,7 +117,7 @@ async function loadLettersAdmin() {
     if (!tbody) return;
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">No requests yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">No requests yet.</td></tr>';
       return;
     }
 
@@ -151,7 +152,8 @@ async function loadLettersAdmin() {
         <td data-label="Items">${(r.items || []).map(i => {
           const label = i.type === "__custom__" && i.description ? i.description : i.type;
           const desc = i.description && i.type !== "__custom__" ? i.description : "";
-          return `<span class="module-pill neutral">${escapeHtml(label)}${desc ? ` <small style="color:var(--muted)">(${escapeHtml(desc)})</small>` : ""}</span>`;
+          const lang = i.lang ? ` [${i.lang}]` : "";
+          return `<span class="module-pill neutral">${escapeHtml(label)}${lang}${desc ? ` <small style="color:var(--muted)">(${escapeHtml(desc)})</small>` : ""}</span>`;
         }).join(" ")}</td>
         <td data-label="Status">
           <select class="letters-status-select status-${escapeHtml(r.status)}" data-id="${r.id}" data-order="${escapeHtml(r.order_number)}" data-prev-status="${escapeHtml(r.status)}">
@@ -163,6 +165,7 @@ async function loadLettersAdmin() {
         </td>
         <td data-label="Date"><small>${formatDate(r.updated_at || r.created_at)}</small></td>
         <td data-label="TA"><small>${escapeHtml(r.academic_year)}</small></td>
+        <td data-label="Notes"><small${r.notes ? ` style="color:var(--warn)" title="${escapeHtml(r.notes)}"` : ` style="color:var(--muted)"`}>${escapeHtml(r.notes ? (r.notes.length > 40 ? r.notes.slice(0, 40) + "…" : r.notes) : "")}</small></td>
         ${isSuper ? `<td data-label="">
           <button class="action-button letters-delete-btn" data-id="${r.id}" data-order="${escapeHtml(r.order_number)}" title="Delete">✕</button>
         </td>` : ""}
@@ -174,17 +177,24 @@ async function loadLettersAdmin() {
         const id = sel.dataset.id;
         const order = sel.dataset.order;
         const status = sel.value;
+        let notes = "";
+        if (status === "pending") {
+          notes = prompt("Alasan pending / Reason for pending:");
+          if (notes === null) { sel.value = sel.dataset.prevStatus; return; }
+        }
         try {
           const prevStatus = sel.dataset.prevStatus;
+          const updateData = { status, updated_at: new Date().toISOString() };
+          if (status === "pending" && notes.trim()) updateData.notes = notes.trim();
           const { error: upErr } = await sb
             .from("client_requests")
-            .update({ status, updated_at: new Date().toISOString() })
+            .update(updateData)
             .eq("id", id);
           if (upErr) throw upErr;
           sel.dataset.prevStatus = status;
           sel.className = "letters-status-select status-" + status;
-          window.auditLog?.("UPDATE", "letters", id, { status: prevStatus }, { status });
-          showToastGlobal(`Request ${order} → ${status}`);
+          window.auditLog?.("UPDATE", "letters", id, { status: prevStatus }, { status, notes: notes.trim() || undefined });
+          showToastGlobal(`Request ${order} → ${status}${notes.trim() ? ` (${notes.trim()})` : ""}`);
           loadLettersAdmin();
         } catch (e) {
           showToastGlobal(`Error: ${e.message}`);
@@ -226,7 +236,7 @@ async function loadLettersAdmin() {
     }
   } catch (err) {
     const tbody = document.getElementById("letters-admin-body");
-    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--due-text)">${escapeHtml(err.message)}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--due-text)">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
