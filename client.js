@@ -258,7 +258,6 @@ window.clientModule = (() => {
                 <th>${t("clientNotes")}</th>
                 <th>${t("clientAcademicYear")}</th>
                 <th>${t("clientDate")}</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -266,7 +265,7 @@ window.clientModule = (() => {
                 const statusLabel = t("client" + r.status.charAt(0).toUpperCase() + r.status.slice(1));
                 return `
                 <tr>
-                  <td data-label="${t("clientOrderNo")}"><code>${escapeHtml(r.order_number)}</code></td>
+                  <td data-label="${t("clientOrderNo")}"><code>${escapeHtml(r.order_number)}</code> <button class="client-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋</button></td>
                   <td data-label="${t("clientRequestor")}">${escapeHtml(r.requestor_name)}<br/><small>${escapeHtml(r.requestor_class)}</small></td>
                   <td data-label="${t("clientId")}"><small>${escapeHtml(r.requestor_id)}</small></td>
                   <td data-label="${t("clientItems")}">${renderItemsSummary(r.items)}</td>
@@ -274,7 +273,6 @@ window.clientModule = (() => {
                   <td data-label="${t("clientNotes")}"><small style="color:var(--warn)">${r.notes ? escapeHtml(r.notes) : ""}</small></td>
                   <td data-label="${t("clientAcademicYear")}"><small>${escapeHtml(r.academic_year)}</small></td>
                   <td data-label="${t("clientDate")}"><small>${formatWIB(r.updated_at || r.created_at)}</small></td>
-                  <td data-label=""><button class="client-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋 Salin</button></td>
                 </tr>`;
               }).join("")}
             </tbody>

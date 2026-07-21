@@ -2753,6 +2753,7 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
   table.client-letters-table td[data-label=""]::before { display: none; }
   table.client-letters-table td[data-label=""] { justify-content: flex-end; }
   #letters-admin-table td:last-child { justify-content: flex-end; }
+  table.client-letters-table td:first-child { flex-wrap: wrap; gap: 0.3rem; }
 
   /* Users table — light card style (ID selector overrides generic table:not(.us-table)) */
   #users-list,
@@ -4158,10 +4159,11 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
 .client-letters-table th { text-align: left; padding: 0.5rem 0.5rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
 .client-letters-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); vertical-align: middle; }
 .client-letters-table td small { color: var(--muted); font-size: 0.7rem; }
-.client-copy-btn { background: none; border: 1px solid var(--line); border-radius: 0.3rem; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.85rem; line-height: 1; }
-.client-copy-btn:hover { border-color: var(--accent); }
+.client-copy-btn, .la-copy-btn { background: none; border: 0; border-radius: 0.3rem; cursor: pointer; padding: 0.15rem 0.3rem; font-size: 0.85rem; line-height: 1; }
+.client-copy-btn:hover, .la-copy-btn:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .client-letters-table tr:last-child td { border-bottom: 0; }
 .client-letters-table tr:nth-child(even) td { background: var(--surface); }
+.client-letters-table td:first-child, #letters-admin-table td:first-child { white-space: nowrap; }
 .client-letters-table td:first-child code { font-size: 0.9rem; font-weight: 700; color: var(--order-color); }
 .letters-order-link { font-size: 0.9rem; font-weight: 700; color: var(--order-color); text-decoration: none; }
 .letters-order-link:hover { text-decoration: underline; }

@@ -51,18 +51,17 @@ function enhanceLettersPage() {
               <tr>
                 <th>Order No</th>
                 <th>Requestor</th>
-                <th>Class</th>
                 <th>ID</th>
                 <th>Items</th>
                 <th>Status</th>
-                <th>Date</th>
-                <th>TA</th>
                 <th>Notes</th>
-                ${isSuper ? "<th>Actions</th>" : ""}
+                <th>TA</th>
+                <th>Date</th>
+                ${isSuper ? "<th></th>" : ""}
               </tr>
             </thead>
             <tbody id="letters-admin-body">
-              <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr>
+              <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr>
             </tbody>
           </table>
         </div>
@@ -176,9 +175,8 @@ async function loadLettersAdmin() {
 
     tbody.innerHTML = filtered.map(r => `
       <tr>
-        <td data-label="Order No"><a href="#" class="letters-order-link" data-order="${escapeHtml(r.order_number)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-date="${formatDate(r.updated_at || r.created_at)}" title="Click for details">${escapeHtml(r.order_number)}</a></td>
+        <td data-label="Order No"><a href="#" class="letters-order-link" data-order="${escapeHtml(r.order_number)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-date="${formatDate(r.updated_at || r.created_at)}" title="Click for details">${escapeHtml(r.order_number)}</a> <button class="la-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋</button></td>
         <td data-label="Requestor"><strong>${escapeHtml(r.requestor_name)}</strong></td>
-        <td data-label="Class">${escapeHtml(r.requestor_class)}</td>
         <td data-label="ID"><small>${escapeHtml(r.requestor_id)}</small></td>
         <td data-label="Items">${(r.items || []).map(i => {
           const label = i.type === "__custom__" && i.description ? i.description : i.type;
@@ -194,12 +192,10 @@ async function loadLettersAdmin() {
             <option value="done" ${r.status === "done" ? "selected" : ""}>done</option>
           </select>
         </td>
-        <td data-label="Date"><small>${formatDate(r.updated_at || r.created_at)}</small></td>
-        <td data-label="TA"><small>${escapeHtml(r.academic_year)}</small></td>
         <td data-label="Notes"><small${r.notes ? ` style="color:var(--warn)" title="${escapeHtml(r.notes)}"` : ` style="color:var(--muted)"`}>${escapeHtml(r.notes ? (r.notes.length > 40 ? r.notes.slice(0, 40) + "…" : r.notes) : "")}</small></td>
-        ${isSuper ? `<td data-label="">
-          <button class="action-button letters-delete-btn" data-id="${r.id}" data-order="${escapeHtml(r.order_number)}" title="Delete">✕</button>
-        </td>` : ""}
+        <td data-label="TA"><small>${escapeHtml(r.academic_year)}</small></td>
+        <td data-label="Date"><small>${formatDate(r.updated_at || r.created_at)}</small></td>
+        ${isSuper ? `<td data-label=""><button class="action-button letters-delete-btn" data-id="${r.id}" data-order="${escapeHtml(r.order_number)}" title="Delete">✕</button></td>` : ""}
       </tr>
     `).join("");
 
@@ -251,6 +247,19 @@ async function loadLettersAdmin() {
         const date = a.dataset.date;
         const summary = items.map(i => i.type === "__custom__" && i.description ? i.description : i.type).join(", ");
         showToastGlobal(`${order} — ${requestor} (${cls}) — ${summary} — ${date}`);
+      });
+    });
+
+    tbody.querySelectorAll(".la-copy-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const items = JSON.parse(btn.dataset.items || "[]");
+        const itemsText = items.map((i, idx) => {
+          const label = i.type === "__custom__" && i.description ? i.description : i.type;
+          const lang = i.lang ? ` [${i.lang}]` : "";
+          return `${idx + 1}. ${label}${lang}`;
+        }).join("\n");
+        const text = `Permohonan surat telah dibuat dengan nomor order\n--------\n${btn.dataset.order}\nID : ${btn.dataset.id || "-"}\nNama : ${btn.dataset.requestor}\nKelas : ${btn.dataset.class}\nTahun Ajaran : ${btn.dataset.year}\nItems:\n${itemsText}\nTanggal Permohonan : ${formatDate(btn.dataset.date)}\nStatus : ${btn.dataset.status}\n\nMohon perhatian:\n1. Waktu pengerjaan normal 3 hari setelah tanggal permohonan\n2. Untuk Alumni mohon menyerahkan dokumen asli untuk pembuatan surat/transkrip`;
+        navigator.clipboard.writeText(text).then(() => showToastGlobal("Disalin!"));
       });
     });
 
