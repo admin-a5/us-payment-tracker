@@ -42,6 +42,8 @@ window.clientModule = (() => {
       clientStatus: "Status",
       clientDate: "Date",
       clientNotes: "Notes",
+      clientScanStart: "Start",
+      clientScanStop: "Stop",
       clientSubmitted: "submitted",
       clientPending: "pending",
       clientApproved: "approved",
@@ -125,8 +127,11 @@ window.clientModule = (() => {
                <button class="primary-button secondary" id="client-scan-btn">Scan</button>
             </div>
             <div class="client-scanner-area" id="client-scanner-area" style="display:none">
-              <div id="client-scanner-viewport"></div>
-              <button class="primary-button secondary" id="client-scan-stop" style="margin-top:0.5rem">Stop Scanner</button>
+              <div id="client-scanner-viewport" style="width:260px;height:260px"></div>
+              <div class="client-scanner-actions">
+                <button class="primary-button secondary" id="client-scan-stop" data-i18n="clientScanStop">Stop</button>
+                <button class="primary-button" id="client-scan-capture" data-i18n="clientScanStart">Start</button>
+              </div>
             </div>
             <div class="client-order-wrap" id="client-order-wrap" style="display:none">
               <table class="client-order-table">
@@ -177,11 +182,15 @@ window.clientModule = (() => {
                 <button type="button" class="client-req-remove" title="Remove">&times;</button>
               </div>
             </div>
-            <button type="button" class="primary-button secondary" id="client-add-item-btn" data-i18n="clientAddItem">+ Add Item</button>
-            <hr />
-            <div class="client-form-actions">
-              <button type="button" class="primary-button secondary" id="client-form-cancel" data-i18n="clientCancel">Cancel</button>
-              <button type="submit" class="primary-button" id="client-form-save" data-i18n="clientSave">Save</button>
+            <div class="client-req-sticky">
+              <hr />
+              <div class="client-req-sticky-row">
+                <button type="button" class="primary-button secondary" id="client-add-item-btn" data-i18n="clientAddItem">+ Add Item</button>
+                <div class="client-form-actions">
+                  <button type="button" class="danger-button" id="client-form-cancel" data-i18n="clientCancel">Cancel</button>
+                  <button type="submit" class="primary-button" id="client-form-save" data-i18n="clientSave">Save</button>
+                </div>
+              </div>
             </div>
           </form>
         </div>
@@ -200,6 +209,7 @@ window.clientModule = (() => {
     $("client-req-form")?.addEventListener("submit", submitRequest);
     $("client-add-item-btn")?.addEventListener("click", addItemRow);
     $("client-scan-btn")?.addEventListener("click", startScanner);
+    $("client-scan-capture")?.addEventListener("click", startCapture);
     $("client-scan-stop")?.addEventListener("click", stopScanner);
     $("client-clear-btn")?.addEventListener("click", clearOrder);
     $("client-checkout-btn")?.addEventListener("click", doCheckout);
@@ -248,24 +258,41 @@ window.clientModule = (() => {
                 <th>${t("clientNotes")}</th>
                 <th>${t("clientAcademicYear")}</th>
                 <th>${t("clientDate")}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              ${data.map(r => `
+              ${data.map(r => {
+                const statusLabel = t("client" + r.status.charAt(0).toUpperCase() + r.status.slice(1));
+                return `
                 <tr>
-                  <td><code>${escapeHtml(r.order_number)}</code></td>
-                  <td>${escapeHtml(r.requestor_name)}<br/><small>${escapeHtml(r.requestor_class)}</small></td>
-                  <td><small>${escapeHtml(r.requestor_id)}</small></td>
-                  <td>${renderItemsSummary(r.items)}</td>
-                  <td><span class="client-status-badge" style="color:${LETTER_TYPE_COLORS[r.status] || 'var(--muted)'}">${t("client" + r.status.charAt(0).toUpperCase() + r.status.slice(1))}</span></td>
-                  <td><small style="color:var(--warn)">${r.notes ? escapeHtml(r.notes) : ""}</small></td>
-                  <td><small>${escapeHtml(r.academic_year)}</small></td>
-                  <td><small>${formatWIB(r.updated_at || r.created_at)}</small></td>
-                </tr>
-              `).join("")}
+                  <td data-label="${t("clientOrderNo")}"><code>${escapeHtml(r.order_number)}</code></td>
+                  <td data-label="${t("clientRequestor")}">${escapeHtml(r.requestor_name)}<br/><small>${escapeHtml(r.requestor_class)}</small></td>
+                  <td data-label="${t("clientId")}"><small>${escapeHtml(r.requestor_id)}</small></td>
+                  <td data-label="${t("clientItems")}">${renderItemsSummary(r.items)}</td>
+                  <td data-label="${t("clientStatus")}"><span class="client-status-badge" style="color:${LETTER_TYPE_COLORS[r.status] || 'var(--muted)'}">${statusLabel}</span></td>
+                  <td data-label="${t("clientNotes")}"><small style="color:var(--warn)">${r.notes ? escapeHtml(r.notes) : ""}</small></td>
+                  <td data-label="${t("clientAcademicYear")}"><small>${escapeHtml(r.academic_year)}</small></td>
+                  <td data-label="${t("clientDate")}"><small>${formatWIB(r.updated_at || r.created_at)}</small></td>
+                  <td data-label=""><button class="client-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋 Salin</button></td>
+                </tr>`;
+              }).join("")}
             </tbody>
           </table>
       `;
+      document.querySelectorAll(".client-copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const items = JSON.parse(btn.dataset.items || "[]");
+          const itemsText = items.map((i, idx) => {
+            const label = i.type === "__custom__" && i.description ? i.description : i.type;
+            const lang = i.lang ? ` [${i.lang}]` : "";
+            return `${idx + 1}. ${label}${lang}`;
+          }).join("\n");
+          const statusLabel = t("client" + btn.dataset.status.charAt(0).toUpperCase() + btn.dataset.status.slice(1));
+          const text = `Permohonan surat telah dibuat dengan nomor order\n--------\n${btn.dataset.order}\nID : ${btn.dataset.id || "-"}\nNama : ${btn.dataset.requestor}\nKelas : ${btn.dataset.class}\nTahun Ajaran : ${btn.dataset.year}\nItems:\n${itemsText}\nTanggal Permohonan : ${formatWIB(btn.dataset.date)}\nStatus : ${statusLabel}\n\nMohon perhatian:\n1. Waktu pengerjaan normal 3 hari setelah tanggal permohonan\n2. Untuk Alumni mohon menyerahkan dokumen asli untuk pembuatan surat/transkrip`;
+          navigator.clipboard.writeText(text).then(() => showToast("Disalin!"));
+        });
+      });
     } catch (err) {
       wrap.innerHTML = `<div class="client-error">${escapeHtml(err.message)}</div>`;
     }
@@ -411,6 +438,8 @@ window.clientModule = (() => {
     }
   }
 
+  let scanEnabled = false;
+
   async function startScanner() {
     if (!window.Html5Qrcode) {
       showToast("Scanner library not loaded. Check internet.");
@@ -419,7 +448,13 @@ window.clientModule = (() => {
 
     const area = $("client-scanner-area");
     if (!area) return;
+
+    const vp = $("client-scanner-viewport");
+    if (vp) vp.innerHTML = "";
+
     area.style.display = "block";
+
+    if (html5QrCode) return;
 
     try {
       const cameras = await Html5Qrcode.getCameras();
@@ -435,7 +470,7 @@ window.clientModule = (() => {
         { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: { width: 250, height: 150 },
+          qrbox: { width: 250, height: 250 },
           formatsToSupport: [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
@@ -451,7 +486,13 @@ window.clientModule = (() => {
       );
     } catch (err) {
       showToast(`Camera error: ${err.message}`);
-      area.style.display = "none";
+      stopScanner();
+    }
+  }
+
+  async function startCapture() {
+    if (html5QrCode && scannerActive && !scanEnabled) {
+      scanEnabled = true;
     }
   }
 
@@ -545,13 +586,33 @@ window.clientModule = (() => {
     }
   }
 
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.5, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+      osc.onended = () => ctx.close();
+    } catch (e) { /* ignore */ }
+  }
+
   async function onScanSuccess(decodedText) {
-    if (!scannerActive) return;
-    stopScanner();
+    if (!scannerActive || !scanEnabled) return;
+    scanEnabled = false;
+    playBeep();
     await lookupAndAddItem(decodedText);
   }
 
   function stopScanner() {
+    scanEnabled = false;
     scannerActive = false;
     if (html5QrCode) {
       try { html5QrCode.stop(); } catch (e) { /* ignore */ }

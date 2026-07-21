@@ -456,10 +456,9 @@ window.studentsModule = (() => {
     document.querySelectorAll("[data-pd-tab]").forEach(b =>
       b.addEventListener("click", () => setActiveTab(b.dataset.pdTab)));
 
-    const lbl = $("pd-upload-btn");
-    lbl.addEventListener("dragover", (e) => { e.preventDefault(); lbl.style.borderColor = "var(--accent)"; });
-    lbl.addEventListener("dragleave", () => { lbl.style.borderColor = ""; });
-    lbl.addEventListener("drop", (e) => { e.preventDefault(); lbl.style.borderColor = ""; const f = e.dataTransfer.files[0]; if (f) processFile(f); });
+    $("pd-upload-btn")?.addEventListener("dragover", (e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--accent)"; });
+    $("pd-upload-btn")?.addEventListener("dragleave", (e) => { e.preventDefault(); e.currentTarget.style.borderColor = ""; });
+    $("pd-upload-btn")?.addEventListener("drop", (e) => { e.preventDefault(); e.currentTarget.style.borderColor = ""; const f = e.dataTransfer.files[0]; if (f) processFile(f); });
   }
 
   function setActiveTab(tab) {

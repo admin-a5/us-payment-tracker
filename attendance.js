@@ -665,7 +665,7 @@ window.attendanceModule = (() => {
       updateStats();
     } catch (e) {
       console.error("attendance render error:", e);
-      $("att-table-body") && ($("att-table-body").innerHTML = `<tr><td colspan="14" style="text-align:center;padding:2rem;color:var(--due-text)">Render error — check console</td></tr>`);
+      $("att-table-body") && ($("att-table-body").innerHTML = `<tr><td colspan="15" style="text-align:center;padding:2rem;color:var(--due-text)">Render error — check console</td></tr>`);
     }
   }
   function debouncedRender() {
@@ -678,17 +678,34 @@ window.attendanceModule = (() => {
       <th>Karyawan</th><th>Stat.</th><th>ER</th><th>R</th><th>Add</th>
       <th style="color:var(--accent)">TotR</th>
       <th style="color:#7c4dff">Izin</th><th style="color:var(--danger)">Sakit</th><th style="color:#9c27b0">Cuti</th>
-      <th style="color:var(--money-warn)">ICC</th><th>Terlambat</th><th style="color:var(--money-warn)">PD</th><th>Keterangan</th><th>Status</th>
+      <th style="color:var(--money-warn)">ICC</th><th>Terlambat</th><th style="color:var(--money-warn)">PD</th><th>%</th><th>Keterangan</th><th>Status</th>
     </tr>`;
     const rows = getFiltered();
-    if (!rows.length) { emptyRow(14); return; }
+    if (!rows.length) { emptyRow(15); return; }
     $("att-table-body").innerHTML = rows.map(renderRekapRow).join("");
+  }
+
+  function is2526I() {
+    const pKey = state.periods[state.activePeriodIdx];
+    if (!pKey) return false;
+    const sem = getSemester(pKey);
+    return sem && (sem.sortKey === "2526-1" || sem.sortKey === "2526I");
+  }
+
+  function isSatpam(r) {
+    return /satpam/i.test(r.org || "") || r.stat === "PT";
+  }
+
+  function attendPct(r) {
+    if (isSatpam(r)) return null;
+    const denom = is2526I() ? 120 : (r.eff_days || 0);
+    return denom ? Math.round((r.hadir_totr / denom) * 100) : 0;
   }
 
   function renderRekapRow(r) {
     const hasICC = r.icc > 0;
     const isAlert = r.tidak_hadir >= 1 || r.terlambat >= 1;
-    const pct = r.eff_days ? Math.round((r.hadir_totr / r.eff_days) * 100) : 0;
+    const pct = attendPct(r);
     const tClr = r.hadir_totr >= r.eff_days ? "good" : r.hadir_totr >= r.eff_days - 2 ? "warn" : "bad";
     const addH = r.hadir_add !== 0
       ? `<span class="att-num ${r.hadir_add > 0 ? "good" : "bad"}">${r.hadir_add > 0 ? "+" : ""}${r.hadir_add}</span>`
@@ -705,19 +722,23 @@ window.attendanceModule = (() => {
       + (isAlert ? `<span class="module-pill warn">Perhatian</span> ` : "")
       + (!hasICC && !isAlert ? `<span class="module-pill good">✓ Normal</span>` : "")
       + (r.terlambat > 0 ? `<span class="module-pill warn" style="margin-left:2px">LT:${r.terlambat}</span>` : "");
+    const pctDisplay = pct !== null
+      ? `<span class="att-num ${pct >= 90 ? "good" : pct >= 75 ? "warn" : "bad"}">${pct}%</span>`
+      : `<span class="att-num" style="color:var(--muted)">—</span>`;
     return `<tr>
       <td data-label="Karyawan"><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
       <td data-label="Stat."><span class="module-pill neutral">${escapeHtml(r.stat || "—")}</span></td>
       <td data-label="ER" class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
       <td data-label="R" class="att-num-cell"><span class="att-num">${r.hadir_r}</span></td>
       <td data-label="Add" class="att-num-cell">${addH}</td>
-      <td data-label="TotR" class="att-num-cell"><span class="att-num ${tClr}" title="${pct}% hadir">${r.hadir_totr}</span></td>
+      <td data-label="TotR" class="att-num-cell"><span class="att-num ${tClr}">${r.hadir_totr}</span></td>
       <td data-label="Izin" class="att-num-cell"><span class="att-num ${r.izin > 0 ? "att-blue" : ""}">${r.izin || "—"}</span></td>
       <td data-label="Sakit" class="att-num-cell"><span class="att-num ${r.sakit > 0 ? "bad" : ""}">${r.sakit || "—"}</span></td>
       <td data-label="Cuti" class="att-num-cell"><span class="att-num ${r.cuti > 0 ? "att-purple" : ""}">${r.cuti || "—"}</span></td>
       <td data-label="ICC" class="att-num-cell">${iccDisplay}</td>
       <td data-label="Terlambat" class="att-num-cell"><span class="att-num ${r.terlambat >= 3 ? "bad" : r.terlambat > 0 ? "warn" : ""}">${r.terlambat || "—"}</span></td>
       <td data-label="PD" class="att-num-cell"><span class="att-num">${r.pd_count || "—"}</span></td>
+      <td data-label="%" class="att-num-cell">${pctDisplay}</td>
       <td data-label="Keterangan">${ketDisplay}</td>
       <td data-label="Status" style="white-space:nowrap">${status}</td>
     </tr>`;
@@ -836,10 +857,13 @@ window.attendanceModule = (() => {
   // ── STATS ────────────────────────────────────────────────────────────────────
   function updateStats() {
     const rows = getFiltered();
-    const totalEff = rows.reduce((a, r) => a + (r.eff_days || 0), 0);
-    const totalPresent = rows.reduce((a, r) => a + (r.hadir_totr || 0), 0);
+    const nonSatpam = rows.filter((r) => !isSatpam(r));
+    const totalDenom = is2526I()
+      ? nonSatpam.length * 120
+      : nonSatpam.reduce((a, r) => a + (r.eff_days || 0), 0);
+    const totalPresent = nonSatpam.reduce((a, r) => a + (r.hadir_totr || 0), 0);
     $("att-s-total").textContent = rows.length;
-    $("att-s-pct").textContent = totalEff ? `${Math.round((totalPresent / totalEff) * 100)}%` : "0%";
+    $("att-s-pct").textContent = totalDenom ? `${Math.round((totalPresent / totalDenom) * 100)}%` : "0%";
     $("att-s-absen").textContent = rows.reduce((a, r) => a + (r.tidak_hadir || 0), 0);
     $("att-s-late").textContent = rows.reduce((a, r) => a + (r.terlambat || 0), 0);
     // ICC tab button — add urgent indicator if any ICC has no keterangan
@@ -876,13 +900,18 @@ window.attendanceModule = (() => {
     // Sanitize for sheet name: max 31 chars, no special chars
     const sheetLabel = pKey.replace("/", "-"); // e.g. "2026-03"
 
-    const H = ["Employee ID", "Nama", "Unit", "Stat", "ER", "R", "Add", "TotR", "Izin", "Sakit", "Cuti", "ICC", "Terlambat", "Menit Terlambat", "PD Count", "Keterangan"];
-    const colWidths = [{ wch: 14 }, { wch: 30 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 6 }, { wch: 6 }, { wch: 7 }, { wch: 6 }, { wch: 5 }, { wch: 10 }, { wch: 16 }, { wch: 9 }, { wch: 28 }];
-    const toRow = (r) => [
-      r.employee_id, r.employee_name, r.org, r.stat, r.eff_days,
-      r.hadir_r, r.hadir_add, r.hadir_totr, r.izin || 0, r.sakit || 0, r.cuti || 0,
-      r.icc, r.terlambat, r.terlambat_minutes || 0, r.pd_count || 0, r.keterangan
-    ];
+    const H = ["Employee ID", "Nama", "Unit", "Stat", "ER", "R", "Add", "TotR", "Izin", "Sakit", "Cuti", "ICC", "Terlambat", "Menit Terlambat", "PD Count", "%", "Keterangan"];
+    const colWidths = [{ wch: 14 }, { wch: 30 }, { wch: 26 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 5 }, { wch: 6 }, { wch: 6 }, { wch: 7 }, { wch: 6 }, { wch: 5 }, { wch: 10 }, { wch: 16 }, { wch: 9 }, { wch: 6 }, { wch: 28 }];
+    const toRow = (r) => {
+      const pct = attendPct(r);
+      return [
+        r.employee_id, r.employee_name, r.org, r.stat, r.eff_days,
+        r.hadir_r, r.hadir_add, r.hadir_totr, r.izin || 0, r.sakit || 0, r.cuti || 0,
+        r.icc, r.terlambat, r.terlambat_minutes || 0, r.pd_count || 0,
+        pct !== null ? `${pct}%` : "-",
+        r.keterangan
+      ];
+    };
 
     const wb = window.XLSX.utils.book_new();
 
@@ -1093,15 +1122,14 @@ window.attendanceModule = (() => {
     const periods = periodsOfSemester(activeSem);
 
     const empMap = new Map();
-    let totalEff = 0, totalPresent = 0, totalLate = 0, totalLateMin = 0, totalAbsent = 0, totalPd = 0;
+    let totalPresent = 0, totalLate = 0, totalLateMin = 0, totalAbsent = 0, totalPd = 0;
     let iccSet = new Set();
 
     periods.forEach((p) => {
       const rows = p === "__seed_2526I__" ? (state.seed2526I?.employees || []) : (state.dbData[p] || []);
       if (!rows.length) return;
       rows.forEach((r) => {
-        totalEff += r.eff_days;
-        totalPresent += r.hadir_totr;
+        if (!isSatpam(r)) totalPresent += r.hadir_totr;
         totalLate += r.terlambat;
         totalLateMin += r.terlambat_minutes;
         totalAbsent += (r.izin || 0) + (r.sakit || 0);
@@ -1122,14 +1150,22 @@ window.attendanceModule = (() => {
     });
 
     const totalEmployees = empMap.size;
+    const nonSatpamEmps = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam");
+    const totalEff = (activeSem === "2526-1" || activeSem === "2526I")
+      ? nonSatpamEmps.length * 120
+      : nonSatpamEmps.reduce((s, e) => s + (e.eff || 0), 0);
     const avgPct = totalEff ? Math.round((totalPresent / totalEff) * 100) : 0;
     const iccCount = iccSet.size;
     const activeSemLabel = semesters.find((s) => s.sortKey === activeSem)?.label || activeSem;
+
+    const ovDenomFn = (activeSem === "2526-1" || activeSem === "2526I") ? () => 120 : (e) => e.eff || 0;
+    const ovPct = (e) => { const d = ovDenomFn(e); return d ? Math.round((e.present / d) * 100) : 0; };
 
     const topLateMin = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam").sort((a, b) => b.lateMin - a.lateMin);
     const topLateEvt = [...empMap.values()].sort((a, b) => b.late - a.late);
     const topAbsent = [...empMap.values()].sort((a, b) => (b.izin + b.sakit) - (a.izin + a.sakit));
     const topPd = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam").sort((a, b) => b.pd - a.pd);
+
 
     function t(k) { return window.t(k); }
 
@@ -1207,7 +1243,8 @@ window.attendanceModule = (() => {
             `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(emp.late, "kali")}</td></tr>`)}
           ${rankCard(`${t("staffOvTopAbsent")}`, topAbsent, (emp, i) => {
             const tot = emp.izin + emp.sakit;
-            return `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(tot, "hari")}</td></tr>`;
+            const pct = ovPct(emp);
+            return `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(tot, "hari")} <span class="ov-val" style="color:var(--muted);font-size:0.7rem">— ${pct}%</span></td></tr>`;
           })}
           ${rankCard(`${t("staffOvTopPD")}`, topPd, (emp, i) =>
             `<tr><td data-label="#" class="rank">${i + 1}</td><td data-label="${t("staffOvEmployee")}">${empCell(emp)}${sv(emp.pd, "PD")}</td></tr>`)}
@@ -1513,7 +1550,7 @@ window.attendanceModule = (() => {
         if (!rows.length) return;
         rows.forEach((r) => {
           if (!empMap.has(r.employee_id)) {
-            empMap.set(r.employee_id, { name: r.employee_name, org: r.org, late: 0, lateMin: 0, izin: 0, sakit: 0, pd: 0 });
+            empMap.set(r.employee_id, { name: r.employee_name, org: r.org, late: 0, lateMin: 0, izin: 0, sakit: 0, pd: 0, eff: 0, hadir: 0 });
           }
           const e = empMap.get(r.employee_id);
           e.late += r.terlambat || 0;
@@ -1521,14 +1558,18 @@ window.attendanceModule = (() => {
           e.izin += r.izin || 0;
           e.sakit += r.sakit || 0;
           e.pd += r.pd_count || 0;
+          e.eff += r.eff_days || 0;
+          e.hadir += r.hadir_totr || 0;
         });
       });
+
+    const expDenomFn = (sem.sortKey === "2526-1" || sem.sortKey === "2526I") ? () => 120 : (e) => e.eff || 0;
+    const expPct = (e) => { const d = expDenomFn(e); return d ? Math.round((e.hadir / d) * 100) : 0; };
 
     const topLateMin = [...empMap.values()].sort((a, b) => b.lateMin - a.lateMin);
       const topLateEvt = [...empMap.values()].sort((a, b) => b.late - a.late);
       const topAbsent = [...empMap.values()].sort((a, b) => (b.izin + b.sakit) - (a.izin + a.sakit));
       const topPd = [...empMap.values()].filter((e) => erGroup(e.org) !== "satpam").sort((a, b) => b.pd - a.pd);
-
       const data = [];
       data.push(["TOP PD", "", ""]);
       data.push(["Rank", "Nama", "PD"]);
@@ -1545,12 +1586,12 @@ window.attendanceModule = (() => {
       topLateEvt.forEach((e, i) => data.push([i + 1, e.name, e.late]));
       data.push([]);
 
-      data.push(["ABSENT", "", ""]);
-      data.push(["Rank", "Nama", "Hari"]);
-      topAbsent.forEach((e, i) => data.push([i + 1, e.name, e.izin + e.sakit]));
+      data.push(["ABSENT", "", "", ""]);
+      data.push(["Rank", "Nama", "Hari", "%"]);
+      topAbsent.forEach((e, i) => data.push([i + 1, e.name, e.izin + e.sakit, `${expPct(e)}%`]));
 
       const ws = window.XLSX.utils.aoa_to_sheet(data);
-      ws["!cols"] = [{ wch: 6 }, { wch: 36 }, { wch: 10 }];
+      ws["!cols"] = [{ wch: 6 }, { wch: 36 }, { wch: 10 }, { wch: 8 }];
       const label = sem.label.replace(/[:\/\?\*\[\]]/g, "-").slice(0, 31);
       window.XLSX.utils.book_append_sheet(wb, ws, label);
     });
