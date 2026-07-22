@@ -36,11 +36,11 @@ function saveInvTokenState() {
 
 const inventoryMasterData = {
   items: [
-      ["MHP-ATK-001", "Kertas A4", "Alat Tulis", "Gudang ATK", "420", "2026-06-30 10:00", "0"],
-      ["MHP-ELK-001", "Mouse Wireless", "Elektronik", "Lab Komputer", "18", "2026-06-30 10:05", "0"],
-      ["MHP-BRS-001", "Cairan Pel", "Kebersihan", "Gudang Kebersihan", "6", "2026-06-30 10:10", "0"],
-      ["MHP-ARS-001", "Ordner Arsip", "Arsip", "TU", "14", "2026-06-30 10:15", "0"],
-      ["MHP-TIN-001", "Tinta Printer", "Tinta & Toner", "Gudang ATK", "8", "2026-06-30 10:20", "0"]
+      ["MHP-ATK-001", "Kertas A4", "Alat Tulis", "Gudang ATK", "420", "2026-06-30 10:00", "0", "rim"],
+      ["MHP-ELK-001", "Mouse Wireless", "Elektronik", "Lab Komputer", "18", "2026-06-30 10:05", "0", "pcs"],
+      ["MHP-BRS-001", "Cairan Pel", "Kebersihan", "Gudang Kebersihan", "6", "2026-06-30 10:10", "0", "bottle"],
+      ["MHP-ARS-001", "Ordner Arsip", "Arsip", "TU", "14", "2026-06-30 10:15", "0", "pcs"],
+      ["MHP-TIN-001", "Tinta Printer", "Tinta & Toner", "Gudang ATK", "8", "2026-06-30 10:20", "0", "pcs"]
   ],
   categories: ["ATK", "Kebersihan", "Elektronik", "Kertas", "Arsip", "Tinta", "Peralatan"],
   kategoriList: [
@@ -133,9 +133,10 @@ function ensureInventoryState() {
     opnames: loadInventoryStore(inventoryStorageKeys.opnames, inventoryOpnameData.sessions),
     discrepancies: loadInventoryStore(inventoryStorageKeys.discrepancies, inventoryOpnameData.discrepancies)
   };
-  /* Normalize freq field — old items may not have row[6] */
+  /* Normalize freq & unit — old items may not have row[6] / row[7] */
   inventoryState.items.forEach((row) => {
     if (row.length < 7) row.push("0");
+    if (row.length < 8) row.push("pcs");
   });
   return inventoryState;
 }
@@ -714,6 +715,7 @@ function bindInventoryWorkspace(page) {
       form.elements["category"].value = catEntry ? catEntry[0] : "";
       form.elements["location"].value = item[3];
       form.elements["stock"].value = item[4];
+      form.elements["unit"].value = item[7] || "pcs";
       document.getElementById("sarpras-master-modal-title").textContent = t("invMasterModalEdit");
       document.getElementById("sarpras-master-modal").style.display = "grid";
       form.elements["category"].disabled = true;
@@ -952,7 +954,8 @@ function bindInventoryWorkspace(page) {
         String(formData.get("location") || "").trim(),
         String(formData.get("stock") || "0").trim(),
         nowStampWIB(),
-        "0"
+        "0",
+        String(formData.get("unit") || "pcs").trim()
       ];
       if (editIndex >= 0 && editIndex < inventoryState.items.length) {
         const oldFreq = inventoryState.items[editIndex][6] || "0";
@@ -1208,7 +1211,7 @@ async function saveMasterToSupabase(page) {
     await Promise.all([
       sb.from("sarpras_master_items").upsert(
         inventoryState.items.map((row) => ({
-          item_code: row[0], item_name: row[1], category: row[2], location: row[3], stock: Number(row[4]) || 0, timestamp: row[5] || null, freq: Number(row[6]) || 0
+          item_code: row[0], item_name: row[1], category: row[2], location: row[3], stock: Number(row[4]) || 0, timestamp: row[5] || null, freq: Number(row[6]) || 0, unit: row[7] || "pcs"
         })),
         { onConflict: "item_code" }
       ),
@@ -1253,7 +1256,7 @@ async function loadMasterFromSupabase(page) {
     if (itemsRes.error) throw itemsRes.error;
     if (kategoriRes.error) throw kategoriRes.error;
     if (txRes.error) throw txRes.error;
-    inventoryState.items = (itemsRes.data || []).map((row) => [row.item_code, row.item_name, row.category, row.location || "", String(row.stock ?? 0), row.timestamp || "", String(row.freq ?? 0)]);
+    inventoryState.items = (itemsRes.data || []).map((row) => [row.item_code, row.item_name, row.category, row.location || "", String(row.stock ?? 0), row.timestamp || "", String(row.freq ?? 0), row.unit || "pcs"]);
     inventoryState.kategoriList = (kategoriRes.data || []).map((row) => [row.code, row.name]);
     inventoryState.transactions = (txRes.data || []).map((row) => [row.token, row.type, row.date, JSON.stringify(row.items || []), String(row.total_qty ?? 0), String(row.item_count ?? 0), row.petugas || "—", row.status || "Selesai"]);
     persistInventoryStore();
@@ -1644,7 +1647,7 @@ function filterMasterTable(q) {
   const start = (masterCurrentPage - 1) * masterPageSize;
   const page = filtered.slice(start, start + masterPageSize);
   tbody.innerHTML = page.length === 0
-    ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
+    ? `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
         <td data-label="${t("invMasterCode")}"><strong>${escapeHtml(row[0])}</strong></td>
@@ -1652,6 +1655,7 @@ function filterMasterTable(q) {
         <td data-label="${t("invMasterCategory")}">${escapeHtml(row[2])}</td>
         <td data-label="${t("invMasterLocation")}">${escapeHtml(row[3])}</td>
         <td data-label="${t("invMasterStock")}">${row[4]}</td>
+        <td data-label="${t("invMasterUnit")}"><small>${escapeHtml(row[7] || "pcs")}</small></td>
         <td data-label="${t("invMasterFreq")}" style="text-align:center;font-weight:600">${row[6] || "0"}</td>
         <td data-label="${t("invMasterTimestamp")}" style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
         <td data-label="">
@@ -1664,7 +1668,7 @@ function filterMasterTable(q) {
 
 function exportMasterExcel() {
   const state = ensureInventoryState();
-  const data = state.items.map((r) => ({ Kode: r[0], "Nama Barang": r[1], Kategori: r[2], Location: r[3], Stock: r[4], "Time Stamp": r[5] || "", Frekuensi: r[6] || "0" }));
+  const data = state.items.map((r) => ({ Kode: r[0], "Nama Barang": r[1], Kategori: r[2], Location: r[3], Stock: r[4], Unit: r[7] || "pcs", "Time Stamp": r[5] || "", Frekuensi: r[6] || "0" }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Master Barang");
@@ -1672,7 +1676,7 @@ function exportMasterExcel() {
 }
 
 function downloadMasterTemplate() {
-  const ws = XLSX.utils.aoa_to_sheet([["Kode", "Nama Barang", "Kategori", "Location", "Stock"]]);
+  const ws = XLSX.utils.aoa_to_sheet([["Kode", "Nama Barang", "Kategori", "Location", "Stock", "Unit"]]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Master Barang");
   XLSX.writeFile(wb, "template-master-barang.xlsx");
@@ -1690,7 +1694,7 @@ function importMasterExcel(file) {
       let count = 0;
       rows.forEach((r) => {
         const kode = String(r.Kode || "").trim();
-        if (kode) { state.items.push([kode, String(r["Nama Barang"] || r.Nama_Barang || "").trim(), String(r.Kategori || "").trim(), String(r.Location || "").trim(), String(r.Stock ?? "0").trim(), String(r["Time Stamp"] || r.Time_Stamp || r.timestamp || nowStampWIB()).trim(), "0"]); count++; }
+        if (kode) { state.items.push([kode, String(r["Nama Barang"] || r.Nama_Barang || "").trim(), String(r.Kategori || "").trim(), String(r.Location || "").trim(), String(r.Stock ?? "0").trim(), String(r["Time Stamp"] || r.Time_Stamp || r.timestamp || nowStampWIB()).trim(), "0", String(r.Unit || "pcs").trim()]); count++; }
       });
       persistInventoryStore();
       inventoryLoading(false);
@@ -1813,7 +1817,7 @@ function buildInventoryMasterPage() {
   const page = filtered.slice(start, start + masterPageSize);
 
   const rows = page.length === 0
-    ? `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
+    ? `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">${t("invMasterEmpty")}</td></tr>`
     : page.map(({ row, i }) => `
       <tr>
         <td data-label="${t("invMasterCode")}"><strong>${escapeHtml(row[0])}</strong></td>
@@ -1821,6 +1825,7 @@ function buildInventoryMasterPage() {
         <td data-label="${t("invMasterCategory")}">${escapeHtml(row[2])}</td>
         <td data-label="${t("invMasterLocation")}">${escapeHtml(row[3])}</td>
         <td data-label="${t("invMasterStock")}">${row[4]}</td>
+        <td data-label="${t("invMasterUnit")}"><small>${escapeHtml(row[7] || "pcs")}</small></td>
         <td data-label="${t("invMasterFreq")}" style="text-align:center;font-weight:600">${row[6] || "0"}</td>
         <td data-label="${t("invMasterTimestamp")}" style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${escapeHtml(row[5]) || "—"}</td>
         <td data-label="">
@@ -1876,6 +1881,7 @@ function buildInventoryMasterPage() {
                 <th>${t("invMasterCategory")}</th>
                 <th>${t("invMasterLocation")}</th>
                 <th>${t("invMasterStock")}</th>
+                <th>${t("invMasterUnit")}</th>
                 <th>${t("invMasterFreq")}</th>
                 <th>${t("invMasterTimestamp")}</th>
                 <th style="width:5rem">${t("invMasterActions")}</th>
@@ -1924,6 +1930,26 @@ function buildInventoryMasterPage() {
             <label style="display:grid;gap:0.2rem;font-size:0.78rem;font-weight:700;color:var(--muted)">
               Stock
               <input type="number" name="stock" min="0" value="0" required style="min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft)" />
+            </label>
+            <label style="display:grid;gap:0.2rem;font-size:0.78rem;font-weight:700;color:var(--muted)">
+              Unit
+              <select name="unit" required style="min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft)">
+                <option value="pcs">pcs</option>
+                <option value="lbr">lbr</option>
+                <option value="box">box</option>
+                <option value="sheet">sheet</option>
+                <option value="pack">pack</option>
+                <option value="set">set</option>
+                <option value="roll">roll</option>
+                <option value="meter">meter</option>
+                <option value="liter">liter</option>
+                <option value="kg">kg</option>
+                <option value="tube">tube</option>
+                <option value="bottle">bottle</option>
+                <option value="rim">rim</option>
+                <option value="bundle">bundle</option>
+                <option value="dozen">dozen</option>
+              </select>
             </label>
             <div style="display:flex;gap:0.5rem;margin-top:0.25rem">
               <button type="submit" class="primary-button" style="flex:1">Simpan</button>

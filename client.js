@@ -520,6 +520,7 @@ window.clientModule = (() => {
           code: item.item_code,
           name: item.name || `Item ${item.item_code}`,
           stock: parseInt(item.stock) || 0,
+          unit: item.unit || "pcs",
           qty: 1
         });
       }
@@ -565,7 +566,7 @@ window.clientModule = (() => {
       results.innerHTML = items.map(item => `
         <div class="client-search-item" data-code="${escapeHtml(item.item_code)}" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid var(--line);font-size:0.82rem;display:flex;justify-content:space-between;gap:0.5rem">
           <span><strong>${escapeHtml(item.item_code)}</strong> — ${escapeHtml(item.name || "")} <small style="color:var(--muted)">${escapeHtml(item.kategori || "")}</small></span>
-          <small style="color:var(--muted);white-space:nowrap">stock: ${item.stock}</small>
+          <small style="color:var(--muted);white-space:nowrap">${escapeHtml(item.unit || "pcs")} &middot; stock: ${item.stock}</small>
         </div>
       `).join("");
       results.style.display = "";
@@ -639,7 +640,7 @@ window.clientModule = (() => {
 
     body.innerHTML = orderItems.map((item, idx) => `
       <tr>
-        <td>${escapeHtml(item.name)}<br/><small><code>${escapeHtml(item.code)}</code> &mdash; stock: ${item.stock}</small></td>
+        <td>${escapeHtml(item.name)}<br/><small><code>${escapeHtml(item.code)}</code> &mdash; ${escapeHtml(item.unit || "pcs")} &middot; stock: ${item.stock}</small></td>
         <td><input type="number" class="client-qty-input" value="${item.qty}" min="1" max="${Math.max(item.stock, 99)}" data-idx="${idx}" /></td>
         <td><button class="client-remove-btn" data-idx="${idx}" title="Remove">&times;</button></td>
       </tr>

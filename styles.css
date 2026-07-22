@@ -2512,7 +2512,7 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
 @media (max-width: 720px) {
   .topbar {
     flex-wrap: wrap;
-    padding: 0.9rem;
+    padding: 1rem;
   }
 
   .search-wrap {
