@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Client Service</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; background: #eef0f4; color: #222; font-size: 16px; line-height: 1.5; }
+input, select, button, textarea { font-size: 16px; }
+a { color: #2563eb; }
+
+#login-screen { max-width: 340px; margin: 5rem auto; padding: 1.5rem; background: #fff; border-radius: 14px; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+#login-screen h2 { font-size: 1.3rem; margin-bottom: 0.2rem; }
+#login-screen p { font-size: 0.82rem; color: #888; margin-bottom: 1.2rem; }
+.field { margin-bottom: 0.8rem; }
+.field label { display: block; font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 0.2rem; }
+.field input { display: block; width: 100%; padding: 0.55rem 0.65rem; border: 1px solid #d1d5db; border-radius: 8px; -webkit-appearance: none; }
+.btn-primary { display: block; width: 100%; padding: 0.6rem; border: 0; border-radius: 8px; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; text-align: center; -webkit-appearance: none; }
+.btn-primary:active { background: #1d4ed8; }
+.btn-primary:disabled { opacity: 0.5; }
+.error { color: #dc2626; font-size: 0.82rem; margin-top: 0.4rem; }
+
+#app { display: none; max-width: 780px; margin: 0 auto; padding: 0.5rem; }
+.header { display: -webkit-flex; display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; margin-bottom: 0.75rem; }
+.header h1 { font-size: 1.1rem; }
+.btn { display: inline-block; padding: 0.35rem 0.8rem; border: 0; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; -webkit-appearance: none; }
+.btn-secondary { background: #f1f5f9; color: #333; border: 1px solid #d1d5db; }
+.btn-secondary:active { background: #e2e8f0; }
+.btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.btn-danger:active { background: #fecaca; }
+.btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+
+.panel { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 1rem; overflow: hidden; }
+.panel-hd { display: -webkit-flex; display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 0.9rem; border-bottom: 1px solid #eee; }
+.panel-hd h2 { font-size: 0.95rem; }
+.panel-bd { padding: 0.7rem; }
+
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+table th, table td { padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid #f0f0f0; }
+table th { font-weight: 600; color: #666; font-size: 0.72rem; text-transform: uppercase; background: #fafafa; }
+table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
+.empty, .loading { padding: 1.2rem; text-align: center; color: #999; font-size: 0.85rem; }
+
+.pill { display: inline-block; padding: 0.12rem 0.35rem; border-radius: 3px; font-size: 0.72rem; background: #f1f5f9; color: #475569; margin: 0.1rem; }
+
+.search-wrap { position: relative; margin-bottom: 0.5rem; }
+.search-wrap input { width: 100%; padding: 0.45rem 0.55rem; border: 1px solid #d1d5db; border-radius: 8px; -webkit-appearance: none; }
+.search-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #d1d5db; border-top: 0; border-radius: 0 0 8px 8px; max-height: 10rem; overflow-y: auto; display: none; }
+.search-item { padding: 0.4rem 0.55rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 0.8rem; }
+.search-item:active { background: #f0f4ff; }
+
+.modal-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.35); display: -webkit-flex; display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.modal-card { width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto; background: #fff; border-radius: 14px; padding: 1.2rem; }
+.modal-card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+
+.item-row { display: -webkit-flex; display: flex; gap: 0.35rem; margin-bottom: 0.35rem; align-items: center; }
+.item-row select { flex: 1; padding: 0.3rem 0.35rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.8rem; background: #fff; }
+.item-row input { flex: 1; padding: 0.3rem 0.35rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.8rem; }
+.item-del { padding: 0.2rem 0.4rem; border: 0; border-radius: 4px; background: #fee2e2; color: #dc2626; cursor: pointer; font-size: 1rem; line-height: 1; }
+
+.toast { position: fixed; bottom: 1rem; left: 50%; -webkit-transform: translateX(-50%); transform: translateX(-50%); background: #1e293b; color: #fff; padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.82rem; z-index: 200; display: none; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h2>Sign In</h2>
+  <p>Client Service</p>
+  <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="email@school.test" /></div>
+  <div class="field"><label>Password</label><input type="password" id="login-password" placeholder="password" /></div>
+  <button class="btn-primary" id="login-btn">Sign In</button>
+  <div class="error" id="login-error"></div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <h1>Client Service</h1>
+    <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><h2>Surat / Letters</h2><button class="btn btn-primary btn-sm" id="new-req-btn">+ New</button></div>
+    <div class="panel-bd"><div class="table-wrap" id="letters-wrap"><div class="loading">Loading...</div></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><h2>Inventory</h2></div>
+    <div class="panel-bd">
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Cari barang..." />
+        <div class="search-results" id="search-results"></div>
+      </div>
+      <div id="order-empty" class="empty">Cari barang untuk memulai.</div>
+      <div id="order-wrap" style="display:none">
+        <table style="width:100%;font-size:0.78rem" id="order-table">
+          <thead><tr><th>Item</th><th style="width:4rem">Qty</th><th style="width:2.5rem"></th></tr></thead>
+          <tbody id="order-body"></tbody>
+        </table>
+        <div style="display:-webkit-flex;display:flex;gap:0.4rem;justify-content:flex-end;margin-top:0.4rem">
+          <button class="btn btn-secondary btn-sm" id="clear-btn">Clear</button>
+          <button class="btn btn-primary btn-sm" id="checkout-btn">Check Out</button>
+        </div>
+      </div>
+      <div id="tx-wrap" style="margin-top:0.5rem;border-top:1px solid #eee;padding-top:0.5rem;display:none">
+        <div style="font-size:0.82rem;font-weight:600;margin-bottom:0.3rem">Recent Check-outs</div>
+        <div id="tx-list" style="font-size:0.78rem"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal" style="display:none"></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var cfg = window.__CONFIG__ || {};
+  var SUPABASE_URL = cfg.SUPABASE_URL || "";
+  var SUPABASE_ANON = cfg.SUPABASE_ANON_KEY || "";
+
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    document.getElementById("login-screen").innerHTML = "<h2>Error</h2><p style='color:#dc2626'>Config tidak ditemukan.</p>";
+    return;
+  }
+
+  /* ─── helpers ─── */
+  var token = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function esc(s) {
+    if (!s) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function toast(msg) {
+    var el = $("toast");
+    if (!el) { alert(msg); return; }
+    el.textContent = msg;
+    el.style.display = "block";
+    setTimeout(function () { el.style.display = "none"; }, 2500);
+  }
+
+  function supFetch(path, opts) {
+    var headers = {
+      "apikey": SUPABASE_ANON,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation"
+    };
+    if (token) headers["Authorization"] = "Bearer " + token;
+    return fetch(SUPABASE_URL + path, {
+      method: opts.method || "GET",
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (r.status >= 400) {
+        return r.json().then(function (e) { throw new Error(e.message || e.msg || "HTTP " + r.status); });
+      }
+      return r.text().then(function (t) {
+        if (!t) return null;
+        try { return JSON.parse(t); } catch (e) { return null; }
+      });
+    });
+  }
+
+  function nowStamp() {
+    var wib = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+    return wib.toISOString().slice(0, 19).replace("T", " ");
+  }
+
+  function nowShort() {
+    return nowStamp().slice(0, 10).replace(/-/g, "");
+  }
+
+  function pad0(n, w) {
+    n = String(n);
+    return n.length >= w ? n : new Array(w - n.length + 1).join("0") + n;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "-";
+    var wib = new Date(new Date(iso).getTime() + 7 * 60 * 60 * 1000);
+    return wib.toISOString().slice(0, 16).replace("T", " ");
+  }
+
+  /* ─── Login ─── */
+  $("login-btn").addEventListener("click", function () {
+    var email = $("login-email").value.trim();
+    var pass = $("login-password").value;
+    var errEl = $("login-error");
+    errEl.textContent = "";
+    var btn = $("login-btn");
+    btn.disabled = true;
+    btn.textContent = "Loading...";
+
+    supFetch("/auth/v1/token?grant_type=password", {
+      method: "POST",
+      body: { email: email, password: pass }
+    }).then(function (res) {
+      if (!res || res.error || !res.access_token) {
+        errEl.textContent = (res && res.error && res.error.message) || (res && res.msg) || (res && res.error_description) || "Login gagal.";
+        btn.disabled = false;
+        btn.textContent = "Sign In";
+        return;
+      }
+      token = res.access_token;
+      $("login-screen").style.display = "none";
+      $("app").style.display = "block";
+      loadLetters();
+      loadTx();
+    }).catch(function () {
+      errEl.textContent = "Network error.";
+      btn.disabled = false;
+      btn.textContent = "Sign In";
+    });
+  });
+
+  $("logout-btn").addEventListener("click", function () {
+    token = null;
+    $("app").style.display = "none";
+    $("login-screen").style.display = "block";
+    $("login-password").value = "";
+    $("login-btn").disabled = false;
+    $("login-btn").textContent = "Sign In";
+  });
+
+  /* ─── Letters ─── */
+  function loadLetters() {
+    var wrap = $("letters-wrap");
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="loading">Loading...</div>';
+    if (!token) return;
+
+    supFetch("/rest/v1/client_requests?select=*&order=created_at.desc", { method: "GET" }).then(function (data) {
+      if (!data || data.error || data.code) {
+        wrap.innerHTML = '<div class="empty">Error: ' + esc((data && data.error && data.error.message) || (data && data.message) || data.msg || "Unknown") + '</div>';
+        return;
+      }
+      if (!data.length) { wrap.innerHTML = '<div class="empty">Belum ada data.</div>'; return; }
+
+      var h = '<table><thead><tr><th>Order</th><th>Pemohon</th><th>Items</th><th>Status</th><th>Tanggal</th></tr></thead><tbody>';
+      for (var i = 0; i < data.length; i++) {
+        var r = data[i];
+        var items = r.items || [];
+        var pills = [];
+        for (var j = 0; j < items.length; j++) {
+          var it = items[j];
+          var label = (it.type === "__custom__" && it.description) ? it.description : it.type;
+          pills.push('<span class="pill">' + esc(label) + (it.lang ? " " + it.lang : "") + '</span>');
+        }
+        h += '<tr>' +
+          '<td><code>' + esc(r.order_number) + '</code></td>' +
+          '<td>' + esc(r.requestor_name) + '<br><small>' + esc(r.requestor_class) + '</small></td>' +
+          '<td>' + pills.join(" ") + '</td>' +
+          '<td>' + r.status.charAt(0).toUpperCase() + r.status.slice(1) + '</td>' +
+          '<td><small>' + fmtDate(r.updated_at || r.created_at) + '</small></td>' +
+          '</tr>';
+      }
+      h += '</tbody></table>';
+      wrap.innerHTML = h;
+    }).catch(function (e) { wrap.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>'; });
+  }
+
+  /* ─── Modal Request ─── */
+  $("new-req-btn").addEventListener("click", function () {
+    var today = nowStamp().slice(0, 10);
+    var y = today.slice(0, 4);
+    var m = parseInt(today.slice(5, 7), 10);
+    var sem = (m >= 7) ? (y.slice(2) + String(parseInt(y) + 1).slice(2) + " I") : (String(parseInt(y) - 1).slice(2) + y.slice(2) + " II");
+
+    function optHtml(list) {
+      var s = "";
+      for (var i = 0; i < list.length; i++) s += '<option value="' + list[i] + '">' + list[i] + '</option>';
+      return s;
+    }
+
+    var h = '<div class="modal-overlay" id="mo">' +
+      '<div class="modal-card">' +
+      '<h2>New Request</h2>' +
+      '<form id="req-form">' +
+      '<div class="field"><label>ID</label><input type="text" id="r-id" required/></div>' +
+      '<div class="field"><label>Nama</label><input type="text" id="r-nama" required/></div>' +
+      '<div class="field"><label>Kelas</label><input type="text" id="r-kelas" required/></div>' +
+      '<div class="field"><label>Tahun Ajaran</label><input type="text" id="r-ta" value="' + esc(sem) + '" required/></div>' +
+      '<hr style="margin:0.5rem 0;border:0;border-top:1px solid #eee">' +
+      '<div id="item-rows"><div class="item-row">' +
+      '<select class="rt">' + optHtml(["Transkrip", "Rekomendasi", "Surat Ket", "Legalisir", "Rapor", "Ijazah"]) + '<option value="__custom__">-- Custom --</option></select>' +
+      '<select class="rl">' + optHtml(["Indonesia", "Inggris"]) + '</select>' +
+      '<input type="text" class="rd" placeholder="Keterangan" />' +
+      '<button type="button" class="item-del" onclick="(function(btn){var rows=document.querySelectorAll(\'.item-row\');if(rows.length>1)btn.parentNode.parentNode.removeChild(btn.parentNode)})(this)">&times;</button>' +
+      '</div></div>' +
+      '<button type="button" class="btn btn-secondary btn-sm" id="add-item-btn" style="margin-top:0.3rem">+ Add Item</button>' +
+      '<div style="display:-webkit-flex;display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.75rem;padding-top:0.5rem;border-top:1px solid #eee">' +
+      '<button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById(\'modal\').style.display=\'none\';document.getElementById(\'modal\').innerHTML=\'\'">Batal</button>' +
+      '<button type="submit" class="btn btn-primary btn-sm" id="submit-btn">Simpan</button></div>' +
+      '</form></div></div>';
+
+    $("modal").innerHTML = h;
+    $("modal").style.display = "block";
+
+    $("mo").addEventListener("click", function (e) { if (e.target === this) { $("modal").style.display = "none"; $("modal").innerHTML = ""; } });
+    $("add-item-btn").addEventListener("click", function () {
+      var c = document.getElementById("item-rows");
+      var row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = '<select class="rt">' + optHtml(["Transkrip", "Rekomendasi", "Surat Ket", "Legalisir", "Rapor", "Ijazah"]) + '<option value="__custom__">-- Custom --</option></select>' +
+        '<select class="rl">' + optHtml(["Indonesia", "Inggris"]) + '</select>' +
+        '<input type="text" class="rd" placeholder="Keterangan" />' +
+        '<button type="button" class="item-del" onclick="(function(btn){var rows=document.querySelectorAll(\'.item-row\');if(rows.length>1)btn.parentNode.parentNode.removeChild(btn.parentNode)})(this)">&times;</button>';
+      c.appendChild(row);
+    });
+    $("req-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var id = $("r-id").value.trim();
+      var nama = $("r-nama").value.trim();
+      var kelas = $("r-kelas").value.trim();
+      var ta = $("r-ta").value.trim();
+      if (!id || !nama || !kelas || !ta) { toast("Isi semua field."); return; }
+
+      var rows = document.querySelectorAll(".item-row");
+      var items = [];
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        items.push({
+          type: row.querySelector(".rt").value,
+          lang: row.querySelector(".rl").value,
+          description: row.querySelector(".rd").value.trim() || ""
+        });
+      }
+      if (!items.length) { toast("Tambah minimal satu item."); return; }
+
+      var btn = $("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
+      var todayStr = nowShort();
+
+      supFetch("/rest/v1/client_requests?select=order_number&order=order_number.desc&limit=1", { method: "GET" }).then(function (existing) {
+        var lastNum = 0;
+        if (existing && existing.length) {
+          var last = existing[0].order_number;
+          if (last && last.indexOf(todayStr) === 0) {
+            lastNum = parseInt(last.slice(-3), 10);
+          }
+        }
+        var orderNo = todayStr + "-" + pad0(lastNum + 1, 3);
+
+        supFetch("/rest/v1/client_requests", {
+          method: "POST",
+          body: {
+            order_number: orderNo,
+            requestor_id: id,
+            requestor_name: nama,
+            requestor_class: kelas,
+            academic_year: ta,
+            items: items,
+            status: "submitted",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        }).then(function (res) {
+          if (res && (res.error || res.code)) { toast("Error: " + ((res.error && res.error.message) || res.message || res.msg || "Unknown")); btn.disabled = false; btn.textContent = "Simpan"; return; }
+          $("modal").style.display = "none";
+          $("modal").innerHTML = "";
+          toast("Request " + orderNo + " submitted.");
+          loadLetters();
+        }).catch(function (e) { toast("Gagal menyimpan: " + e.message); btn.disabled = false; btn.textContent = "Simpan"; });
+      }).catch(function (e) { toast("Gagal memuat data: " + e.message); btn.disabled = false; btn.textContent = "Simpan"; });
+    });
+  });
+
+  /* ─── Inventory Search ─── */
+  var searchTimer = null;
+  $("search-input").addEventListener("input", function () {
+    var q = this.value.trim();
+    if (!q) { $("search-results").style.display = "none"; return; }
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () { doSearch(q); }, 300);
+  });
+  $("search-input").addEventListener("blur", function () { setTimeout(function () { $("search-results").style.display = "none"; }, 200); });
+  $("search-input").addEventListener("focus", function () { if (this.value.trim()) doSearch(this.value.trim()); });
+
+  function doSearch(q) {
+    if (!token) return;
+      supFetch("/rest/v1/rpc/client_lookup_items", {
+      method: "POST",
+      body: { search_query: q }
+    }).then(function (data) {
+      if (!data || !data.length) {
+        $("search-results").innerHTML = '<div style="padding:0.4rem;color:#999;font-size:0.78rem">Tidak ditemukan.</div>';
+        $("search-results").style.display = "block";
+        return;
+      }
+      var html = "";
+      for (var i = 0; i < data.length; i++) {
+        var it = data[i];
+        html += '<div class="search-item" data-code="' + esc(it.item_code) + '"><strong>' + esc(it.item_code) + '</strong> ' + esc(it.name || "") + ' <small style="color:#999;float:right">' + esc(it.unit || "pcs") + ' stok:' + it.stock + '</small></div>';
+      }
+      $("search-results").innerHTML = html;
+      $("search-results").style.display = "block";
+      var els = $("search-results").querySelectorAll(".search-item");
+      for (var i = 0; i < els.length; i++) {
+        els[i].addEventListener("click", function () {
+          var code = this.dataset.code;
+          $("search-input").value = "";
+          $("search-results").style.display = "none";
+          lookupItem(code);
+        });
+      }
+    }).catch(function () {});
+  }
+
+  var orderItems = [];
+
+  function lookupItem(code) {
+    if (!token) return;
+    supFetch("/rest/v1/rpc/client_lookup_items", {
+      method: "POST",
+      body: { search_query: code }
+    }).then(function (data) {
+      if (!data || data.error || data.code) { toast("Error: " + ((data && data.error && data.error.message) || (data && data.message) || data.msg || "Unknown")); return; }
+      var list = data || [];
+      var item = null;
+      for (var i = 0; i < list.length; i++) { if (list[i].item_code === code) { item = list[i]; break; } }
+      if (!item && list.length) item = list[0];
+      if (!item) { toast("Item tidak ditemukan: " + code); return; }
+
+      var found = false;
+      for (var i = 0; i < orderItems.length; i++) {
+        if (orderItems[i].code === item.item_code) { orderItems[i].qty += 1; found = true; break; }
+      }
+      if (!found) {
+        orderItems.push({ code: item.item_code, name: item.name || item.item_code, stock: parseInt(item.stock) || 0, unit: item.unit || "pcs", qty: 1 });
+      }
+      renderOrder();
+      toast("Ditambahkan: " + item.item_code);
+    }).catch(function (e) { toast("Gagal mencari: " + e.message); });
+  }
+
+  function renderOrder() {
+    var wrap = $("order-wrap");
+    var empty = $("order-empty");
+    var body = $("order-body");
+    if (!wrap || !body) return;
+
+    if (!orderItems.length) { wrap.style.display = "none"; if (empty) empty.style.display = ""; return; }
+    wrap.style.display = "";
+    if (empty) empty.style.display = "none";
+
+    var h = "";
+    for (var i = 0; i < orderItems.length; i++) {
+      var o = orderItems[i];
+      h += '<tr><td>' + esc(o.name) + '<br><small>' + esc(o.code) + ' &middot; ' + esc(o.unit || "pcs") + ' stok:' + o.stock + '</small></td>' +
+        '<td><input type="number" value="' + o.qty + '" min="1" max="' + Math.max(o.stock, 99) + '" data-idx="' + i + '" style="width:3rem;padding:0.2rem;border:1px solid #d1d5db;border-radius:4px;-webkit-appearance:none" /></td>' +
+        '<td><button class="btn btn-danger btn-sm" data-idx="' + i + '" style="padding:0.15rem 0.35rem">&times;</button></td></tr>';
+    }
+    body.innerHTML = h;
+
+    var inputs = body.querySelectorAll('input[type="number"]');
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].addEventListener("change", function () {
+        var idx = parseInt(this.dataset.idx, 10);
+        var v = parseInt(this.value, 10) || 1;
+        if (idx >= 0 && idx < orderItems.length) orderItems[idx].qty = Math.max(1, v);
+      });
+    }
+    var dels = body.querySelectorAll(".btn-danger");
+    for (var i = 0; i < dels.length; i++) {
+      dels[i].addEventListener("click", function () {
+        var idx = parseInt(this.dataset.idx, 10);
+        if (idx >= 0 && idx < orderItems.length) { orderItems.splice(idx, 1); renderOrder(); }
+      });
+    }
+  }
+
+  $("clear-btn").addEventListener("click", function () { orderItems = []; renderOrder(); });
+
+  $("checkout-btn").addEventListener("click", function () {
+    if (!orderItems.length) { toast("Tidak ada item."); return; }
+    var name = prompt("Masukkan nama petugas:");
+    if (!name || !name.trim()) return;
+    name = name.trim();
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = "Processing...";
+
+    var todayStr = nowShort();
+    supFetch("/rest/v1/sarpras_transactions?select=token&order=token.desc&limit=1", { method: "GET" }).then(function (existing) {
+      var lastSeq = 0;
+      if (existing && existing.length) {
+        var last = existing[0].token;
+        if (last && last.indexOf(todayStr) === 0) lastSeq = parseInt(last.slice(-3), 10);
+      }
+      var tokenVal = todayStr + pad0(lastSeq + 1, 3);
+
+      var items = [];
+      var totalQty = 0;
+      for (var i = 0; i < orderItems.length; i++) {
+        items.push({ code: orderItems[i].code, name: orderItems[i].name || orderItems[i].code, qty: orderItems[i].qty });
+        totalQty += orderItems[i].qty;
+      }
+
+      supFetch("/rest/v1/rpc/process_inventory_transaction", {
+        method: "POST",
+        body: {
+          p_token: tokenVal, p_type: "Keluar", p_date: nowStamp(),
+          p_items: items, p_total_qty: totalQty, p_item_count: items.length, p_petugas: name
+        }
+      }).then(function (rpcRes) {
+        if (rpcRes && (rpcRes.error || rpcRes.code)) { toast("Error: " + ((rpcRes.error && rpcRes.error.message) || rpcRes.message || rpcRes.msg || "Unknown")); btn.disabled = false; btn.textContent = "Check Out"; return; }
+        toast("Check-out selesai. Token: " + tokenVal);
+        orderItems = [];
+        renderOrder();
+        loadTx();
+        btn.disabled = false;
+        btn.textContent = "Check Out";
+      }).catch(function (e) { toast("Gagal checkout: " + e.message); btn.disabled = false; btn.textContent = "Check Out"; });
+    }).catch(function (e) { toast("Gagal memuat data: " + e.message); btn.disabled = false; btn.textContent = "Check Out"; });
+  });
+
+  /* ─── Transaction History ─── */
+  function loadTx() {
+    if (!token) return;
+    supFetch("/rest/v1/sarpras_transactions?select=*&order=date.desc&limit=5", { method: "GET" }).then(function (data) {
+      if (!data || !data.length || data.code) return;
+      $("tx-wrap").style.display = "";
+      var html = "";
+      for (var i = 0; i < data.length; i++) {
+        var tx = data[i];
+        var txItems = Array.isArray(tx.items) ? tx.items : [];
+        var parts = [];
+        for (var j = 0; j < txItems.length; j++) {
+          parts.push((txItems[j].name || txItems[j].code) + " x" + txItems[j].qty);
+        }
+        html += '<div style="padding:0.3rem 0;border-bottom:1px solid #f0f0f0;display:-webkit-flex;display:flex;justify-content:space-between;gap:0.4rem">' +
+          '<span><strong>' + esc(tx.token) + '</strong> ' + esc(parts.join(", ")) + '</span>' +
+          '<small style="color:#999">' + esc(tx.petugas) + ' &middot; ' + fmtDate(tx.date) + '</small></div>';
+      }
+      $("tx-list").innerHTML = html;
+    }).catch(function (e) { console.log(e.message); });
+  }
+})();
+</script>
+</body>
+</html>
