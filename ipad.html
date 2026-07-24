@@ -197,6 +197,50 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
     return n.length >= w ? n : new Array(w - n.length + 1).join("0") + n;
   }
 
+  function calcEstimate() {
+    var now = new Date(), day = now.getDay(), hour = now.getHours();
+    var est = new Date(now), count = 0;
+    if (day >= 1 && day <= 4) { count = 1; }
+    else if (day === 5) { if (hour < 12) { count = 1; } else { est.setDate(est.getDate() + 3); } }
+    else if (day === 6) { est.setDate(est.getDate() + 2); }
+    else { est.setDate(est.getDate() + 1); }
+    while (count < 3) {
+      est.setDate(est.getDate() + 1);
+      var d = est.getDay();
+      if (d !== 0 && d !== 6) count++;
+    }
+    return est;
+  }
+
+  function showEstimatePopup(orderNumber) {
+    var existing = document.getElementById("est-popup");
+    if (existing) existing.parentNode.removeChild(existing);
+    var est = calcEstimate();
+    var days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    var months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+    var dateStr = days[est.getDay()] + ", " + est.getDate() + " " + months[est.getMonth()] + " " + est.getFullYear();
+    var overlay = document.createElement("div");
+    overlay.id = "est-popup";
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.4);display:-webkit-flex;display:flex;align-items:center;justify-content:center;z-index:9999";
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.parentNode.removeChild(overlay); });
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:1rem;padding:1.5rem;max-width:340px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.2);text-align:center;position:relative">' +
+      '<button id="est-popup-close" style="position:absolute;top:0.5rem;right:0.75rem;border:none;background:none;font-size:1.2rem;cursor:pointer;color:#999">&times;</button>' +
+      '<div style="font-size:2rem;margin-bottom:0.5rem">&#x1F441;</div>' +
+      '<h3 style="margin:0 0 0.25rem;font-size:1rem">Estimasi Selesai</h3>' +
+      '<p style="margin:0.25rem 0;font-size:0.82rem;color:#666">Nomor Order</p>' +
+      '<p style="margin:0 0 1rem;font-size:1rem;font-weight:700;font-family:monospace">' + esc(orderNumber) + '</p>' +
+      '<p style="margin:0;font-size:0.82rem;color:#666">Estimasi Selesai</p>' +
+      '<p style="margin:0.25rem 0 0;font-size:1.2rem;font-weight:700;color:#2563eb">' + dateStr + '</p>' +
+      '<p style="margin:0.75rem 0 0;font-size:0.72rem;color:#999">3 hari kerja (Senin-Jumat)</p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    setTimeout(function () {
+      var cb = document.getElementById("est-popup-close");
+      if (cb) cb.addEventListener("click", function () { var p = document.getElementById("est-popup"); if (p) p.parentNode.removeChild(p); });
+    }, 0);
+  }
+
   function fmtDate(iso) {
     if (!iso) return "-";
     var wib = new Date(new Date(iso).getTime() + 7 * 60 * 60 * 1000);
@@ -269,7 +313,7 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
           pills.push('<span class="pill">' + esc(label) + (it.lang ? " " + it.lang : "") + '</span>');
         }
         h += '<tr>' +
-          '<td><code>' + esc(r.order_number) + '</code></td>' +
+          '<td><code>' + esc(r.order_number) + '</code> <span class="est-btn" data-order="' + esc(r.order_number) + '" style="cursor:pointer;font-size:0.85rem">&#x1F441;</span></td>' +
           '<td>' + esc(r.requestor_name) + '<br><small>' + esc(r.requestor_class) + '</small></td>' +
           '<td>' + pills.join(" ") + '</td>' +
           '<td>' + r.status.charAt(0).toUpperCase() + r.status.slice(1) + '</td>' +
@@ -278,6 +322,14 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
       }
       h += '</tbody></table>';
       wrap.innerHTML = h;
+      var estBtns = wrap.querySelectorAll(".est-btn");
+      for (var ei = 0; ei < estBtns.length; ei++) {
+        (function (btn) {
+          btn.addEventListener("click", function () {
+            showEstimatePopup(btn.getAttribute("data-order"));
+          });
+        })(estBtns[ei]);
+      }
     }).catch(function (e) { wrap.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>'; });
   }
 
