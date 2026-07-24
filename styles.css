@@ -948,13 +948,7 @@ select.status-done     { background: #43a047; border-color: #43a047; color: #fff
   color: var(--muted);
 }
 .sarpras-report-table .rep-sticky {
-  position: sticky;
-  left: 0;
-  z-index: 2;
   background: var(--surface);
-}
-.sarpras-report-table thead .rep-sticky {
-  z-index: 3;
 }
 .sarpras-report-table .rep-masuk {
   color: var(--accent);

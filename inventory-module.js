@@ -1205,7 +1205,9 @@ function refreshInventorySubpages(page) {
   if (inventoryPage) inventoryPage.innerHTML = buildInventoryOperationsPage();
   if (opnamePage) opnamePage.innerHTML = buildInventoryOpnamePage();
   if (activityPage) activityPage.innerHTML = buildInventoryActivityPage();
-  if (reportPage) reportPage.innerHTML = buildInventoryReportsPage();
+  if (reportPage) {
+    reportPage.innerHTML = buildInventoryReportsPage();
+  }
 }
 
 function inventoryToast(msg) {
@@ -1858,11 +1860,28 @@ function exportReportExcel() {
   const data = buildReportData(invReportType, invReportYear, invReportMonth);
   const { rows, periods, type } = data;
   const aoa = [];
+
+  const titleLabel = type === "bulanan"
+    ? (t("invRepMonthly") + " " + new Date(2000, invReportMonth - 1, 1).toLocaleString("default", { month: "long" }) + " " + invReportYear)
+    : type === "tahunan-3"
+    ? t("invRepQuarterly") + " " + invReportYear
+    : t("invRepTahapan") + " " + invReportYear;
+
+  const spacer = Array.from({ length: 5 + periods.length * 2 + 3 }, () => "");
+  aoa.push(spacer);
+  aoa.push([titleLabel, ...spacer.slice(1)]);
+  aoa.push(spacer);
+
   const h1 = [t("invRepNo"), t("invRepCategory"), t("invRepCode"), t("invRepName"), t("invRepStockAwal")];
-  periods.forEach(() => { h1.push(t("invRepMasuk"), t("invRepKeluar")); });
+  periods.forEach((p) => { h1.push(p.label, ""); });
   h1.push(t("invRepTotalMasuk"), t("invRepTotalKeluar"), t("invRepSisaStock"));
   aoa.push(h1);
-  aoa.push(Array.from({ length: h1.length }, () => ""));
+
+  const h2 = Array.from({ length: 5 }, () => "");
+  periods.forEach(() => { h2.push(t("invRepMasuk"), t("invRepKeluar")); });
+  h2.push("", "", "");
+  aoa.push(h2);
+
   rows.forEach((r) => {
     const row = [r.idx + 1, r.kategori, r.code, r.name, r.stockAwal];
     r.periodData.forEach((p) => row.push(p.masuk || 0, p.keluar || 0));
@@ -1870,10 +1889,13 @@ function exportReportExcel() {
     aoa.push(row);
   });
   const ws = XLSX.utils.aoa_to_sheet(aoa);
+
   const merges = [];
   let ci = 5;
-  periods.forEach(() => { merges.push({ s: { r: 0, c: ci }, e: { r: 0, c: ci + 1 } }); ci += 2; });
+  periods.forEach(() => { merges.push({ s: { r: 3, c: ci }, e: { r: 3, c: ci + 1 } }); ci += 2; });
+  merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: h1.length - 1 } });
   if (merges.length) ws["!merges"] = merges;
+
   ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 11 }];
   ws["!cols"].push(...periods.flatMap(() => [{ wch: 7 }, { wch: 7 }]));
   ws["!cols"].push({ wch: 11 }, { wch: 11 }, { wch: 11 });
@@ -1888,12 +1910,24 @@ function exportStockCardExcel(code) {
   const movements = getItemStockCard(code);
   const state = ensureInventoryState();
   const item = state.items.find((r) => r[0] === code);
-  const aoa = [[t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]];
+  const itemName = item ? item[1] : code;
+  const itemCategory = item ? item[2] : "";
+  const itemUnit = item ? (item[7] || "pcs") : "pcs";
+  const aoa = [
+    ["KARTU STOCK BARANG"],
+    [`Unit kerja   : SMA KRISTEN PETRA 5`],
+    [`Jenis Barang : ${itemCategory}`],
+    [`Nama barang  : ${itemName}`],
+    [`Satuan       : ${itemUnit}`],
+    [],
+    [t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]
+  ];
   movements.forEach((m, i) => {
     aoa.push([i + 1, m.date.slice(0, 10), m.type, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.balance, m.token, m.officer]);
   });
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
+  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, code);
   XLSX.writeFile(wb, `kartu-stok-${code}.xlsx`);
@@ -1907,7 +1941,18 @@ function exportAllStockCardsExcel() {
   items.forEach((row) => {
     const code = row[0];
     const movements = getItemStockCard(code);
-    const aoa = [[t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]];
+    const itemName = row[1];
+    const itemCategory = row[2];
+    const itemUnit = row[7] || "pcs";
+    const aoa = [
+      ["KARTU STOCK BARANG"],
+      [`Unit kerja   : SMA KRISTEN PETRA 5`],
+      [`Jenis Barang : ${itemCategory}`],
+      [`Nama barang  : ${itemName}`],
+      [`Satuan       : ${itemUnit}`],
+      [],
+      [t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]
+    ];
     if (!movements.length) {
       aoa.push([t("invRepCardNoTx")]);
     } else {
@@ -1917,6 +1962,7 @@ function exportAllStockCardsExcel() {
     }
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
+    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
     XLSX.utils.book_append_sheet(wb, ws, code.slice(0, 31));
   });
   XLSX.writeFile(wb, `kartu-stok-semua-barang.xlsx`);
@@ -2616,7 +2662,7 @@ function buildReportData(type, year, month) {
       const mm = ((m - 1) % 12) + 1;
       const monthName = new Date(y, mm - 1, 1).toLocaleString("default", { month: "short" });
       const days = getDaysInMonth(y, mm);
-      periods.push({ key: `month-${i}`, label: `${monthName}`, start: `${y}-${String(mm).padStart(2, "0")}-01`, end: `${y}-${String(mm).padStart(2, "0")}-${String(days).padStart(2, "0")}` });
+      periods.push({ key: `month-${i}`, label: `${monthName} ${y}`, start: `${y}-${String(mm).padStart(2, "0")}-01`, end: `${y}-${String(mm).padStart(2, "0")}-${String(days).padStart(2, "0")}` });
     }
   } else if (type === "tahapan") {
     periods.push({ key: "tahap1", label: t("invRepTahapan1"), start: `${year}-01-01`, end: `${year}-06-30` });
@@ -2655,11 +2701,11 @@ function renderReportTable(data) {
 
   let html = `<div class="sarpras-report-scroll"><table class="module-table sarpras-report-table" style="min-width:${periods.length > 6 ? "180rem" : "max-content"}">`;
   html += `<thead><tr>
-    <th rowspan="2" class="rep-sticky">${t("invRepNo")}</th>
-    <th rowspan="2" class="rep-sticky">${t("invRepCategory")}</th>
-    <th rowspan="2" class="rep-sticky">${t("invRepCode")}</th>
-    <th rowspan="2" class="rep-sticky">${t("invRepName")}</th>
-    <th rowspan="2" class="rep-sticky">${t("invRepStockAwal")}</th>`;
+    <th rowspan="2" class="rep-sticky" data-sticky="0">${t("invRepNo")}</th>
+    <th rowspan="2" class="rep-sticky" data-sticky="1">${t("invRepCategory")}</th>
+    <th rowspan="2" class="rep-sticky" data-sticky="2">${t("invRepCode")}</th>
+    <th rowspan="2" class="rep-sticky" data-sticky="3">${t("invRepName")}</th>
+    <th rowspan="2" class="rep-sticky" data-sticky="4">${t("invRepStockAwal")}</th>`;
 
   periods.forEach((p) => {
     html += `<th colspan="2" class="rep-period-header">${p.label}</th>`;
@@ -2676,11 +2722,11 @@ function renderReportTable(data) {
 
   rows.forEach((r) => {
     html += `<tr>
-      <td class="rep-sticky">${r.idx + 1}</td>
-      <td class="rep-sticky">${r.kategori}</td>
-      <td class="rep-sticky"><strong>${r.code}</strong></td>
-      <td class="rep-sticky">${r.name}</td>
-      <td class="rep-sticky"><strong>${r.stockAwal}</strong></td>`;
+      <td class="rep-sticky" data-sticky="0">${r.idx + 1}</td>
+      <td class="rep-sticky" data-sticky="1">${r.kategori}</td>
+      <td class="rep-sticky" data-sticky="2"><strong>${r.code}</strong></td>
+      <td class="rep-sticky" data-sticky="3">${r.name}</td>
+      <td class="rep-sticky" data-sticky="4"><strong>${r.stockAwal}</strong></td>`;
     r.periodData.forEach((p) => {
       html += `<td class="rep-masuk">${p.masuk || ""}</td><td class="rep-keluar">${p.keluar || ""}</td>`;
     });
