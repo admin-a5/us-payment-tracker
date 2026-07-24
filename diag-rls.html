@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RLS Diagnostic</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, Helvetica, Arial, sans-serif; background: #eef0f4; color: #222; font-size: 15px; line-height: 1.5; padding: 1rem; }
+h1 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+#login { max-width: 340px; margin: 3rem auto; background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+#login h2 { font-size: 1.1rem; margin-bottom: 0.2rem; }
+.field { margin-bottom: 0.7rem; }
+.field label { display: block; font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 0.2rem; }
+.field input { width: 100%; padding: 0.5rem 0.6rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; }
+.btn { display: inline-block; padding: 0.5rem 1rem; border: 0; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.btn-primary { background: #2563eb; color: #fff; width: 100%; text-align: center; }
+.btn-primary:disabled { opacity: 0.5; }
+.error { color: #dc2626; font-size: 0.82rem; margin-top: 0.3rem; }
+
+#results { display: none; }
+.actions { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.card { background: #fff; border-radius: 10px; margin-bottom: 0.6rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.card-hd { padding: 0.5rem 0.8rem; font-weight: 600; font-size: 0.9rem; background: #f8fafc; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+.card-bd { padding: 0.5rem 0.8rem; font-size: 0.82rem; }
+.success { background: #dcfce7; color: #166534; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.fail { background: #fee2e2; color: #991b1b; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.wait { background: #fef9c3; color: #854d0e; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+pre { background: #f1f5f9; padding: 0.4rem; border-radius: 6px; font-size: 0.72rem; max-height: 8rem; overflow: auto; white-space: pre-wrap; word-break: break-all; margin-top: 0.3rem; }
+.cols { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cols > * { flex: 1; min-width: 280px; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h2>RLS Diagnostic Tool</h2>
+  <p style="font-size:0.82rem;color:#888;margin-bottom:1rem">Sign in with any role to test table access</p>
+  <div class="field"><label>Email</label><input type="email" id="email" placeholder="email@school.test" /></div>
+  <div class="field"><label>Password</label><input type="password" id="password" placeholder="password" /></div>
+  <button class="btn btn-primary" id="login-btn">Sign In & Run Diagnostics</button>
+  <div class="error" id="login-error"></div>
+</div>
+
+<div id="results">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+    <h1>Results</h1>
+    <div>
+      <span id="role-badge" style="font-size:0.78rem;background:#e0e7ff;padding:0.2rem 0.5rem;border-radius:4px"></span>
+      <span id="user-badge" style="font-size:0.78rem;background:#f1f5f9;padding:0.2rem 0.5rem;border-radius:4px;margin-left:0.3rem"></span>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-primary" id="run-all-btn" style="width:auto">Re-run All</button>
+    <button class="btn btn-primary" id="view-payments-btn" style="width:auto;background:#059669">View Payments (up to 50)</button>
+    <button class="btn btn-primary" id="view-students-btn" style="width:auto;background:#7c3aed">View Students (up to 50)</button>
+  </div>
+  <div id="cards"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var cfg = window.__CONFIG__ || {};
+  var SUPABASE_URL = cfg.SUPABASE_URL || "";
+  var SUPABASE_ANON = cfg.SUPABASE_ANON_KEY || "";
+  var token = null;
+  var userRole = "?";
+
+  function $(id) { return document.getElementById(id); }
+
+  function esc(s) {
+    if (!s) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function supFetch(path, opts) {
+    var headers = { "apikey": SUPABASE_ANON, "Content-Type": "application/json", "Prefer": "return=representation" };
+    if (token) headers["Authorization"] = "Bearer " + token;
+    return fetch(SUPABASE_URL + path, {
+      method: (opts && opts.method) || "GET",
+      headers: headers,
+      body: (opts && opts.body) ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        var json = null;
+        try { json = JSON.parse(t); } catch (e) {}
+        return { status: r.status, ok: r.ok, body: json, raw: t };
+      });
+    });
+  }
+
+  function addCard(title, items) {
+    var html = '<div class="card"><div class="card-hd">' + esc(title) + '</div><div class="card-bd">';
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var badge = it.status === "ok" ? '<span class="success">OK</span>' : (it.status === "fail" ? '<span class="fail">FAIL</span>' : '<span class="wait">' + esc(it.status) + '</span>');
+      html += '<div style="margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid #f0f0f0">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<strong>' + esc(it.label) + '</strong> ' + badge +
+        '</div>';
+      if (it.detail) html += '<pre>' + esc(it.detail) + '</pre>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+    $("cards").insertAdjacentHTML("beforeend", html);
+  }
+
+  function testTable(name) {
+    var label = "SELECT * FROM " + name + " LIMIT 1";
+    return supFetch("/rest/v1/" + name + "?select=*&limit=1").then(function (res) {
+      if (res.status === 200) {
+        var rowCount = Array.isArray(res.body) ? res.body.length : "?";
+        var cols = res.body && res.body.length ? Object.keys(res.body[0]).join(", ") : "no rows";
+        return { label: label, status: "ok", detail: "Status: " + res.status + " | Rows: " + rowCount + " | Columns: " + cols + " | Data: " + JSON.stringify(res.body) };
+      } else {
+        var msg = res.body && (res.body.message || res.body.msg || res.body.code) ? (res.body.message || res.body.msg || res.body.code) : res.raw;
+        return { label: label, status: "fail", detail: "Status: " + res.status + " | " + msg };
+      }
+    });
+  }
+
+  function runAll() {
+    $("cards").innerHTML = "";
+
+    var tables = [
+      "payments",
+      "students",
+      "client_requests",
+      "sarpras_transactions",
+      "sarpras_master_items",
+      "pd_students",
+      "audit_logs",
+      "user_roles"
+    ];
+
+    var promises = [];
+    for (var i = 0; i < tables.length; i++) {
+      promises.push(testTable(tables[i]));
+    }
+
+    // Also try to get role info
+    promises.push(supFetch("/rest/v1/rpc/get_my_role").then(function (res) {
+      if (res.ok) {
+        var role = res.body && (res.body.role || JSON.stringify(res.body));
+        userRole = role || "?";
+        $("role-badge").textContent = "Role: " + (typeof role === "string" ? role : JSON.stringify(role));
+        return { label: "get_my_role()", status: "ok", detail: JSON.stringify(res.body) };
+      }
+      return { label: "get_my_role()", status: "fail", detail: "Status: " + res.status + " " + (res.raw || "") };
+    }));
+
+    // Try to query pg_tables for RLS status - might not work but worth trying
+    // Use a raw query through the REST API if possible
+    // Actually, we can check via a function or information_schema
+    promises.push(supFetch("/rest/v1/rpc/check_rls_status").then(function (res) {
+      if (res.ok) return { label: "check_rls_status()", status: "ok", detail: JSON.stringify(res.body) };
+      return { label: "check_rls_status()", status: "skip", detail: "Function not available (expected)" };
+    }));
+
+    Promise.all(promises).then(function (results) {
+      // Group by table
+      for (var i = 0; i < tables.length; i++) {
+        addCard("public." + tables[i], [results[i]]);
+      }
+      addCard("RPCs / Misc", [results[tables.length], results[tables.length + 1]]);
+    });
+  }
+
+  $("login-btn").addEventListener("click", function () {
+    var email = $("email").value.trim();
+    var pass = $("password").value;
+    var errEl = $("login-error");
+    errEl.textContent = "";
+    var btn = $("login-btn");
+    btn.disabled = true;
+    btn.textContent = "Signing in...";
+
+    supFetch("/auth/v1/token?grant_type=password", {
+      method: "POST",
+      body: { email: email, password: pass }
+    }).then(function (res) {
+      if (!res.ok || !res.body || !res.body.access_token) {
+        var msg = (res.body && (res.body.error_description || res.body.msg || res.body.message)) || "Login failed";
+        errEl.textContent = msg;
+        btn.disabled = false;
+        btn.textContent = "Sign In & Run Diagnostics";
+        return;
+      }
+      token = res.body.access_token;
+      $("user-badge").textContent = email;
+      $("login").style.display = "none";
+      $("results").style.display = "block";
+      runAll();
+    });
+  });
+
+  $("run-all-btn").addEventListener("click", runAll);
+
+  function viewTable(name, limit) {
+    $("cards").innerHTML = '<div class="card"><div class="card-hd">Loading ' + name + '...</div></div>';
+    supFetch("/rest/v1/" + name + "?select=*&limit=" + (limit || 50)).then(function (res) {
+      if (!res.ok || !res.body || !res.body.length) {
+        $("cards").innerHTML = '<div class="card"><div class="card-hd">' + name + '</div><div class="card-bd">' +
+          (res.ok ? '<span class="fail">No data or no access</span>' : '<span class="fail">Status ' + res.status + '</span>') +
+          '<pre>' + esc(res.raw || "") + '</pre></div></div>';
+        return;
+      }
+      var data = res.body;
+      var cols = Object.keys(data[0]);
+      var html = '<div class="card"><div class="card-hd">' + name + ' <span style="font-size:0.78rem;font-weight:400">(' + data.length + ' rows)</span></div><div class="card-bd" style="overflow-x:auto">';
+      html += '<table style="font-size:0.7rem;border-collapse:collapse;width:100%"><thead><tr>';
+      for (var c = 0; c < cols.length; c++) {
+        html += '<th style="text-align:left;padding:0.2rem 0.3rem;background:#f1f5f9;border:1px solid #ddd;white-space:nowrap">' + esc(cols[c]) + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+      for (var r = 0; r < data.length; r++) {
+        html += '<tr>';
+        for (var c = 0; c < cols.length; c++) {
+          var v = data[r][cols[c]];
+          var sv = v === null ? '<span style="color:#bbb">NULL</span>' : esc(String(v));
+          if (String(v).length > 50) sv = esc(String(v).slice(0, 50)) + '&hellip;';
+          html += '<td style="padding:0.15rem 0.3rem;border:1px solid #eee;white-space:nowrap;max-width:10rem;overflow:hidden;text-overflow:ellipsis">' + sv + '</td>';
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table></div></div>';
+      $("cards").innerHTML = html;
+    });
+  }
+
+  $("view-payments-btn").addEventListener("click", function () { viewTable("payments", 50); });
+  $("view-students-btn").addEventListener("click", function () { viewTable("students", 50); });
+})();
+</script>
+</body>
+</html>

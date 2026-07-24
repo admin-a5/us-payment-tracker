@@ -710,6 +710,7 @@ const usPayment = (() => {
       ${detailRow("VA BCA", student.va_bca || "-")}
       ${detailRow("VA Mandiri", student.va_mandiri || "-")}
       ${payment && payment.payment_date ? detailRow("Payment Date", String(payment.payment_date).slice(0, 16).replace("T", " ")) : ""}
+      ${payment && payment.payment_description ? detailRow("Method", payment.payment_description) : ""}
       ${student.ket && /^PEG/i.test(student.ket) ? "" : '<button class="us-copy" type="button" id="us-copy-bill">Copy Tagihan</button>'}
     `;
     var copyBtn = $("us-copy-bill");
