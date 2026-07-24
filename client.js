@@ -125,7 +125,7 @@ window.clientModule = (() => {
     var dateStr = dayName + ", " + est.getDate() + " " + months[est.getMonth()] + " " + est.getFullYear();
     var overlay = document.createElement("div");
     overlay.id = "client-estimate-popup";
-    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:9999";
+    overlay.style.cssText = "position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.4);display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;z-index:9999";
     overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
     overlay.innerHTML =
       '<div style="background:var(--card-bg,#fff);border-radius:1rem;padding:1.5rem;max-width:360px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.2);text-align:center;position:relative">' +
