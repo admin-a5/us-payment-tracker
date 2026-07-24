@@ -442,29 +442,40 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
 
   /* ─── Inventory Search ─── */
   var searchTimer = null;
-  $("search-input").addEventListener("input", function () {
-    var q = this.value.trim();
+  $("search-input").setAttribute("autocomplete", "off");
+  function onSearchInput() {
+    var q = $("search-input").value.trim();
     if (!q) { $("search-results").style.display = "none"; return; }
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(function () { doSearch(q); }, 300);
-  });
+  }
+  $("search-input").addEventListener("input", onSearchInput);
+  $("search-input").addEventListener("keyup", onSearchInput);
   $("search-input").addEventListener("blur", function () { setTimeout(function () { $("search-results").style.display = "none"; }, 200); });
-  $("search-input").addEventListener("focus", function () { if (this.value.trim()) doSearch(this.value.trim()); });
+  $("search-input").addEventListener("focus", function () { if ($("search-input").value.trim()) doSearch($("search-input").value.trim()); });
 
   function doSearch(q) {
     if (!token) return;
-      supFetch("/rest/v1/rpc/client_lookup_items", {
+    $("search-results").innerHTML = '<div style="padding:0.4rem;color:#999;font-size:0.78rem">Mencari...</div>';
+    $("search-results").style.display = "block";
+    supFetch("/rest/v1/rpc/client_lookup_items", {
       method: "POST",
       body: { search_query: q }
     }).then(function (data) {
-      if (!data || !data.length) {
+      if (!data || data.code || data.error) {
+        $("search-results").innerHTML = '<div style="padding:0.4rem;color:#999;font-size:0.78rem">Tidak ditemukan.</div>';
+        $("search-results").style.display = "block";
+        return;
+      }
+      var list = Array.isArray(data) ? data : [];
+      if (!list.length) {
         $("search-results").innerHTML = '<div style="padding:0.4rem;color:#999;font-size:0.78rem">Tidak ditemukan.</div>';
         $("search-results").style.display = "block";
         return;
       }
       var html = "";
-      for (var i = 0; i < data.length; i++) {
-        var it = data[i];
+      for (var i = 0; i < list.length; i++) {
+        var it = list[i];
         html += '<div class="search-item" data-code="' + esc(it.item_code) + '"><strong>' + esc(it.item_code) + '</strong> ' + esc(it.name || "") + ' <small style="color:#999;float:right">' + esc(it.unit || "pcs") + ' stok:' + it.stock + '</small></div>';
       }
       $("search-results").innerHTML = html;
@@ -478,7 +489,10 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
           lookupItem(code);
         });
       }
-    }).catch(function () {});
+    }).catch(function (e) {
+      $("search-results").innerHTML = '<div style="padding:0.4rem;color:#c00;font-size:0.78rem">Error: ' + esc(e.message) + '</div>';
+      $("search-results").style.display = "block";
+    });
   }
 
   var orderItems = [];

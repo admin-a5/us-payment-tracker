@@ -1,4 +1,48 @@
 window.clientModule = (() => {
+  var cfg = window.__CONFIG__ || {};
+  var SUPABASE_URL = cfg.SUPABASE_URL || "";
+  var SUPABASE_ANON = cfg.SUPABASE_ANON_KEY || "";
+
+  function getSupabaseClient() {
+    return window.authModule?.getSupabaseClient?.() || window.schoolAuth?.sb || window._sb || null;
+  }
+
+  function getAccessToken() {
+    try {
+      var keys = Object.keys(localStorage);
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].indexOf("-auth-token") !== -1) {
+          var stored = JSON.parse(localStorage.getItem(keys[i]));
+          if (stored && stored.access_token) return stored.access_token;
+        }
+      }
+    } catch (e) {}
+    return "";
+  }
+
+  function supFetch(path, opts) {
+    var headers = {
+      "apikey": SUPABASE_ANON,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation"
+    };
+    var tok = getAccessToken();
+    if (tok) headers["Authorization"] = "Bearer " + tok;
+    return fetch(SUPABASE_URL + path, {
+      method: opts.method || "GET",
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (r.status >= 400) {
+        return r.json().then(function (e) { throw new Error(e.message || e.msg || "HTTP " + r.status); });
+      }
+      return r.text().then(function (t) {
+        if (!t) return null;
+        try { return JSON.parse(t); } catch (e) { return null; }
+      });
+    });
+  }
+
   let sb = null;
   let html5QrCode = null;
   let scannerActive = false;
@@ -206,7 +250,7 @@ window.clientModule = (() => {
               </div>
               <div class="client-search-wrap" style="position:relative;padding:0.75rem 0">
                 <input type="text" id="client-search-input" placeholder="Search item by code or name..." style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.3rem;background:var(--input-bg);color:var(--text);font-size:0.85rem;box-sizing:border-box" />
-                <div class="client-search-results" id="client-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--line);border-radius:0.3rem;max-height:14rem;overflow-y:auto;z-index:10;margin-top:2px"></div>
+                <div class="client-search-results" id="client-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--line);border-radius:0.3rem;max-height:14rem;overflow-y:auto;z-index:999;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"></div>
               </div>
               <div class="client-empty-inv" id="client-empty-inv">Scan or search items to start.</div>
               <div class="client-tx-history" id="client-tx-history" style="margin-top:0.75rem;border-top:1px solid var(--line);padding-top:0.75rem;display:none">
@@ -284,9 +328,14 @@ window.clientModule = (() => {
     $("client-scan-stop")?.addEventListener("click", stopScanner);
     $("client-clear-btn")?.addEventListener("click", clearOrder);
     $("client-checkout-btn")?.addEventListener("click", doCheckout);
-    $("client-search-input")?.addEventListener("input", onSearchInput);
-    $("client-search-input")?.addEventListener("blur", () => setTimeout(() => hideSearchResults(), 200));
-    $("client-search-input")?.addEventListener("focus", () => { if ($("client-search-input").value.trim()) onSearchInput(); });
+    var si = $("client-search-input");
+    if (si) {
+      si.setAttribute("autocomplete", "off");
+      si.addEventListener("input", onSearchInput);
+      si.addEventListener("keyup", onSearchInput);
+      si.addEventListener("blur", function () { setTimeout(function () { hideSearchResults(); }, 200); });
+      si.addEventListener("focus", function () { if (si.value.trim()) onSearchInput(); });
+    }
 
     document.addEventListener("click", (e) => {
       if (e.target.closest(".client-req-remove")) {
@@ -570,82 +619,86 @@ window.clientModule = (() => {
     }
   }
 
-  async function lookupAndAddItem(code) {
-    try {
-      if (!sb) sb = getSupabaseClient();
-      const q = code.trim();
-      if (!q) return;
-
-      const { data, error } = await sb.rpc("client_lookup_items", { search_query: q });
-
-      if (error) throw error;
-
-      const items = Array.isArray(data) ? data : [];
-      const item = items.find(i => i.item_code === q) || items[0];
-
-      if (!item) {
-        showToast(`Item not found: ${q}`);
+  function lookupAndAddItem(code) {
+    var q = (code || "").trim();
+    if (!q) return;
+    supFetch("/rest/v1/rpc/client_lookup_items", {
+      method: "POST",
+      body: { search_query: q }
+    }).then(function (data) {
+      if (!data || data.code || data.error) {
+        showToast("Item not found: " + q);
         return;
       }
+      var list = Array.isArray(data) ? data : [];
+      var item = null;
+      for (var i = 0; i < list.length; i++) { if (list[i].item_code === q) { item = list[i]; break; } }
+      if (!item && list.length) item = list[0];
+      if (!item) { showToast("Item not found: " + q); return; }
 
-      const existing = orderItems.find(o => o.code === item.item_code);
-      if (existing) {
-        existing.qty += 1;
-      } else {
+      var found = false;
+      for (var i = 0; i < orderItems.length; i++) {
+        if (orderItems[i].code === item.item_code) { orderItems[i].qty += 1; found = true; break; }
+      }
+      if (!found) {
         orderItems.push({
           code: item.item_code,
-          name: item.name || `Item ${item.item_code}`,
+          name: item.name || "Item " + item.item_code,
           stock: parseInt(item.stock) || 0,
           unit: item.unit || "pcs",
           qty: 1
         });
       }
       renderOrder();
-    } catch (err) {
-      showToast(`Error: ${err.message}`);
-    }
+    }).catch(function (e) { showToast("Error: " + (e.message || e)); });
   }
 
   let searchTimer = null;
 
   function onSearchInput() {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => doSearch(), 250);
+    searchTimer = setTimeout(function () { doSearch(); }, 200);
   }
 
   function hideSearchResults() {
-    const el = $("client-search-results");
+    var el = $("client-search-results");
     if (el) el.style.display = "none";
   }
 
-  async function doSearch() {
-    const input = $("client-search-input");
-    const results = $("client-search-results");
+  function doSearch() {
+    var input = $("client-search-input");
+    var results = $("client-search-results");
     if (!input || !results) return;
-    const q = input.value.trim();
+    var q = input.value.trim();
     if (!q) { results.style.display = "none"; return; }
 
-    try {
-      if (!sb) sb = getSupabaseClient();
-      const { data, error } = await sb.rpc("client_lookup_items", { search_query: q });
+    results.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">Searching...</div>';
+    results.style.display = "block";
 
-      if (error) throw error;
-
-      const items = Array.isArray(data) ? data : [];
-
-      if (!items || items.length === 0) {
-        results.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">No items found.</div>';
-        results.style.display = "";
+    supFetch("/rest/v1/rpc/client_lookup_items", {
+      method: "POST",
+      body: { search_query: q }
+    }).then(function (data) {
+      if (!data || data.code || data.error) {
+        results.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">Tidak ditemukan.</div>';
+        results.style.display = "block";
         return;
       }
-
-      results.innerHTML = items.map(item => `
-        <div class="client-search-item" data-code="${escapeHtml(item.item_code)}" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid var(--line);font-size:0.82rem;display:flex;justify-content:space-between;gap:0.5rem">
-          <span><strong>${escapeHtml(item.item_code)}</strong> — ${escapeHtml(item.name || "")} <small style="color:var(--muted)">${escapeHtml(item.kategori || "")}</small></span>
-          <small style="color:var(--muted);white-space:nowrap">${escapeHtml(item.unit || "pcs")} &middot; stock: ${item.stock}</small>
-        </div>
-      `).join("");
-      results.style.display = "";
+      var list = Array.isArray(data) ? data : [];
+      if (!list.length) {
+        results.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">Tidak ditemukan.</div>';
+        results.style.display = "block";
+        return;
+      }
+      var html = "";
+      for (var i = 0; i < list.length; i++) {
+        var it = list[i];
+        html += '<div class="client-search-item" data-code="' + escapeHtml(it.item_code) + '" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid var(--line);font-size:0.82rem;display:-webkit-flex;display:flex;justify-content:space-between;gap:0.5rem">' +
+          '<span><strong>' + escapeHtml(it.item_code) + '</strong> &mdash; ' + escapeHtml(it.name || "") + ' <small style="color:var(--muted)">' + escapeHtml(it.kategori || "") + '</small></span>' +
+          '<small style="color:var(--muted);white-space:nowrap">' + escapeHtml(it.unit || "pcs") + ' &middot; stok: ' + it.stock + '</small></div>';
+      }
+      results.innerHTML = html;
+      results.style.display = "block";
 
       var els = results.querySelectorAll(".client-search-item");
       for (var _i = 0; _i < els.length; _i++) {
@@ -658,10 +711,10 @@ window.clientModule = (() => {
           });
         })(els[_i]);
       }
-    } catch (err) {
-      results.innerHTML = `<div style="padding:0.5rem;color:var(--due-text);font-size:0.78rem">${escapeHtml(err.message)}</div>`;
-      results.style.display = "";
-    }
+    }).catch(function (err) {
+      results.innerHTML = '<div style="padding:0.5rem;color:var(--due-text);font-size:0.78rem">Error: ' + escapeHtml(err.message || err) + '</div>';
+      results.style.display = "block";
+    });
   }
 
   function playBeep() {

@@ -587,29 +587,28 @@ function bindInventoryWorkspace(page) {
     }
     if (action === "client-approve") {
       const token = actionButton.dataset.token;
-      if (token) handleClientApprove(token);
+      if (token) { await handleClientApprove(token); await loadMasterFromSupabase(page); }
     }
     if (action === "client-reject") {
       const token = actionButton.dataset.token;
-      if (token) handleClientReject(token);
+      if (token) { await handleClientReject(token); await loadMasterFromSupabase(page); }
     }
     if (action === "client-delete") {
       const token = actionButton.dataset.token;
-      if (token) handleClientDelete(token);
+      if (token) { await handleClientDelete(token); await loadMasterFromSupabase(page); }
     }
     if (action === "client-approve-all") {
       const sb = getInventorySupabaseClient();
       if (!sb) return;
-      sb.from("client_transactions").select("token").eq("status", "pending").then(({ data, error }) => {
+      sb.from("client_transactions").select("token").eq("status", "pending").then(async ({ data, error }) => {
         if (error || !data) return;
         const tokens = data.map(r => r.token);
         if (tokens.length === 0) { inventoryToast("No pending transactions."); return; }
         if (!confirm("Approve all " + tokens.length + " pending transactions?")) return;
-        (async () => {
-          for (const t of tokens) {
-            await handleClientApprove(t);
-          }
-        })();
+        for (const t of tokens) {
+          await handleClientApprove(t);
+        }
+        await loadMasterFromSupabase(page);
       });
     }
 
@@ -912,6 +911,98 @@ function bindInventoryWorkspace(page) {
     }
   });
 
+  /* ── Inventory: live search dropdown ── */
+  let invSearchTimer = null;
+  function hideInvSearchResults(resultsEl) {
+    if (resultsEl) resultsEl.style.display = "none";
+  }
+  function doInventoryItemSearch(q, resultsEl) {
+    if (!q) { hideInvSearchResults(resultsEl); return; }
+    resultsEl.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">Searching...</div>';
+    resultsEl.style.display = "block";
+    var sb = getInventorySupabaseClient();
+    if (!sb) { resultsEl.innerHTML = '<div style="padding:0.5rem;color:var(--due-text);font-size:0.78rem">Not authenticated.</div>'; return; }
+    sb.rpc("client_lookup_items", { search_query: q }).then(function (res) {
+      if (res.error) { throw res.error; }
+      var data = res.data;
+      if (!data || !Array.isArray(data) || !data.length) {
+        resultsEl.innerHTML = '<div style="padding:0.5rem;color:var(--muted);font-size:0.78rem">Tidak ditemukan.</div>';
+        resultsEl.style.display = "block";
+        return;
+      }
+      var html = "";
+      for (var i = 0; i < data.length; i++) {
+        var it = data[i];
+        html += '<div class="sarpras-inv-search-item" data-code="' + escapeHtml(it.item_code) + '" data-name="' + escapeHtml(it.name || "") + '" data-stock="' + it.stock + '" data-unit="' + escapeHtml(it.unit || "pcs") + '" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid var(--line);font-size:0.82rem;display:flex;justify-content:space-between;gap:0.5rem">' +
+          '<span><strong>' + escapeHtml(it.item_code) + '</strong> &mdash; ' + escapeHtml(it.name || "") + '</span>' +
+          '<small style="color:var(--muted);white-space:nowrap">' + escapeHtml(it.unit || "pcs") + ' &middot; stok: ' + it.stock + '</small></div>';
+      }
+      resultsEl.innerHTML = html;
+      resultsEl.style.display = "block";
+    }).catch(function (err) {
+      resultsEl.innerHTML = '<div style="padding:0.5rem;color:var(--due-text);font-size:0.78rem">Error: ' + escapeHtml(err.message || err) + '</div>';
+      resultsEl.style.display = "block";
+    });
+  }
+
+  page.addEventListener("input", function (e) {
+    if (e.target.id === "sarpras-inv-search") {
+      var results = document.getElementById("sarpras-inv-search-results");
+      if (!results) return;
+      var q = e.target.value.trim();
+      if (!q) { results.style.display = "none"; return; }
+      clearTimeout(invSearchTimer);
+      invSearchTimer = setTimeout(function () { doInventoryItemSearch(q, results); }, 200);
+    }
+  });
+
+  page.addEventListener("keyup", function (e) {
+    if (e.target.id === "sarpras-inv-search") {
+      var results = document.getElementById("sarpras-inv-search-results");
+      if (!results) return;
+      var q = e.target.value.trim();
+      if (!q) { results.style.display = "none"; return; }
+      clearTimeout(invSearchTimer);
+      invSearchTimer = setTimeout(function () { doInventoryItemSearch(q, results); }, 200);
+    }
+  });
+
+  page.addEventListener("focusin", function (e) {
+    if (e.target.id === "sarpras-inv-search") {
+      var results = document.getElementById("sarpras-inv-search-results");
+      if (!results) return;
+      var q = e.target.value.trim();
+      if (q) { doInventoryItemSearch(q, results); }
+    }
+  });
+
+  page.addEventListener("focusout", function (e) {
+    if (e.target.id === "sarpras-inv-search") {
+      var results = document.getElementById("sarpras-inv-search-results");
+      if (!results) return;
+      setTimeout(function () { results.style.display = "none"; }, 200);
+    }
+  });
+
+  page.addEventListener("mousedown", function (e) {
+    var item = e.target.closest(".sarpras-inv-search-item");
+    if (!item) return;
+    e.preventDefault();
+    var code = item.dataset.code;
+    var name = item.dataset.name;
+    var stock = parseInt(item.dataset.stock) || 0;
+    var input = document.getElementById("sarpras-inv-search");
+    var results = document.getElementById("sarpras-inv-search-results");
+    if (input) input.value = "";
+    if (results) results.style.display = "none";
+    invCurrentOrder.push({ code: code, name: name || code, qty: 1 });
+    refreshInventorySubpages(page);
+    setTimeout(function () {
+      var scanner = document.getElementById("sarpras-scanner");
+      if (scanner) scanner.focus();
+    }, 0);
+  });
+
   /* ── Inventory: add item on Enter ── */
   page.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -920,6 +1011,8 @@ function bindInventoryWorkspace(page) {
         event.preventDefault();
         const q = input.value.trim();
         input.value = "";
+        const resultsEl = document.getElementById("sarpras-inv-search-results");
+        if (resultsEl) resultsEl.style.display = "none";
         if (!q) return;
         const state = ensureInventoryState();
         const match = state.items.find((row) => row[0].toLowerCase() === q.toLowerCase() || row[1].toLowerCase().includes(q.toLowerCase()));
@@ -2060,8 +2153,11 @@ function buildInventoryOperationsPage() {
             <h2>${t("invOpOrderList")}</h2>
             <span id="sarpras-order-count">${invCurrentOrder.length} ${t("invActItem")}</span>
           </div>
-          <div style="padding:0.6rem 1rem;border-bottom:1px solid var(--line);display:flex;gap:0.4rem">
-            <input type="text" data-sarpras-input="inventory-item-input" placeholder="${t("invOpSearch")}" style="flex:1;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-size:0.9rem" />
+          <div style="padding:0.6rem 1rem;border-bottom:1px solid var(--line);display:flex;gap:0.4rem;flex-wrap:wrap">
+            <div style="position:relative;flex:1;min-width:10rem">
+              <input type="text" id="sarpras-inv-search" data-sarpras-input="inventory-item-input" placeholder="${t("invOpSearch")}" autocomplete="off" style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-size:0.9rem;box-sizing:border-box" />
+              <div class="sarpras-inv-search-results" id="sarpras-inv-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--line);border-radius:0.3rem;max-height:14rem;overflow-y:auto;z-index:999;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"></div>
+            </div>
             <button type="button" class="primary-button secondary" id="sarpras-video-scan-btn" style="padding:0 0.6rem;font-size:0.82rem">📷 Scan</button>
           </div>
           <div id="sarpras-video-scanner" style="display:none;padding:0.6rem 1rem;border-bottom:1px solid var(--line)">
