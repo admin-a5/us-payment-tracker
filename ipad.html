@@ -61,6 +61,13 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
 .item-del { padding: 0.2rem 0.4rem; border: 0; border-radius: 4px; background: #fee2e2; color: #dc2626; cursor: pointer; font-size: 1rem; line-height: 1; }
 
 .toast { position: fixed; bottom: 1rem; left: 50%; -webkit-transform: translateX(-50%); transform: translateX(-50%); background: #1e293b; color: #fff; padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.82rem; z-index: 200; display: none; }
+
+/* Tabs */
+.tabs { display: -webkit-flex; display: flex; gap: 0; margin-bottom: 1rem; background: #e2e8f0; border-radius: 10px; padding: 0.2rem; }
+.tab { -webkit-flex: 1; flex: 1; padding: 0.45rem 0.5rem; border: 0; border-radius: 8px; background: transparent; color: #64748b; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-align: center; -webkit-appearance: none; }
+.tab.active { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 </style>
 </head>
 <body>
@@ -80,32 +87,41 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
     <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
   </div>
 
-  <div class="panel">
-    <div class="panel-hd"><h2>Surat / Letters</h2><button class="btn btn-primary btn-sm" id="new-req-btn">+ New</button></div>
-    <div class="panel-bd"><div class="table-wrap" id="letters-wrap"><div class="loading">Loading...</div></div></div>
+  <div class="tabs">
+    <button class="tab active" data-tab="letters">Surat / Letters</button>
+    <button class="tab" data-tab="inv">Sarpras / Facilities</button>
   </div>
 
-  <div class="panel">
-    <div class="panel-hd"><h2>Inventory</h2></div>
-    <div class="panel-bd">
-      <div class="search-wrap">
-        <input type="text" id="search-input" placeholder="Cari barang..." />
-        <div class="search-results" id="search-results"></div>
-      </div>
-      <div id="order-empty" class="empty">Cari barang untuk memulai.</div>
-      <div id="order-wrap" style="display:none">
-        <table style="width:100%;font-size:0.78rem" id="order-table">
-          <thead><tr><th>Item</th><th style="width:4rem">Qty</th><th style="width:2.5rem"></th></tr></thead>
-          <tbody id="order-body"></tbody>
-        </table>
-        <div style="display:-webkit-flex;display:flex;gap:0.4rem;justify-content:flex-end;margin-top:0.4rem">
-          <button class="btn btn-secondary btn-sm" id="clear-btn">Clear</button>
-          <button class="btn btn-primary btn-sm" id="checkout-btn">Check Out</button>
+  <div class="tab-content active" id="tab-letters">
+    <div class="panel">
+      <div class="panel-hd"><h2>Surat / Letters</h2><button class="btn btn-primary btn-sm" id="new-req-btn">+ New</button></div>
+      <div class="panel-bd"><div class="table-wrap" id="letters-wrap"><div class="loading">Loading...</div></div></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-inv">
+    <div class="panel">
+      <div class="panel-hd"><h2>Sarpras / Facilities</h2></div>
+      <div class="panel-bd">
+        <div class="search-wrap">
+          <input type="text" id="search-input" placeholder="Cari barang..." />
+          <div class="search-results" id="search-results"></div>
         </div>
-      </div>
-      <div id="tx-wrap" style="margin-top:0.5rem;border-top:1px solid #eee;padding-top:0.5rem;display:none">
-        <div style="font-size:0.82rem;font-weight:600;margin-bottom:0.3rem">Recent Check-outs</div>
-        <div id="tx-list" style="font-size:0.78rem"></div>
+        <div id="order-empty" class="empty">Cari barang untuk memulai.</div>
+        <div id="order-wrap" style="display:none">
+          <table style="width:100%;font-size:0.78rem" id="order-table">
+            <thead><tr><th>Item</th><th style="width:4rem">Qty</th><th style="width:2.5rem"></th></tr></thead>
+            <tbody id="order-body"></tbody>
+          </table>
+          <div style="display:-webkit-flex;display:flex;gap:0.4rem;justify-content:flex-end;margin-top:0.4rem">
+            <button class="btn btn-secondary btn-sm" id="clear-btn">Clear</button>
+            <button class="btn btn-primary btn-sm" id="checkout-btn">Check Out</button>
+          </div>
+        </div>
+        <div id="tx-wrap" style="margin-top:0.5rem;border-top:1px solid #eee;padding-top:0.5rem;display:none">
+          <div style="font-size:0.82rem;font-weight:600;margin-bottom:0.3rem">Recent Check-outs</div>
+          <div id="tx-list" style="font-size:0.78rem"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -403,7 +419,7 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
       $("search-results").style.display = "block";
       var els = $("search-results").querySelectorAll(".search-item");
       for (var i = 0; i < els.length; i++) {
-        els[i].addEventListener("click", function () {
+        els[i].addEventListener("mousedown", function () {
           var code = this.dataset.code;
           $("search-input").value = "";
           $("search-results").style.display = "none";
@@ -488,7 +504,7 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
     btn.textContent = "Processing...";
 
     var todayStr = nowShort();
-    supFetch("/rest/v1/sarpras_transactions?select=token&order=token.desc&limit=1", { method: "GET" }).then(function (existing) {
+    supFetch("/rest/v1/client_transactions?select=token&order=token.desc&limit=1", { method: "GET" }).then(function (existing) {
       var lastSeq = 0;
       if (existing && existing.length) {
         var last = existing[0].token;
@@ -503,15 +519,19 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
         totalQty += orderItems[i].qty;
       }
 
-      supFetch("/rest/v1/rpc/process_inventory_transaction", {
+      supFetch("/rest/v1/client_transactions", {
         method: "POST",
+        headers: { Prefer: "return=representation" },
         body: {
-          p_token: tokenVal, p_type: "Keluar", p_date: nowStamp(),
-          p_items: items, p_total_qty: totalQty, p_item_count: items.length, p_petugas: name
+          token: tokenVal, items: items, total_qty: totalQty, item_count: items.length,
+          petugas: name, status: "pending"
         }
-      }).then(function (rpcRes) {
-        if (rpcRes && (rpcRes.error || rpcRes.code)) { toast("Error: " + ((rpcRes.error && rpcRes.error.message) || rpcRes.message || rpcRes.msg || "Unknown")); btn.disabled = false; btn.textContent = "Check Out"; return; }
-        toast("Check-out selesai. Token: " + tokenVal);
+      }).then(function (insertRes) {
+        if (insertRes && (insertRes.code || insertRes.error)) {
+          toast("Error: " + ((insertRes.error && insertRes.error.message) || insertRes.message || insertRes.msg || "Unknown"));
+          btn.disabled = false; btn.textContent = "Check Out"; return;
+        }
+        toast("Request submitted (pending approval). Token: " + tokenVal);
         orderItems = [];
         renderOrder();
         loadTx();
@@ -524,7 +544,7 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
   /* ─── Transaction History ─── */
   function loadTx() {
     if (!token) return;
-    supFetch("/rest/v1/sarpras_transactions?select=*&order=date.desc&limit=5", { method: "GET" }).then(function (data) {
+    supFetch("/rest/v1/client_transactions?select=*&order=created_at.desc&limit=10", { method: "GET" }).then(function (data) {
       if (!data || !data.length || data.code) return;
       $("tx-wrap").style.display = "";
       var html = "";
@@ -535,12 +555,32 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
         for (var j = 0; j < txItems.length; j++) {
           parts.push((txItems[j].name || txItems[j].code) + " x" + txItems[j].qty);
         }
+        var badge = tx.status === "approved" ? "&#9989;" : tx.status === "rejected" ? "&#10060;" : "&#9203;";
         html += '<div style="padding:0.3rem 0;border-bottom:1px solid #f0f0f0;display:-webkit-flex;display:flex;justify-content:space-between;gap:0.4rem">' +
-          '<span><strong>' + esc(tx.token) + '</strong> ' + esc(parts.join(", ")) + '</span>' +
-          '<small style="color:#999">' + esc(tx.petugas) + ' &middot; ' + fmtDate(tx.date) + '</small></div>';
+          '<span>' + badge + ' <strong>' + esc(tx.token) + '</strong> ' + esc(parts.join(", ")) + '</span>' +
+          '<small style="color:#999">' + esc(tx.petugas) + ' &middot; ' + esc(tx.status) + '</small></div>';
       }
       $("tx-list").innerHTML = html;
     }).catch(function (e) { console.log(e.message); });
+  }
+
+  /* ─── Tab Switching ─── */
+  function switchTab(name) {
+    var tabs = document.querySelectorAll(".tab");
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].className = tabs[i].dataset.tab === name ? "tab active" : "tab";
+    }
+    var contents = document.querySelectorAll(".tab-content");
+    for (var i = 0; i < contents.length; i++) {
+      contents[i].className = contents[i].id === "tab-" + name ? "tab-content active" : "tab-content";
+    }
+  }
+
+  var tabBtns = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabBtns.length; i++) {
+    tabBtns[i].addEventListener("click", function () {
+      switchTab(this.dataset.tab);
+    });
   }
 })();
 </script>

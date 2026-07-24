@@ -34,44 +34,6 @@ function saveInvTokenState() {
   Store.saveInvToken(invToken, invTokenDate);
 }
 
-const inventoryMasterData = {
-  items: [
-      ["MHP-ATK-001", "Kertas A4", "Alat Tulis", "Gudang ATK", "420", "2026-06-30 10:00", "0", "rim"],
-      ["MHP-ELK-001", "Mouse Wireless", "Elektronik", "Lab Komputer", "18", "2026-06-30 10:05", "0", "pcs"],
-      ["MHP-BRS-001", "Cairan Pel", "Kebersihan", "Gudang Kebersihan", "6", "2026-06-30 10:10", "0", "bottle"],
-      ["MHP-ARS-001", "Ordner Arsip", "Arsip", "TU", "14", "2026-06-30 10:15", "0", "pcs"],
-      ["MHP-TIN-001", "Tinta Printer", "Tinta & Toner", "Gudang ATK", "8", "2026-06-30 10:20", "0", "pcs"]
-  ],
-  categories: ["ATK", "Kebersihan", "Elektronik", "Kertas", "Arsip", "Tinta", "Peralatan"],
-  kategoriList: [
-      ["MHP-ATK", "Alat Tulis"],
-      ["MHP-KRT", "Kertas"],
-      ["MHP-ARS", "Arsip"],
-      ["MHP-PRT", "Peralatan"],
-      ["MHP-TIN", "Tinta & Toner"],
-      ["MHP-BRS", "Kebersihan"],
-      ["MHP-ELK", "Elektronik"],
-      ["MHP-LKS", "Perekat"],
-      ["MHP-KSM", "Konsumabel"]
-  ],
-  locations: ["Gudang Utama", "Gudang ATK", "Gudang Kebersihan", "TU", "Perpustakaan", "Lab Komputer"],
-  suppliers: [
-    ["CV Sumber Kertas", "Mira", "Aktif"],
-    ["PT Edukasi Teknologi", "Rian", "Aktif"],
-    ["UD Bersih Jaya", "Sinta", "Pending update"]
-  ]
-};
-
-const inventoryTransactionData = {
-  metrics: [
-    { value: "0", label: "Masuk bulan ini", tone: "mint" },
-    { value: "0", label: "Keluar bulan ini", tone: "sand" },
-    { value: "0", label: "Mutasi lokasi", tone: "sky" },
-    { value: "0", label: "Penyesuaian", tone: "rose" }
-  ],
-  transactions: []
-};
-
 const inventoryOpnameData = {
   metrics: [
     { value: "3", label: "Sesi aktif", tone: "sky" },
@@ -123,15 +85,15 @@ function persistInventoryStore() {
 function ensureInventoryState() {
   if (inventoryState) return inventoryState;
   inventoryState = {
-    items: loadInventoryStore(inventoryStorageKeys.items, inventoryMasterData.items),
-    categories: loadInventoryStore(inventoryStorageKeys.categories, inventoryMasterData.categories),
-    kategoriList: loadInventoryStore(inventoryStorageKeys.kategoriList, inventoryMasterData.kategoriList),
-    locations: loadInventoryStore(inventoryStorageKeys.locations, inventoryMasterData.locations),
+    items: loadInventoryStore(inventoryStorageKeys.items, []),
+    categories: loadInventoryStore(inventoryStorageKeys.categories, []),
+    kategoriList: loadInventoryStore(inventoryStorageKeys.kategoriList, []),
+    locations: loadInventoryStore(inventoryStorageKeys.locations, []),
     units: loadInventoryStore(inventoryStorageKeys.units, ["pcs", "box", "rim", "liter", "kg", "pack", "lusin"]),
-    suppliers: loadInventoryStore(inventoryStorageKeys.suppliers, inventoryMasterData.suppliers),
-    transactions: loadInventoryStore(inventoryStorageKeys.transactions, inventoryTransactionData.transactions),
-    opnames: loadInventoryStore(inventoryStorageKeys.opnames, inventoryOpnameData.sessions),
-    discrepancies: loadInventoryStore(inventoryStorageKeys.discrepancies, inventoryOpnameData.discrepancies)
+    suppliers: loadInventoryStore(inventoryStorageKeys.suppliers, []),
+    transactions: loadInventoryStore(inventoryStorageKeys.transactions, []),
+    opnames: loadInventoryStore(inventoryStorageKeys.opnames, []),
+    discrepancies: loadInventoryStore(inventoryStorageKeys.discrepancies, [])
   };
   /* Normalize freq & unit — old items may not have row[6] / row[7] */
   inventoryState.items.forEach((row) => {
@@ -278,7 +240,7 @@ function getInventorySupabaseClient() {
 function refreshInventoryLanguage() {
   const invPage = document.querySelector("#inventory .module-page");
   if (!invPage) return;
-  const tabMap = { "inv-overview": "invTabOverview", "inv-qrocr": "invTabQrcr", "inv-master": "invTabMaster", "inv-inventory": "invTabInventory", "inv-opname": "invTabOpname", "inv-asset": "invTabAsset", "inv-borrow": "invTabBorrow", "inv-maintenance": "invTabMaintenance", "inv-activity": "invTabActivity", "inv-reports": "invTabReports" };
+  const tabMap = { "inv-overview": "invTabOverview", "inv-qrocr": "invTabQrcr", "inv-master": "invTabMaster", "inv-inventory": "invTabInventory", "inv-opname": "invTabOpname", "inv-asset": "invTabAsset", "inv-borrow": "invTabBorrow", "inv-maintenance": "invTabMaintenance", "inv-activity": "invTabActivity", "inv-reports": "invTabReports", "inv-client": "invTabClient" };
   invPage.querySelectorAll("[data-invpage]").forEach((btn) => {
     const key = tabMap[btn.dataset.invpage];
     if (key) btn.textContent = t(key);
@@ -318,6 +280,7 @@ function enhanceInventoryPage() {
     <button type="button" data-invpage="inv-borrow">${t("invTabBorrow")}</button>
     <button type="button" data-invpage="inv-maintenance">${t("invTabMaintenance")}</button>
     <button type="button" data-invpage="inv-activity">${t("invTabActivity")}</button>
+    <button type="button" data-invpage="inv-client">${t("invTabClient")}</button>
     <button type="button" data-invpage="inv-reports">${t("invTabReports")}</button>
   `;
 
@@ -392,13 +355,19 @@ function enhanceInventoryPage() {
     t("invActPlaceholderScope").split(", ")
   );
 
+  const clientPage = document.createElement("section");
+  clientPage.id = "inv-client";
+  clientPage.className = "module-subpage";
+  clientPage.hidden = true;
+  clientPage.innerHTML = buildInventoryClientPage();
+
   const reportPage = document.createElement("section");
   reportPage.id = "inv-reports";
   reportPage.className = "module-subpage";
   reportPage.hidden = true;
   reportPage.innerHTML = buildInventoryReportsPage();
 
-  page.append(subnav, overview, qrPage, masterPage, inventoryPage, opnamePage, assetPage, borrowPage, maintenancePage, activityPage, reportPage);
+  page.append(subnav, overview, qrPage, masterPage, inventoryPage, opnamePage, assetPage, borrowPage, maintenancePage, activityPage, clientPage, reportPage);
 
   /* ── Toast & loading overlay ── */
   const toastEl = document.createElement("div");
@@ -450,6 +419,9 @@ function enhanceInventoryPage() {
       const ap = page.querySelector("#inv-activity");
       if (ap) ap.innerHTML = buildInventoryActivityPage();
     }
+    if (id === "inv-client") {
+      loadClientTransactionsTable();
+    }
   };
 
   page.querySelectorAll("[data-invpage]").forEach((b) => {
@@ -464,6 +436,28 @@ function enhanceInventoryPage() {
 
   /* Build all subpages on load */
   refreshInventorySubpages(page);
+
+  /* Auto-load from Supabase if localStorage is empty (no dummy data) */
+  if (localStorage.getItem(inventoryStorageKeys.items) === null) {
+    const sb = getInventorySupabaseClient();
+    if (sb) {
+      Promise.all([
+        sb.from("sarpras_master_items").select("*").order("item_code"),
+        sb.from("sarpras_kategori").select("*").order("code"),
+        sb.from("sarpras_transactions").select("*").order("date", { ascending: false }).limit(100)
+      ]).then(([itemsRes, kategoriRes, txRes]) => {
+        if (itemsRes.error || kategoriRes.error || txRes.error) return;
+        const state = ensureInventoryState();
+        state.items = (itemsRes.data || []).map(r => [r.item_code, r.item_name, r.category, r.location || "", String(r.stock ?? 0), r.timestamp || "", String(r.freq ?? 0), r.unit || "pcs"]);
+        state.kategoriList = (kategoriRes.data || []).map(r => [r.code, r.name]);
+        state.transactions = (txRes.data || []).map(r => [r.token, r.type, r.date, JSON.stringify(r.items || []), String(r.total_qty ?? 0), String(r.item_count ?? 0), r.petugas || "—", r.status || "Selesai"]);
+        persistInventoryStore();
+        refreshInventorySubpages(page);
+        inventorySyncState.master = "Auto-loaded from Supabase";
+        inventorySyncState.inventory = "Auto-loaded from Supabase";
+      }).catch(() => {});
+    }
+  }
 
   bindInventoryWorkspace(page);
 }
@@ -585,6 +579,38 @@ function bindInventoryWorkspace(page) {
         detailRow.style.display = isHidden ? "table-row" : "none";
         toggleBtn.textContent = isHidden ? "▼" : "▶";
       }
+    }
+
+    /* ── Client approval page ── */
+    if (action === "client-refresh") {
+      loadClientTransactionsTable();
+    }
+    if (action === "client-approve") {
+      const token = actionButton.dataset.token;
+      if (token) handleClientApprove(token);
+    }
+    if (action === "client-reject") {
+      const token = actionButton.dataset.token;
+      if (token) handleClientReject(token);
+    }
+    if (action === "client-delete") {
+      const token = actionButton.dataset.token;
+      if (token) handleClientDelete(token);
+    }
+    if (action === "client-approve-all") {
+      const sb = getInventorySupabaseClient();
+      if (!sb) return;
+      sb.from("client_transactions").select("token").eq("status", "pending").then(({ data, error }) => {
+        if (error || !data) return;
+        const tokens = data.map(r => r.token);
+        if (tokens.length === 0) { inventoryToast("No pending transactions."); return; }
+        if (!confirm("Approve all " + tokens.length + " pending transactions?")) return;
+        (async () => {
+          for (const t of tokens) {
+            await handleClientApprove(t);
+          }
+        })();
+      });
     }
 
     /* ── Inventory operations ── */
@@ -2611,6 +2637,122 @@ function renderStockCardTable(movements, code) {
 
   html += `</tbody></table></div>`;
   return html;
+}
+
+/* ─── Client Approval Page ─── */
+function buildInventoryClientPage() {
+  return `
+    <div class="sarpras-section-header">
+      <h3>Client Transactions</h3>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button type="button" class="primary-button" data-sarpras-action="client-refresh">&#x21bb; Refresh</button>
+        <button type="button" class="primary-button" data-sarpras-action="client-approve-all">&#x2714; Approve All Pending</button>
+      </div>
+    </div>
+    <div class="module-table-scroll" style="margin-top:0.75rem">
+      <table class="module-table sarpras-table" id="client-tx-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Items</th>
+            <th>Total Qty</th>
+            <th>Petugas</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="client-tx-body">
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function loadClientTransactionsTable() {
+  const tbody = document.getElementById("client-tx-body");
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr>';
+  try {
+    const sb = getInventorySupabaseClient();
+    if (!sb) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--error)">Supabase not connected</td></tr>'; return; }
+    const { data, error } = await sb
+      .from("client_transactions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">No transactions found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(tx => {
+      const items = Array.isArray(tx.items) ? tx.items : [];
+      const summary = items.map(i => `${i.name || i.code} x${i.qty}`).join(", ");
+      const isPending = tx.status === "pending";
+      const statusBadge = tx.status === "approved" ? `<span style="color:var(--success-text)">&#9989; Approved</span>`
+        : tx.status === "rejected" ? `<span style="color:var(--due-text)">&#10060; Rejected</span>`
+        : `<span style="color:var(--warning-text)">&#9203; Pending</span>`;
+      return `<tr>
+        <td><strong>${escapeHtml(tx.token)}</strong></td>
+        <td style="font-size:0.82rem">${escapeHtml(summary)}</td>
+        <td style="text-align:center">${tx.total_qty}</td>
+        <td>${escapeHtml(tx.petugas)}</td>
+        <td>${statusBadge}</td>
+        <td style="white-space:nowrap;font-size:0.78rem;color:var(--muted)">${tx.created_at ? new Date(tx.created_at).toLocaleString() : "—"}</td>
+        <td>${isPending ? `
+          <button type="button" class="action-button" data-sarpras-action="client-approve" data-token="${escapeHtml(tx.token)}" title="Approve" style="color:var(--success-text)">&#x2714;</button>
+          <button type="button" class="action-button" data-sarpras-action="client-reject" data-token="${escapeHtml(tx.token)}" title="Reject" style="color:var(--warning-text)">&#x2718;</button>
+          <button type="button" class="action-button" data-sarpras-action="client-delete" data-token="${escapeHtml(tx.token)}" title="Delete" style="color:var(--due-text)">&#x1F5D1;</button>
+        ` : `<span style="color:var(--muted);font-size:0.78rem">—</span>`}</td>
+      </tr>`;
+    }).join("");
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--due-text)">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function handleClientApprove(token) {
+  const sb = getInventorySupabaseClient();
+  if (!sb) return;
+  try {
+    const { data, error } = await sb.rpc("approve_client_transaction", { p_token: token });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    inventoryToast("Approved: " + token);
+    loadClientTransactionsTable();
+  } catch (e) {
+    inventoryToast("Approve error: " + e.message);
+  }
+}
+
+async function handleClientReject(token) {
+  const sb = getInventorySupabaseClient();
+  if (!sb) return;
+  try {
+    const { data, error } = await sb.rpc("reject_client_transaction", { p_token: token });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    inventoryToast("Rejected: " + token);
+    loadClientTransactionsTable();
+  } catch (e) {
+    inventoryToast("Reject error: " + e.message);
+  }
+}
+
+async function handleClientDelete(token) {
+  if (!confirm("Delete transaction " + token + "?")) return;
+  const sb = getInventorySupabaseClient();
+  if (!sb) return;
+  try {
+    const { error } = await sb.from("client_transactions").delete().eq("token", token);
+    if (error) throw error;
+    inventoryToast("Deleted: " + token);
+    loadClientTransactionsTable();
+  } catch (e) {
+    inventoryToast("Delete error: " + e.message);
+  }
 }
 
 function buildInventoryReportsPage() {

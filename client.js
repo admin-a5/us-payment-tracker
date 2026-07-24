@@ -97,6 +97,54 @@ window.clientModule = (() => {
     setTimeout(() => { el.style.opacity = "0"; }, 3000);
   }
 
+  function calculateEstimate() {
+    var now = new Date();
+    var day = now.getDay();
+    var hour = now.getHours();
+    var est = new Date(now);
+    var count = 0;
+    if (day >= 1 && day <= 4) { count = 1; }
+    else if (day === 5) { if (hour < 12) { count = 1; } else { est.setDate(est.getDate() + 3); } }
+    else if (day === 6) { est.setDate(est.getDate() + 2); }
+    else { est.setDate(est.getDate() + 1); }
+    while (count < 3) {
+      est.setDate(est.getDate() + 1);
+      var d = est.getDay();
+      if (d !== 0 && d !== 6) count++;
+    }
+    return est;
+  }
+
+  function showEstimatePopup(orderNumber) {
+    var existing = $("client-estimate-popup");
+    if (existing) existing.remove();
+    var est = calculateEstimate();
+    var days = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    var months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+    var dayName = days[est.getDay()];
+    var dateStr = dayName + ", " + est.getDate() + " " + months[est.getMonth()] + " " + est.getFullYear();
+    var overlay = document.createElement("div");
+    overlay.id = "client-estimate-popup";
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:9999";
+    overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
+    overlay.innerHTML =
+      '<div style="background:var(--card-bg,#fff);border-radius:1rem;padding:1.5rem;max-width:360px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.2);text-align:center;position:relative">' +
+      '<button id="client-estimate-close" style="position:absolute;top:0.5rem;right:0.75rem;border:none;background:none;font-size:1.2rem;cursor:pointer;color:var(--muted,#999)">&times;</button>' +
+      '<div style="font-size:2rem;margin-bottom:0.5rem">&#x1F441;</div>' +
+      '<h3 style="margin:0 0 0.25rem;font-size:1rem">Estimasi Selesai</h3>' +
+      '<p style="margin:0.25rem 0;font-size:0.82rem;color:var(--muted,#666)">Nomor Order</p>' +
+      '<p style="margin:0 0 1rem;font-size:1rem;font-weight:700;font-family:monospace">' + escapeHtml(orderNumber) + '</p>' +
+      '<p style="margin:0;font-size:0.82rem;color:var(--muted,#666)">Estimasi Selesai</p>' +
+      '<p style="margin:0.25rem 0 0;font-size:1.2rem;font-weight:700;color:var(--accent,#2563eb)">' + dateStr + '</p>' +
+      '<p style="margin:0.75rem 0 0;font-size:0.72rem;color:var(--muted,#999)">3 hari kerja (Senin-Jumat)</p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    setTimeout(function() {
+      var closeBtn = document.getElementById("client-estimate-close");
+      if (closeBtn) closeBtn.addEventListener("click", function() { overlay.remove(); });
+    }, 0);
+  }
+
   function mount() {
     const section = $("client");
     if (!section || section.querySelector(".client-page")) return;
@@ -112,49 +160,59 @@ window.clientModule = (() => {
           </div>
         </div>
         <div class="client-content">
-          <div class="client-panel" id="client-panel-letters">
-            <div class="client-panel-hd">
-              <h2 data-i18n="clientLetters">Letters</h2>
-              <button class="primary-button" id="client-new-req-btn" data-i18n="clientNewRequest">New Request</button>
-            </div>
-            <div class="client-table-wrap" id="client-letters-table">
-              <div class="client-loading">Loading...</div>
+          <div class="client-tabs">
+            <button class="client-tab active" data-tab="letters"><span data-i18n="navLetters">Letters</span></button>
+            <button class="client-tab" data-tab="inv"><span data-i18n="navInventory">Facilities</span></button>
+          </div>
+
+          <div class="client-tab-content active" id="client-tab-letters">
+            <div class="client-panel">
+              <div class="client-panel-hd">
+                <h2 data-i18n="clientLetters">Letters</h2>
+                <button class="primary-button" id="client-new-req-btn" data-i18n="clientNewRequest">New Request</button>
+              </div>
+              <div class="client-table-wrap" id="client-letters-table">
+                <div class="client-loading">Loading...</div>
+              </div>
             </div>
           </div>
-          <div class="client-panel" id="client-panel-inventory">
-            <div class="client-panel-hd">
-              <h2 data-i18n="clientInventory">Inventory</h2>
-               <button class="primary-button secondary" id="client-scan-btn">Scan</button>
-            </div>
-            <div class="client-scanner-area" id="client-scanner-area" style="display:none">
-              <div id="client-scanner-viewport" style="width:260px;height:260px"></div>
-              <div class="client-scanner-actions">
-                <button class="primary-button secondary" id="client-scan-stop" data-i18n="clientScanStop">Stop</button>
-                <button class="primary-button" id="client-scan-capture" data-i18n="clientScanStart">Start</button>
+
+          <div class="client-tab-content" id="client-tab-inv">
+            <div class="client-panel">
+              <div class="client-panel-hd">
+                <h2 data-i18n="clientInventory">Facilities</h2>
+                 <button class="primary-button secondary" id="client-scan-btn">Scan</button>
               </div>
-            </div>
-            <div class="client-order-wrap" id="client-order-wrap" style="display:none">
-              <table class="client-order-table">
-                <thead><tr>
-                  <th data-i18n="clientItems">Item</th>
-                  <th style="width:5rem" data-i18n="clientQty">Qty</th>
-                  <th style="width:4rem"></th>
-                </tr></thead>
-                <tbody id="client-order-body"></tbody>
-              </table>
-              <div class="client-order-actions">
-                <button class="primary-button secondary" id="client-clear-btn" data-i18n="clientClear">Clear</button>
-                <button class="primary-button" id="client-checkout-btn" data-i18n="clientCheckout">Check Out</button>
+              <div class="client-scanner-area" id="client-scanner-area" style="display:none">
+                <div id="client-scanner-viewport" style="width:260px;height:260px"></div>
+                <div class="client-scanner-actions">
+                  <button class="primary-button secondary" id="client-scan-stop" data-i18n="clientScanStop">Stop</button>
+                  <button class="primary-button" id="client-scan-capture" data-i18n="clientScanStart">Start</button>
+                </div>
               </div>
-            </div>
-            <div class="client-search-wrap" style="position:relative;padding:0.75rem 0">
-              <input type="text" id="client-search-input" placeholder="Search item by code or name..." style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.3rem;background:var(--input-bg);color:var(--text);font-size:0.85rem;box-sizing:border-box" />
-              <div class="client-search-results" id="client-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--line);border-radius:0.3rem;max-height:14rem;overflow-y:auto;z-index:10;margin-top:2px"></div>
-            </div>
-            <div class="client-empty-inv" id="client-empty-inv">Scan or search items to start.</div>
-            <div class="client-tx-history" id="client-tx-history" style="margin-top:0.75rem;border-top:1px solid var(--line);padding-top:0.75rem;display:none">
-              <h3 style="font-size:0.85rem;margin:0 0 0.5rem">Recent Check-outs</h3>
-              <div id="client-tx-list" style="font-size:0.78rem"></div>
+              <div class="client-order-wrap" id="client-order-wrap" style="display:none">
+                <table class="client-order-table">
+                  <thead><tr>
+                    <th data-i18n="clientItems">Item</th>
+                    <th style="width:5rem" data-i18n="clientQty">Qty</th>
+                    <th style="width:4rem"></th>
+                  </tr></thead>
+                  <tbody id="client-order-body"></tbody>
+                </table>
+                <div class="client-order-actions">
+                  <button class="primary-button secondary" id="client-clear-btn" data-i18n="clientClear">Clear</button>
+                  <button class="primary-button" id="client-checkout-btn" data-i18n="clientCheckout">Check Out</button>
+                </div>
+              </div>
+              <div class="client-search-wrap" style="position:relative;padding:0.75rem 0">
+                <input type="text" id="client-search-input" placeholder="Search item by code or name..." style="width:100%;min-height:2.2rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.3rem;background:var(--input-bg);color:var(--text);font-size:0.85rem;box-sizing:border-box" />
+                <div class="client-search-results" id="client-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--line);border-radius:0.3rem;max-height:14rem;overflow-y:auto;z-index:10;margin-top:2px"></div>
+              </div>
+              <div class="client-empty-inv" id="client-empty-inv">Scan or search items to start.</div>
+              <div class="client-tx-history" id="client-tx-history" style="margin-top:0.75rem;border-top:1px solid var(--line);padding-top:0.75rem;display:none">
+                <h3 style="font-size:0.85rem;margin:0 0 0.5rem">Recent Check-outs</h3>
+                <div id="client-tx-list" style="font-size:0.78rem"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -196,6 +254,19 @@ window.clientModule = (() => {
         </div>
       </div>
     `;
+
+    /* ─── Tab Switching ─── */
+    const tabs = section.querySelectorAll(".client-tab");
+    for (let i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener("click", function () {
+        for (let j = 0; j < tabs.length; j++) tabs[j].className = tabs[j] === this ? "client-tab active" : "client-tab";
+        const name = this.dataset.tab;
+        const contents = section.querySelectorAll(".client-tab-content");
+        for (let j = 0; j < contents.length; j++) {
+          contents[j].className = contents[j].id === "client-tab-" + name ? "client-tab-content active" : "client-tab-content";
+        }
+      });
+    }
 
     bind();
     loadLetters();
@@ -265,7 +336,7 @@ window.clientModule = (() => {
                 const statusLabel = t("client" + r.status.charAt(0).toUpperCase() + r.status.slice(1));
                 return `
                 <tr>
-                  <td data-label="${t("clientOrderNo")}"><code>${escapeHtml(r.order_number)}</code> <button class="client-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋</button></td>
+                  <td data-label="${t("clientOrderNo")}"><code>${escapeHtml(r.order_number)}</code> <button class="client-estimate-btn" data-order="${escapeHtml(r.order_number)}" title="Estimasi selesai" style="cursor:pointer;border:none;background:none;padding:0 0.15rem;font-size:0.85rem">&#x1F441;</button> <button class="client-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋</button></td>
                   <td data-label="${t("clientRequestor")}">${escapeHtml(r.requestor_name)}<br/><small>${escapeHtml(r.requestor_class)}</small></td>
                   <td data-label="${t("clientId")}"><small>${escapeHtml(r.requestor_id)}</small></td>
                   <td data-label="${t("clientItems")}">${renderItemsSummary(r.items)}</td>
@@ -289,6 +360,11 @@ window.clientModule = (() => {
           const statusLabel = t("client" + btn.dataset.status.charAt(0).toUpperCase() + btn.dataset.status.slice(1));
           const text = `Permohonan surat telah dibuat dengan nomor order\n--------\n${btn.dataset.order}\nID : ${btn.dataset.id || "-"}\nNama : ${btn.dataset.requestor}\nKelas : ${btn.dataset.class}\nTahun Ajaran : ${btn.dataset.year}\nItems:\n${itemsText}\nTanggal Permohonan : ${formatWIB(btn.dataset.date)}\nStatus : ${statusLabel}\n\nMohon perhatian:\n1. Waktu pengerjaan normal 3 hari setelah tanggal permohonan\n2. Untuk Alumni mohon menyerahkan dokumen asli untuk pembuatan surat/transkrip`;
           navigator.clipboard.writeText(text).then(() => showToast("Disalin!"));
+        });
+      });
+      document.querySelectorAll(".client-estimate-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          showEstimatePopup(btn.dataset.order);
         });
       });
     } catch (err) {
@@ -571,14 +647,17 @@ window.clientModule = (() => {
       `).join("");
       results.style.display = "";
 
-      results.querySelectorAll(".client-search-item").forEach(el => {
-        el.addEventListener("click", () => {
-          const code = el.dataset.code;
-          input.value = "";
-          results.style.display = "none";
-          lookupAndAddItem(code);
-        });
-      });
+      var els = results.querySelectorAll(".client-search-item");
+      for (var _i = 0; _i < els.length; _i++) {
+        (function (el) {
+          el.addEventListener("mousedown", function () {
+            var code = el.dataset.code;
+            input.value = "";
+            results.style.display = "none";
+            lookupAndAddItem(code);
+          });
+        })(els[_i]);
+      }
     } catch (err) {
       results.innerHTML = `<div style="padding:0.5rem;color:var(--due-text);font-size:0.78rem">${escapeHtml(err.message)}</div>`;
       results.style.display = "";
@@ -671,9 +750,9 @@ window.clientModule = (() => {
     try {
       if (!sb) sb = getSupabaseClient();
       const { data, error } = await sb
-        .from("sarpras_transactions")
+        .from("client_transactions")
         .select("*")
-        .order("date", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(10);
       if (error) throw error;
       if (!data || data.length === 0) return;
@@ -684,9 +763,10 @@ window.clientModule = (() => {
       list.innerHTML = data.map(tx => {
         const items = Array.isArray(tx.items) ? tx.items : [];
         const summary = items.map(i => `${i.name || i.code} x${i.qty}`).join(", ");
+        const badge = tx.status === "approved" ? "&#9989;" : tx.status === "rejected" ? "&#10060;" : "&#9203;";
         return `<div style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.25rem 0;border-bottom:1px solid var(--line)">
-          <span><strong>${escapeHtml(tx.token)}</strong> — ${escapeHtml(summary)}</span>
-          <small style="color:var(--muted);white-space:nowrap">${escapeHtml(tx.petugas)} — ${formatWIB(tx.date)}</small>
+          <span>${badge} <strong>${escapeHtml(tx.token)}</strong> — ${escapeHtml(summary)}</span>
+          <small style="color:var(--muted);white-space:nowrap">${escapeHtml(tx.petugas)} — ${escapeHtml(tx.status)}</small>
         </div>`;
       }).join("");
     } catch (e) {
@@ -715,7 +795,7 @@ window.clientModule = (() => {
       let token;
       try {
         const { data: lastTx } = await sb
-          .from("sarpras_transactions")
+          .from("client_transactions")
           .select("token")
           .like("token", `${todayStr}%`)
           .order("token", { ascending: false })
@@ -734,22 +814,23 @@ window.clientModule = (() => {
 
       const totalQty = items.reduce((s, i) => s + i.qty, 0);
       const itemCount = items.length;
-      const date = nowStampWIB();
 
-      const { error: rpcError } = await sb.rpc("process_inventory_transaction", {
-        p_token: token,
-        p_type: "Keluar",
-        p_date: date,
-        p_items: items,
-        p_total_qty: totalQty,
-        p_item_count: itemCount,
-        p_petugas: name.trim()
-      });
+      const { error: insertError } = await sb
+        .from("client_transactions")
+        .insert({
+          token,
+          items,
+          total_qty: totalQty,
+          item_count: itemCount,
+          petugas: name.trim(),
+          status: "pending"
+        })
+        .single();
 
-      if (rpcError) throw rpcError;
+      if (insertError) throw insertError;
 
-      window.auditLog?.("CHECKOUT", "inventory", token, null, { petugas: name.trim(), items, totalQty });
-      showToast(`Check-out complete. Token: ${token}`);
+      window.auditLog?.("CHECKOUT", "inventory", token, null, { petugas: name.trim(), items, totalQty, status: "pending" });
+      showToast(`Request submitted (pending approval). Token: ${token}`);
       orderItems = [];
       renderOrder();
       loadClientTxHistory();
