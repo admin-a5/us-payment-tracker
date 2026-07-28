@@ -665,7 +665,7 @@ function bindInventoryWorkspace(page) {
     if (action === "inventory-confirm") {
       const tokenRaw = invToken;
       if (!tokenRaw || tokenRaw.length !== 11 || !/^\d{11}$/.test(tokenRaw)) {
-        inventoryToast("Token harus 11 digit (YYYYMMDD + 3 digit urutan).");
+        inventoryToast("Token tidak valid.");
         return;
       }
       if (invCurrentOrder.length === 0) {
@@ -1044,9 +1044,10 @@ function bindInventoryWorkspace(page) {
   /* ── Inventory: token input change ── */
   page.addEventListener("input", (event) => {
     if (event.target.matches("[data-sarpras-input='inventory-token']")) {
-      const raw = event.target.value.replace(/\D/g, "").slice(0, 11);
-      event.target.value = raw;
-      invToken = raw || (datePrefix() + "001");
+      const datePart = datePrefix();
+      const seq = event.target.value.replace(/\D/g, "").slice(-3).padStart(3, "0");
+      event.target.value = datePart + seq;
+      invToken = datePart + seq;
       saveInvTokenState();
     }
   });
@@ -1058,7 +1059,7 @@ function bindInventoryWorkspace(page) {
 
     if (form.id === "sarpras-confirm-form") {
       const inputVal = form.querySelector("#sarpras-confirm-token-input")?.value.trim();
-      if (inputVal === invToken) {
+      if (inputVal === invToken.slice(-3)) {
         executeInventoryTransaction(page);
         form.reset();
         document.getElementById("sarpras-confirm-modal").style.display = "none";
@@ -2193,6 +2194,7 @@ function buildInventoryOperationsPage() {
           <span style="font-size:0.82rem;color:var(--muted);font-weight:600">${t("invOpToken")}</span>
           <input type="${invTokenVisible ? "text" : "password"}" maxlength="11" value="${invToken}" data-sarpras-input="inventory-token" style="width:9rem;min-height:2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:0.95rem;letter-spacing:0.1em;text-align:center" />
           <button type="button" class="action-button" data-sarpras-action="inventory-token-toggle" title="${invTokenVisible ? "Sembunyikan" : "Tampilkan"}">${invTokenVisible ? "🙈" : "👁"}</button>
+          <span style="font-size:0.72rem;color:var(--muted)">(edit 3 digit terakhir)</span>
         </div>
         <div style="margin-left:auto;display:flex;gap:0.35rem">
           <button type="button" class="primary-button secondary" data-sarpras-action="inventory-save" style="font-size:0.72rem;padding:0.35rem 0.6rem">${t("invMasterSave")}</button>
@@ -2261,9 +2263,9 @@ function buildInventoryOperationsPage() {
       <div style="position:relative;width:min(20rem,100%);padding:1.2rem;border:1px solid var(--line);border-radius:1.4rem;background:var(--surface);box-shadow:var(--shadow)">
         <button type="button" id="sarpras-confirm-modal-close" style="position:absolute;top:0.75rem;right:0.75rem;width:2rem;height:2rem;border:1px solid var(--line);border-radius:0.75rem;color:var(--text);background:var(--surface-soft);cursor:pointer">×</button>
         <h2 style="margin:0 0 0.5rem;font-size:1rem">${t("invOpConfirmTitle").replace("{type}", type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut"))}</h2>
-        <p style="margin:0 0 1rem;font-size:0.82rem;color:var(--muted)">${t("invOpTokenReEnter")} <strong style="font-family:monospace;letter-spacing:0.15em">${invToken}</strong></p>
+        <p style="margin:0 0 1rem;font-size:0.82rem;color:var(--muted)">${t("invOpTokenReEnter")} <strong style="font-family:monospace;letter-spacing:0.15em">${invToken}</strong> — masukkan <strong>3 digit terakhir</strong></p>
         <form id="sarpras-confirm-form" style="display:grid;gap:0.6rem">
-          <input type="text" maxlength="11" placeholder="20260728001" required style="width:100%;min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1.2rem;letter-spacing:0.1em;text-align:center" id="sarpras-confirm-token-input" />
+          <input type="text" maxlength="3" placeholder="${invToken.slice(-3)}" required style="width:100%;min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1.5rem;letter-spacing:0.3em;text-align:center" id="sarpras-confirm-token-input" />
           <button type="submit" class="primary-button">${t("invOpConfirm").replace("{type}", type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut"))}</button>
         </form>
       </div>
