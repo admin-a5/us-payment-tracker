@@ -159,7 +159,7 @@ window.authModule = (() => {
     $("profile-avatar").textContent = getAvatarInitials(displayName, user.email);
     if (typeof APP_VERSION !== "undefined") $("sidebar-version").textContent = APP_VERSION;
 
-    if (window.SessionManager) {
+    if (window.SessionManager && currentRole !== "client") {
       sessionManager = new window.SessionManager(window.authModule, 15);
     }
 
