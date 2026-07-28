@@ -571,44 +571,48 @@ table td code { font-family: Menlo, Courier, monospace; font-weight: 700; }
 
     var todayStr = nowShort();
     var today = todayStr.slice(0, 4) + "-" + todayStr.slice(4, 6) + "-" + todayStr.slice(6, 8);
-    var lsDate = localStorage.getItem("reload_sarpras_token_date");
-    var lsToken = localStorage.getItem("reload_sarpras_token");
-    var tokenVal;
-    if (lsDate === today && lsToken && lsToken.length === 11) {
-      var seq = parseInt(lsToken.slice(-3)) + 1;
-      tokenVal = todayStr + (seq > 999 ? "001" : String(seq).padStart(3, "0"));
-    } else {
-      tokenVal = todayStr + "001";
-    }
-    localStorage.setItem("reload_sarpras_token", tokenVal);
-    localStorage.setItem("reload_sarpras_token_date", today);
 
-    var items = [];
-    var totalQty = 0;
-    for (var i = 0; i < orderItems.length; i++) {
-      items.push({ code: orderItems[i].code, name: orderItems[i].name || orderItems[i].code, qty: orderItems[i].qty });
-      totalQty += orderItems[i].qty;
-    }
+    supFetch("/rest/v1/client_transactions?select=token&order=token.desc&limit=1", { method: "GET" }).then(function (existing) {
+      var dbSeq = 0;
+      if (existing && existing.length) {
+        var last = existing[0].token;
+        if (last && last.indexOf(todayStr) === 0) dbSeq = parseInt(last.slice(-3), 10);
+      }
+      var lsDate = localStorage.getItem("reload_sarpras_token_date");
+      var lsToken = localStorage.getItem("reload_sarpras_token");
+      var lsSeq = (lsDate === today && lsToken && lsToken.length === 11) ? parseInt(lsToken.slice(-3)) : 0;
+      var seq = Math.max(dbSeq, lsSeq) + 1;
+      var tokenVal = todayStr + (seq > 999 ? "001" : String(seq).padStart(3, "0"));
+      localStorage.setItem("reload_sarpras_token", tokenVal);
+      localStorage.setItem("reload_sarpras_token_date", today);
 
-    supFetch("/rest/v1/client_transactions", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: {
-        token: tokenVal, items: items, total_qty: totalQty, item_count: items.length,
-        petugas: name, status: "pending"
+      var items = [];
+      var totalQty = 0;
+      for (var i = 0; i < orderItems.length; i++) {
+        items.push({ code: orderItems[i].code, name: orderItems[i].name || orderItems[i].code, qty: orderItems[i].qty });
+        totalQty += orderItems[i].qty;
       }
-    }).then(function (insertRes) {
-      if (insertRes && (insertRes.code || insertRes.error)) {
-        toast("Error: " + ((insertRes.error && insertRes.error.message) || insertRes.message || insertRes.msg || "Unknown"));
-        btn.disabled = false; btn.textContent = "Check Out"; return;
-      }
-      toast("Request submitted (pending approval). Token: " + tokenVal);
-      orderItems = [];
-      renderOrder();
-      loadTx();
-      btn.disabled = false;
-      btn.textContent = "Check Out";
-    }).catch(function (e) { toast("Gagal checkout: " + e.message); btn.disabled = false; btn.textContent = "Check Out"; });
+
+      supFetch("/rest/v1/client_transactions", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: {
+          token: tokenVal, items: items, total_qty: totalQty, item_count: items.length,
+          petugas: name, status: "pending"
+        }
+      }).then(function (insertRes) {
+        if (insertRes && (insertRes.code || insertRes.error)) {
+          toast("Error: " + ((insertRes.error && insertRes.error.message) || insertRes.message || insertRes.msg || "Unknown"));
+          btn.disabled = false; btn.textContent = "Check Out"; return;
+        }
+        toast("Request submitted (pending approval). Token: " + tokenVal);
+        orderItems = [];
+        renderOrder();
+        loadTx();
+        btn.disabled = false;
+        btn.textContent = "Check Out";
+      }).catch(function (e) { toast("Gagal checkout: " + e.message); btn.disabled = false; btn.textContent = "Check Out"; });
+    }).catch(function (e) { toast("Gagal memuat data: " + e.message); btn.disabled = false; btn.textContent = "Check Out"; });
   });
 
   /* ─── Transaction History ─── */

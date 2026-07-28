@@ -846,14 +846,21 @@ window.clientModule = (() => {
 
       const todayStr = nowDateStr();
       const today = todayStr.slice(0, 4) + "-" + todayStr.slice(4, 6) + "-" + todayStr.slice(6, 8);
+
+      let dbSeq = 0;
+      try {
+        const { data: lastTx } = await sb
+          .from("client_transactions")
+          .select("token")
+          .like("token", `${todayStr}%`)
+          .order("token", { ascending: false })
+          .limit(1);
+        if (lastTx?.length) dbSeq = parseInt(lastTx[0].token.slice(-3));
+      } catch {}
       const stored = Store.getInvToken();
-      let token;
-      if (stored.date === today && stored.token && stored.token.length === 11) {
-        const seq = parseInt(stored.token.slice(-3)) + 1;
-        token = todayStr + String(seq > 999 ? 1 : seq).padStart(3, "0");
-      } else {
-        token = todayStr + "001";
-      }
+      const lsSeq = (stored.date === today && stored.token && stored.token.length === 11) ? parseInt(stored.token.slice(-3)) : 0;
+      const seq = Math.max(dbSeq, lsSeq) + 1;
+      const token = todayStr + String(seq > 999 ? 1 : seq).padStart(3, "0");
       Store.saveInvToken(token, today);
 
       const items = orderItems.map(o => ({
