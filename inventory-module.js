@@ -1329,27 +1329,24 @@ async function saveMasterToSupabase(page) {
   }
   inventoryLoading(true, "Menyimpan data ke database...");
   try {
-    await Promise.all([
-      sb.from("sarpras_master_items").upsert(
-        inventoryState.items.map((row) => ({
-          item_code: row[0], item_name: row[1], category: row[2], location: row[3], stock: Number(row[4]) || 0, timestamp: row[5] || null, freq: Number(row[6]) || 0, unit: row[7] || "pcs"
-        })),
-        { onConflict: "item_code" }
-      ),
-      sb.from("sarpras_kategori").upsert(
-        inventoryState.kategoriList.map(([code, name]) => ({ code, name })),
-        { onConflict: "code" }
-      ),
-      sb.from("sarpras_transactions").upsert(
-        inventoryState.transactions.map((row) => ({
-          token: row[0], type: row[1], date: row[2], items: typeof row[3] === "string" ? JSON.parse(row[3]) : row[3], total_qty: Number(row[4]) || 0, item_count: Number(row[5]) || 0, petugas: row[7] || "", status: row[6] || "Selesai"
-        })),
-        { onConflict: "token" }
-      )
-    ]);
+    const items = inventoryState.items.map((row) => ({
+      item_code: row[0], item_name: row[1], category: row[2], location: row[3],
+      stock: Number(row[4]) || 0, timestamp: row[5] || null, freq: Number(row[6]) || 0, unit: row[7] || "pcs"
+    }));
+    const kategori = inventoryState.kategoriList.map(([code, name]) => ({ code, name }));
+    const transactions = inventoryState.transactions.map((row) => ({
+      token: row[0], type: row[1], date: row[2],
+      items: typeof row[3] === "string" ? JSON.parse(row[3]) : row[3],
+      total_qty: Number(row[4]) || 0, item_count: Number(row[5]) || 0,
+      petugas: row[6] || "", status: row[7] || "Selesai"
+    }));
+    const { error } = await sb.rpc("bulk_save_inventory", {
+      p_items: items, p_kategori: kategori, p_transactions: transactions
+    });
+    if (error) throw error;
     inventoryLoading(false);
     inventoryToast("✓ Semua data tersimpan ke database");
-    inventorySyncState.master = "Master tersimpan ke Supabase (upsert)";
+    inventorySyncState.master = "Master tersimpan ke Supabase (RPC)";
     inventorySyncState.inventory = "Transaksi tersimpan ke Supabase";
   } catch (error) {
     inventoryLoading(false);
@@ -1919,11 +1916,12 @@ function exportStockCardExcel(code) {
     [`Jenis Barang : ${itemCategory}`],
     [`Nama barang  : ${itemName}`],
     [`Satuan       : ${itemUnit}`],
+    [`Stok Awal    : ${movements.initialStock || 0}`],
     [],
-    [t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]
+    [t("invRepNo"), t("invRepDate"), t("invRepStock"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]
   ];
   movements.forEach((m, i) => {
-    aoa.push([i + 1, m.date.slice(0, 10), m.type, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.balance, m.token, m.officer]);
+    aoa.push([i + 1, m.date.slice(0, 10), m.stockBefore, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.actualBalance, m.token, m.officer]);
   });
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
@@ -1950,14 +1948,15 @@ function exportAllStockCardsExcel() {
       [`Jenis Barang : ${itemCategory}`],
       [`Nama barang  : ${itemName}`],
       [`Satuan       : ${itemUnit}`],
+      [`Stok Awal    : ${movements.initialStock || 0}`],
       [],
-      [t("invRepNo"), t("invRepDate"), t("invRepType"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]
+      [t("invRepNo"), t("invRepDate"), t("invRepStock"), t("invRepIn"), t("invRepOut"), t("invRepBalance"), t("invRepToken"), t("invRepCardOf")]
     ];
     if (!movements.length) {
       aoa.push([t("invRepCardNoTx")]);
     } else {
       movements.forEach((m, i) => {
-        aoa.push([i + 1, m.date.slice(0, 10), m.type, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.balance, m.token, m.officer]);
+        aoa.push([i + 1, m.date.slice(0, 10), m.stockBefore, m.type === "Masuk" ? m.qty : 0, m.type === "Masuk" ? 0 : m.qty, m.actualBalance, m.token, m.officer]);
       });
     }
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -2569,6 +2568,8 @@ let invStockCardCode = "";
 
 function getItemStockCard(code) {
   const state = ensureInventoryState();
+  const item = state.items.find((r) => r[0] === code);
+  const currentStock = item ? Number(item[4]) || 0 : 0;
   const allTxs = state.transactions;
   const movements = [];
   allTxs.forEach((tx) => {
@@ -2589,6 +2590,16 @@ function getItemStockCard(code) {
     else balance -= m.qty;
     m.balance = balance;
   });
+  const txFinalBalance = movements.length > 0 ? movements[movements.length - 1].balance : 0;
+  const initialStock = Math.max(0, currentStock - txFinalBalance);
+  let running = initialStock;
+  movements.forEach((m) => {
+    m.stockBefore = running;
+    if (m.type === "Masuk") running += m.qty;
+    else running -= m.qty;
+    m.actualBalance = running;
+  });
+  movements.initialStock = initialStock;
   return movements;
 }
 
@@ -2745,13 +2756,15 @@ function renderStockCardTable(movements, code) {
   const item = state.items.find((r) => r[0] === code);
   const currentStock = item ? Number(item[4]) || 0 : 0;
   const itemName = item ? item[1] : code;
+  const initialStock = movements.initialStock || 0;
 
   let html = `<div class="sarpras-card-header"><strong>${code} — ${itemName}</strong> &bull; ${t("invRepCurrentStock")}: <b>${currentStock}</b></div>`;
+  html += `<div class="sarpras-card-header" style="font-size:0.82rem;margin-top:-0.4rem">${t("invRepStockAwal")}: <b>${initialStock}</b></div>`;
   html += `<div class="sarpras-report-scroll" style="max-height:60vh"><table class="module-table sarpras-report-table" style="min-width:max-content">`;
   html += `<thead><tr>
     <th>${t("invRepNo")}</th>
     <th>${t("invRepDate")}</th>
-    <th>${t("invRepType")}</th>
+    <th>${t("invRepStock")}</th>
     <th>${t("invRepIn")}</th>
     <th>${t("invRepOut")}</th>
     <th>${t("invRepBalance")}</th>
@@ -2767,10 +2780,10 @@ function renderStockCardTable(movements, code) {
       html += `<tr>
         <td>${i + 1}</td>
         <td>${m.date.slice(0, 10)}</td>
-        <td>${m.type}</td>
+        <td><strong>${m.stockBefore}</strong></td>
         <td class="rep-masuk">${isIn ? m.qty : ""}</td>
         <td class="rep-keluar">${isIn ? "" : m.qty}</td>
-        <td><strong>${m.balance}</strong></td>
+        <td><strong>${m.actualBalance}</strong></td>
         <td style="font-family:monospace">${m.token}</td>
         <td>${m.officer}</td>
       </tr>`;

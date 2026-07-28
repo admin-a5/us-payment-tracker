@@ -163,7 +163,8 @@ window.studentsModule = (() => {
     if (sectionEl) {
       const obs = new MutationObserver(() => {
         if (sectionEl.classList.contains("active") && activeTab === "overview") {
-          drawCharts();
+          if (window.studentOverview) renderOverview();
+          else drawCharts();
         }
       });
       obs.observe(sectionEl, { attributes: true, attributeFilter: ["class"] });
@@ -414,7 +415,7 @@ window.studentsModule = (() => {
     $("pd-ta-select").addEventListener("change", (e) => {
       activeTa = e.target.value;
       syncAllTaDropdowns("overview");
-      updateStats();
+      renderOverview();
     });
 
     $("pd-students-ta-select").addEventListener("change", (e) => {
@@ -581,7 +582,7 @@ window.studentsModule = (() => {
     setLoadingProgress(90, "Merender tampilan\u2026");
     buildTaDropdowns();
     populateClassFilter();
-    updateStats();
+    if (!window.studentOverview) updateStats();
     renderAll();
 
     setLoadingProgress(100, "Selesai!");
@@ -654,6 +655,13 @@ window.studentsModule = (() => {
   /* ── Tab 1: Overview ─────────────────────────────── */
 
   function renderOverview() {
+    const container = $("pd-sub-overview");
+    if (!container) return;
+    if (window.studentOverview) {
+      window.studentOverview.render(container);
+      return;
+    }
+    // Legacy fallback
     const empty = $("pd-rekap-empty");
     if (!studentsData.length) {
       if (empty) empty.style.display = "";
@@ -1113,7 +1121,7 @@ window.studentsModule = (() => {
       detectedTas  = [];
       activeTa     = "";
       buildTaDropdowns();
-      updateStats();
+      if (!window.studentOverview) updateStats();
       renderAll();
 
       const lbl = $("pd-upload-label");
@@ -1280,7 +1288,7 @@ window.studentsModule = (() => {
 
       buildTaDropdowns();
       populateClassFilter();
-      updateStats();
+      if (!window.studentOverview) updateStats();
       renderAll();
 
       if (!silent) {
@@ -1424,7 +1432,7 @@ window.studentsModule = (() => {
     if (activeTab === "students")      renderStudents();
     else if (activeTab === "mutasi")    renderMutasi();
     else                                renderOverview();
-    updateStats();
+    if (!window.studentOverview) updateStats();
   }
 
   /* ── Utilities ───────────────────────────────────── */
@@ -1450,7 +1458,20 @@ window.studentsModule = (() => {
     clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),3400);
   }
 
-  return { mount, updateLanguage, loadFromSupabase };
+  return {
+    mount,
+    updateLanguage,
+    loadFromSupabase,
+    getState: () => ({
+      students: studentsData,
+      activeTa,
+      detectedTas,
+      taLabel: taLabel(activeTa),
+      activeStudents: activeStudents(),
+      allClasses: allClassesForTa(),
+      isMale
+    })
+  };
 })();
 
 window.addEventListener("load", () => window.studentsModule.mount());
