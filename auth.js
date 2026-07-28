@@ -167,7 +167,8 @@ window.authModule = (() => {
     hideFinanceShellUntilLoaded();
 
     const allowed = ROLE_NAV[currentRole] || ["dashboard"];
-    navigateTo(allowed[0]);
+    const savedPage = Store.get("reload_last_page");
+    navigateTo(allowed.includes(savedPage) ? savedPage : allowed[0]);
 
     if (FINANCE_ROLES.includes(currentRole)) {
       await autoLoadFinanceDB();
@@ -186,6 +187,25 @@ window.authModule = (() => {
     if (typeof enhanceInventoryPage === "function" && !document.querySelector("#inventory .module-page .module-subnav")) {
       enhanceInventoryPage();
     }
+
+    /* Restore saved sub-page state after modules are ready */
+    setTimeout(() => {
+      const savedInvPage = localStorage.getItem("reload_last_inv_page");
+      if (savedInvPage) {
+        const btn = document.querySelector(`#inventory [data-invpage="${savedInvPage}"]`);
+        if (btn) btn.click();
+      }
+      const savedReportTab = localStorage.getItem("reload_last_report_subtab");
+      if (savedReportTab) {
+        const btn = document.querySelector(`#inventory [data-sarpras-action="report-set-subtab"][data-value="${savedReportTab}"]`);
+        if (btn) btn.click();
+      }
+      const savedStudentTab = localStorage.getItem("reload_last_student_tab");
+      if (savedStudentTab) {
+        const btn = document.querySelector(`[data-pd-tab="${savedStudentTab}"]`);
+        if (btn) btn.click();
+      }
+    }, 300);
   }
 
   function hideFinanceShellUntilLoaded() {
@@ -226,6 +246,7 @@ window.authModule = (() => {
     const navEl = document.querySelector(`.nav-item[data-page="${pageId}"]`);
     if (pageEl) pageEl.classList.add("active");
     if (navEl) navEl.classList.add("active");
+    Store.set("reload_last_page", pageId);
   }
 
   async function autoLoadFinanceDB() {

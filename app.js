@@ -356,6 +356,7 @@ document.querySelectorAll(".nav-item").forEach((button) => {
     const pageId = button.dataset.page;
     document.querySelector(`#${pageId}`).classList.add("active");
     sidebar.classList.remove("open");
+    Store.set("reload_last_page", pageId);
   });
 });
 

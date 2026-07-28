@@ -392,6 +392,7 @@ function enhanceInventoryPage() {
     page.querySelectorAll(".module-subpage").forEach((s) => {
       s.hidden = s.id !== id;
     });
+    localStorage.setItem("reload_last_inv_page", id);
 
     if (id === "inv-qrocr" && !qrMounted) {
       window.inventoryQROCR.loadDeps()
@@ -560,6 +561,7 @@ function bindInventoryWorkspace(page) {
     }
     if (action === "report-set-subtab") {
       invReportSubTab = actionButton.dataset.value || "ledger";
+      localStorage.setItem("reload_last_report_subtab", invReportSubTab);
       refreshInventorySubpages(page);
     }
     if (action === "report-export-card") {
@@ -587,15 +589,15 @@ function bindInventoryWorkspace(page) {
     }
     if (action === "client-approve") {
       const token = actionButton.dataset.token;
-      if (token) { await handleClientApprove(token); await loadMasterFromSupabase(page); }
+      if (token) { await handleClientApprove(token); await loadMasterFromSupabase(page); loadClientTransactionsTable(); }
     }
     if (action === "client-reject") {
       const token = actionButton.dataset.token;
-      if (token) { await handleClientReject(token); await loadMasterFromSupabase(page); }
+      if (token) { await handleClientReject(token); await loadMasterFromSupabase(page); loadClientTransactionsTable(); }
     }
     if (action === "client-delete") {
       const token = actionButton.dataset.token;
-      if (token) { await handleClientDelete(token); await loadMasterFromSupabase(page); }
+      if (token) { await handleClientDelete(token); await loadMasterFromSupabase(page); loadClientTransactionsTable(); }
     }
     if (action === "client-approve-all") {
       const sb = getInventorySupabaseClient();
@@ -609,6 +611,7 @@ function bindInventoryWorkspace(page) {
           await handleClientApprove(t);
         }
         await loadMasterFromSupabase(page);
+        loadClientTransactionsTable();
       });
     }
 

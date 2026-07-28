@@ -472,6 +472,7 @@ window.studentsModule = (() => {
     if (tab === "students")     renderStudents();
     else if (tab === "mutasi")  renderMutasi();
     else                        renderOverview();
+    localStorage.setItem("reload_last_student_tab", tab);
   }
 
   function syncAllTaDropdowns(except) {
