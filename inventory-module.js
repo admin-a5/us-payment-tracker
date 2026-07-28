@@ -7,20 +7,24 @@ let invActivitySearch = "";
 
 /* ── Inventory operations state ── */
 let invTransactionType = "masuk";
-let invToken = "000001";
+let invToken = "";
 let invTokenDate = "";
 let invTokenVisible = false;
 let invCurrentOrder = [];
 let invVideoScanner = null;
 
+function datePrefix() {
+  return nowStampWIB().slice(0, 10).replace(/-/g, "");
+}
+
 function loadInvTokenState() {
   const today = nowStampWIB().slice(0, 10);
   const stored = Store.getInvToken();
-  if (stored.date === today && stored.token) {
+  if (stored.date === today && stored.token && stored.token.length === 11) {
     invToken = stored.token;
     invTokenDate = today;
   } else {
-    invToken = "000001";
+    invToken = datePrefix() + "001";
     invTokenDate = today;
     Store.saveInvToken(invToken, today);
   }
@@ -28,7 +32,7 @@ function loadInvTokenState() {
 function saveInvTokenState() {
   const today = nowStampWIB().slice(0, 10);
   if (invTokenDate !== today) {
-    invToken = "000001";
+    invToken = datePrefix() + "001";
     invTokenDate = today;
   }
   Store.saveInvToken(invToken, invTokenDate);
@@ -660,8 +664,8 @@ function bindInventoryWorkspace(page) {
 
     if (action === "inventory-confirm") {
       const tokenRaw = invToken;
-      if (!tokenRaw || tokenRaw.length !== 6 || !/^\d{6}$/.test(tokenRaw)) {
-        inventoryToast("Token harus 6 digit angka.");
+      if (!tokenRaw || tokenRaw.length !== 11 || !/^\d{11}$/.test(tokenRaw)) {
+        inventoryToast("Token harus 11 digit (YYYYMMDD + 3 digit urutan).");
         return;
       }
       if (invCurrentOrder.length === 0) {
@@ -1040,9 +1044,9 @@ function bindInventoryWorkspace(page) {
   /* ── Inventory: token input change ── */
   page.addEventListener("input", (event) => {
     if (event.target.matches("[data-sarpras-input='inventory-token']")) {
-      const raw = event.target.value.replace(/\D/g, "").slice(0, 6);
+      const raw = event.target.value.replace(/\D/g, "").slice(0, 11);
       event.target.value = raw;
-      invToken = raw || "000001";
+      invToken = raw || (datePrefix() + "001");
       saveInvTokenState();
     }
   });
@@ -1274,7 +1278,8 @@ function executeInventoryTransaction(page) {
   /* Reset order immediately */
   invCurrentOrder = [];
   /* Increment token */
-  invToken = String(Math.min(999999, (Number(invToken) || 0) + 1)).padStart(6, "0");
+  const seq = (parseInt(invToken.slice(-3)) || 0) + 1;
+  invToken = datePrefix() + String(seq > 999 ? 1 : seq).padStart(3, "0");
   saveInvTokenState();
 
   /* Re-render to clear order table */
@@ -2186,7 +2191,7 @@ function buildInventoryOperationsPage() {
         </div>
         <div style="display:flex;align-items:center;gap:0.4rem;margin-left:0.25rem">
           <span style="font-size:0.82rem;color:var(--muted);font-weight:600">${t("invOpToken")}</span>
-          <input type="${invTokenVisible ? "text" : "password"}" maxlength="6" value="${invToken}" data-sarpras-input="inventory-token" style="width:6rem;min-height:2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1rem;letter-spacing:0.2em;text-align:center" />
+          <input type="${invTokenVisible ? "text" : "password"}" maxlength="11" value="${invToken}" data-sarpras-input="inventory-token" style="width:9rem;min-height:2rem;padding:0 0.5rem;border:1px solid var(--line);border-radius:0.4rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:0.95rem;letter-spacing:0.1em;text-align:center" />
           <button type="button" class="action-button" data-sarpras-action="inventory-token-toggle" title="${invTokenVisible ? "Sembunyikan" : "Tampilkan"}">${invTokenVisible ? "🙈" : "👁"}</button>
         </div>
         <div style="margin-left:auto;display:flex;gap:0.35rem">
@@ -2258,7 +2263,7 @@ function buildInventoryOperationsPage() {
         <h2 style="margin:0 0 0.5rem;font-size:1rem">${t("invOpConfirmTitle").replace("{type}", type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut"))}</h2>
         <p style="margin:0 0 1rem;font-size:0.82rem;color:var(--muted)">${t("invOpTokenReEnter")} <strong style="font-family:monospace;letter-spacing:0.15em">${invToken}</strong></p>
         <form id="sarpras-confirm-form" style="display:grid;gap:0.6rem">
-          <input type="text" maxlength="6" placeholder="000000" required style="width:100%;min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1.2rem;letter-spacing:0.2em;text-align:center" id="sarpras-confirm-token-input" />
+          <input type="text" maxlength="11" placeholder="20260728001" required style="width:100%;min-height:2.4rem;padding:0 0.6rem;border:1px solid var(--line);border-radius:0.45rem;color:var(--text);background:var(--surface-soft);font-family:monospace;font-size:1.2rem;letter-spacing:0.1em;text-align:center" id="sarpras-confirm-token-input" />
           <button type="submit" class="primary-button">${t("invOpConfirm").replace("{type}", type === "masuk" ? t("invOpTypeIn") : t("invOpTypeOut"))}</button>
         </form>
       </div>

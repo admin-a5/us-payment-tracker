@@ -845,19 +845,16 @@ window.clientModule = (() => {
       if (!sb) sb = getSupabaseClient();
 
       const todayStr = nowDateStr();
+      const today = todayStr.slice(0, 4) + "-" + todayStr.slice(4, 6) + "-" + todayStr.slice(6, 8);
+      const stored = Store.getInvToken();
       let token;
-      try {
-        const { data: lastTx } = await sb
-          .from("client_transactions")
-          .select("token")
-          .like("token", `${todayStr}%`)
-          .order("token", { ascending: false })
-          .limit(1);
-        const lastSeq = lastTx?.length ? parseInt(lastTx[0].token.slice(-3)) : 0;
-        token = `${todayStr}${String(lastSeq + 1).padStart(3, "0")}`;
-      } catch {
-        token = `${todayStr}001`;
+      if (stored.date === today && stored.token && stored.token.length === 11) {
+        const seq = parseInt(stored.token.slice(-3)) + 1;
+        token = todayStr + String(seq > 999 ? 1 : seq).padStart(3, "0");
+      } else {
+        token = todayStr + "001";
       }
+      Store.saveInvToken(token, today);
 
       const items = orderItems.map(o => ({
         code: o.code,
