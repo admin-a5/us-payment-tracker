@@ -94,8 +94,12 @@ function enhanceStaffPage() {
         <strong>Hari Efektif (ER)</strong>
         <label>Guru <input type="number" id="att-er-guru" min="1" max="31" value="18" /></label>
         <label>Karyawan <input type="number" id="att-er-karyawan" min="1" max="31" value="18" /></label>
-        <label>Satpam <input type="number" id="att-er-satpam" min="1" max="31" value="24" /></label>
+        <div class="att-er-satpam-block">
+          <span class="att-er-satpam-title">Satpam (per orang)</span>
+          <div class="att-er-satpam-list" id="att-er-satpam-list"></div>
+        </div>
         <span>Periode: <b id="att-period-er">-</b></span>
+        <button type="button" class="primary-button secondary" id="att-er-save-btn" style="margin-left:auto">Save ER</button>
       </div>
 
       <div class="att-preview" id="att-preview" hidden>

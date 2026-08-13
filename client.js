@@ -423,12 +423,7 @@ window.clientModule = (() => {
 
   function renderItemsSummary(items) {
     if (!items || !items.length) return "-";
-    return items.map(i => {
-      const label = i.type === "__custom__" && i.description ? i.description : i.type;
-      const desc = i.description && i.type !== "__custom__" ? i.description : "";
-      const lang = i.lang ? ` [${i.lang}]` : "";
-      return `<span class="client-item-pill">${escapeHtml(label)}${lang}${desc ? ` <small style="color:var(--muted)">(${escapeHtml(desc)})</small>` : ""}</span>`;
-    }).join(" ");
+    return window.renderItemsDropdown(items, "client-item-pill");
   }
 
   function openRequestForm() {

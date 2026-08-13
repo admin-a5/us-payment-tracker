@@ -4,7 +4,7 @@ window.attendanceModule = (() => {
     parsedKet: null,
     dbData: {},
     dailyData: {},       // period -> employee_id -> [{work_date, finger_in, codes}]
-    periodConfigs: {},   // period -> {er_guru, er_karyawan, er_satpam, cutoff_time}
+    periodConfigs: {},   // period -> {er_guru, er_karyawan, er_satpam, er_individual, cutoff_time}
     periods: [],
     activePeriodIdx: 0,
     activeTab: "rekap"
@@ -27,7 +27,7 @@ window.attendanceModule = (() => {
     } else {
       bindUpload("jpayroll");
       bindUpload("ket");
-      ["att-er-guru", "att-er-karyawan", "att-er-satpam"].forEach((id) => {
+      ["att-er-guru", "att-er-karyawan"].forEach((id) => {
         const el = $(id);
         if (el) el.addEventListener("input", onErChange);
       });
@@ -197,7 +197,7 @@ window.attendanceModule = (() => {
       });
       employees[emp.id] = {
         id: emp.id, name: emp.name || emp.id, org: emp.org || "", stat: emp.stat || "",
-        eff_days: emp.stat === "PT" ? 24 : emp.stat === "GT" ? effGuru : effKaryawan,
+        eff_days: emp.stat === "PT" ? getER(emp.org, emp.stat, emp.id) : emp.stat === "GT" ? effGuru : effKaryawan,
         hadir_r, tidak_hadir, terlambat, terlambat_minutes, icc, er, daily: emp.daily
       };
     });
@@ -257,7 +257,7 @@ window.attendanceModule = (() => {
     const summaries = Object.values(employees).map((emp) => {
       const k = ket[emp.id] || { add: 0, izin: 0, sakit: 0, cuti: 0, keterangan: "" };
       const add = k.add || 0;
-      const effDays = getER(emp.org, emp.stat);
+      const effDays = getER(emp.org, emp.stat, emp.id);
       return {
         employee_id: emp.id, employee_name: emp.name, org: emp.org, stat: emp.stat,
         period: meta.pKey, start_date: meta.startDate, end_date: meta.endDate, period_label: meta.pLabel,
@@ -273,6 +273,11 @@ window.attendanceModule = (() => {
     if (!state.periods.includes(meta.pKey)) state.periods.push(meta.pKey);
     state.periods.sort();
     state.activePeriodIdx = state.periods.indexOf(meta.pKey);
+
+    // Re-apply individual ER overrides now that the period is active
+    if (state.periodConfigs[meta.pKey]) {
+      sorted.forEach((r) => { r.eff_days = getER(r.org, r.stat, r.employee_id); });
+    }
 
     // Store daily for PD
     state.dailyData[meta.pKey] = {};
@@ -336,8 +341,9 @@ window.attendanceModule = (() => {
         period: period,
         er_guru: Number($("att-er-guru")?.value) || 18,
         er_karyawan: Number($("att-er-karyawan")?.value) || 18,
-        er_satpam: Number($("att-er-satpam")?.value) || 24,
-        cutoff_time: $("att-pd-cutoff")?.value || ""
+        er_satpam: cfg.er_satpam || 24,
+        cutoff_time: $("att-pd-cutoff")?.value || "",
+        er_individual: cfg.er_individual || {}
       };
       
       await sb.from("period_config").upsert(periodConfig, { onConflict: "period" });
@@ -432,8 +438,9 @@ window.attendanceModule = (() => {
         period:       pKey,
         er_guru:      Number(document.getElementById("att-er-guru")?.value)     || 18,
         er_karyawan:  Number(document.getElementById("att-er-karyawan")?.value) || 18,
-        er_satpam:    Number(document.getElementById("att-er-satpam")?.value)   || 24,
-        cutoff_time:  document.getElementById("att-pd-cutoff")?.value || ""
+        er_satpam:    state.periodConfigs[pKey]?.er_satpam || 24,
+        cutoff_time:  document.getElementById("att-pd-cutoff")?.value || "",
+        er_individual: state.periodConfigs[pKey]?.er_individual || {}
       };
 
       const { error } = await sb.from("period_config").upsert(periodConfig, { onConflict: "period" });
@@ -461,7 +468,7 @@ window.attendanceModule = (() => {
       const { data: cfgList } = await sb.from("period_config").select("*");
       state.periodConfigs = {};
       (cfgList || []).forEach((r) => {
-        state.periodConfigs[r.period] = { er_guru: r.er_guru || 18, er_karyawan: r.er_karyawan || 18, er_satpam: r.er_satpam || 24, cutoff_time: r.cutoff_time || "" };
+        state.periodConfigs[r.period] = { er_guru: r.er_guru || 18, er_karyawan: r.er_karyawan || 18, er_satpam: r.er_satpam || 24, cutoff_time: r.cutoff_time || "", er_individual: r.er_individual || {} };
       });
 
       // Load daily data for PD counting
@@ -522,8 +529,10 @@ window.attendanceModule = (() => {
         const cfg = state.periodConfigs[p];
         if (cfg) {
           state.dbData[p].forEach((r) => {
-            if (erGroup(r.org) === "satpam") r.eff_days = cfg.er_satpam;
-            else if (erGroup(r.org) === "karyawan") r.eff_days = cfg.er_karyawan;
+            if (erGroup(r.org) === "satpam") {
+              const ind = (cfg.er_individual || {})[r.employee_id];
+              r.eff_days = ind !== undefined ? ind : cfg.er_satpam;
+            } else if (erGroup(r.org) === "karyawan") r.eff_days = cfg.er_karyawan;
             else r.eff_days = cfg.er_guru;
           });
         }
@@ -616,9 +625,14 @@ window.attendanceModule = (() => {
       if (!state.periodConfigs[pKey]) state.periodConfigs[pKey] = {};
       state.periodConfigs[pKey].er_guru     = Number(document.getElementById("att-er-guru")?.value)     || 18;
       state.periodConfigs[pKey].er_karyawan = Number(document.getElementById("att-er-karyawan")?.value) || 18;
-      state.periodConfigs[pKey].er_satpam   = Number(document.getElementById("att-er-satpam")?.value)   || 24;
+      if (!state.periodConfigs[pKey].er_individual) state.periodConfigs[pKey].er_individual = {};
+      document.querySelectorAll(".att-er-satpam-input").forEach((inp) => {
+        const v = Number(inp.value);
+        if (v > 0) state.periodConfigs[pKey].er_individual[inp.dataset.empId] = v;
+        else delete state.periodConfigs[pKey].er_individual[inp.dataset.empId];
+      });
     }
-    if (state.dbData[pKey]) state.dbData[pKey].forEach((r) => { r.eff_days = getER(r.org, r.stat); });
+    if (state.dbData[pKey]) state.dbData[pKey].forEach((r) => { r.eff_days = getER(r.org, r.stat, r.employee_id); });
     updateStats();
     render();
   }
@@ -644,14 +658,49 @@ window.attendanceModule = (() => {
   }
 
   function loadErForPeriod(pKey) {
-    const cfg = state.periodConfigs[pKey];
-    if (!cfg) return;
-    const g = $("att-er-guru"), k = $("att-er-karyawan"), s = $("att-er-satpam");
-    if (g) g.value = cfg.er_guru;
-    if (k) k.value = cfg.er_karyawan;
-    if (s) s.value = cfg.er_satpam;
+    const cfg = state.periodConfigs[pKey] || {};
+    const g = $("att-er-guru"), k = $("att-er-karyawan");
+    if (g) g.value = cfg.er_guru ?? 18;
+    if (k) k.value = cfg.er_karyawan ?? 18;
     const ci = $("att-pd-cutoff");
     if (ci) ci.value = cfg.cutoff_time || "";
+    renderSatpamErInputs(pKey);
+  }
+
+  // Build one ER input per satpam employee (letters a., b., c., …)
+  function renderSatpamErInputs(pKey) {
+    const list = $("att-er-satpam-list");
+    if (!list) return;
+    const cfg = state.periodConfigs[pKey];
+    const ind = (cfg && cfg.er_individual) || {};
+    const satpams = (state.dbData[pKey] || [])
+      .filter((r) => /satpam/i.test(r.org || "") || r.stat === "PT")
+      .sort((a, b) => (a.employee_name || "").localeCompare(b.employee_name || ""));
+
+    list.innerHTML = "";
+    if (!satpams.length) {
+      list.innerHTML = `<span class="att-er-satpam-empty">No satpam in this period.</span>`;
+      return;
+    }
+    satpams.forEach((s, i) => {
+      const letter = String.fromCharCode(97 + i);
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "1";
+      input.max = "31";
+      input.className = "att-er-satpam-input";
+      input.dataset.empId = s.employee_id;
+      input.value = ind[s.employee_id] !== undefined ? ind[s.employee_id] : "";
+      input.placeholder = (cfg && cfg.er_satpam) || 24;
+      input.addEventListener("input", onErChange);
+      const row = document.createElement("label");
+      row.className = "att-er-satpam-item";
+      const name = document.createElement("span");
+      name.className = "att-er-satpam-name";
+      name.textContent = `${letter}. ${s.employee_name}`;
+      row.append(name, input);
+      list.appendChild(row);
+    });
   }
 
   // ── RENDER ───────────────────────────────────────────────────────────────────
@@ -697,7 +746,6 @@ window.attendanceModule = (() => {
   }
 
   function attendPct(r) {
-    if (isSatpam(r)) return null;
     const denom = is2526I() ? 120 : (r.eff_days || 0);
     return denom ? Math.round((r.hadir_totr / denom) * 100) : 0;
   }
@@ -817,12 +865,15 @@ window.attendanceModule = (() => {
       <th>Karyawan</th><th>Unit</th><th>Stat.</th><th>R</th>
       <th style="color:var(--money-warn)">ICC</th>
       <th style="color:var(--accent)">TotR</th><th>ER</th>
-      <th>Keterangan</th><th>Catatan</th>
+      <th>Keterangan</th>
     </tr>`;
     const rows = getFiltered().filter((r) => r.icc > 0).sort((a, b) => b.icc - a.icc);
-    if (!rows.length) { $("att-table-body").innerHTML = `<tr><td colspan="9" style="text-align:center;padding:3rem;color:var(--muted)">✓ Tidak ada ICC yang perlu diklarifikasi</td></tr>`; return; }
+    if (!rows.length) { $("att-table-body").innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--muted)">✓ Tidak ada ICC yang perlu diklarifikasi</td></tr>`; return; }
     $("att-table-body").innerHTML = rows.map((r) => {
       const iccNeedsKet = !r.keterangan;
+      const ketDisplay = r.keterangan
+        ? `<span class="att-ket-chip">${escapeHtml(r.keterangan)}</span>`
+        : `<span class="att-icc-chip${iccNeedsKet ? " att-icc-urgent" : ""}">Belum ada keterangan</span>`;
       return `<tr>
         <td data-label="Karyawan"><div class="att-emp-cell"><strong>${escapeHtml(r.employee_name)}</strong><small>${escapeHtml(r.employee_id)}</small></div></td>
         <td data-label="Unit"><span class="att-org">${escapeHtml(r.org || "—")}</span></td>
@@ -832,7 +883,6 @@ window.attendanceModule = (() => {
         <td data-label="TotR" class="att-num-cell"><span class="att-num good">${r.hadir_totr}</span></td>
         <td data-label="ER" class="att-num-cell"><span class="att-num">${r.eff_days}</span></td>
         <td data-label="Keterangan">${ketDisplay}</td>
-        <td data-label="Catatan">${catatanDisplay}</td>
       </tr>`;
     }).join("");
   }
@@ -954,7 +1004,7 @@ window.attendanceModule = (() => {
   }
 
   function rerender() {
-    curRows().forEach((r) => { r.eff_days = getER(r.org, r.stat); r.hadir_totr = r.hadir_r + r.hadir_add; });
+    curRows().forEach((r) => { r.eff_days = getER(r.org, r.stat, r.employee_id); r.hadir_totr = r.hadir_r + r.hadir_add; });
     updatePeriodLabel();
     updateStats();
     render();
@@ -976,9 +1026,15 @@ window.attendanceModule = (() => {
   // ── HELPERS ──────────────────────────────────────────────────────────────────
   function curRows() { return state.dbData[state.periods[state.activePeriodIdx]] || []; }
 
-  function getER(org, stat) {
+  function getER(org, stat, employeeId) {
     const text = String(org || "").toLowerCase();
-    if (/satpam/.test(text) || stat === "PT") return Number($("att-er-satpam")?.value) || 24;
+    if (/satpam/.test(text) || stat === "PT") {
+      const pKey = state.periods[state.activePeriodIdx];
+      const cfg = pKey ? state.periodConfigs[pKey] : null;
+      const ind = (cfg && cfg.er_individual) || {};
+      if (employeeId && ind[employeeId] !== undefined) return Number(ind[employeeId]);
+      return (cfg && cfg.er_satpam) || 24;
+    }
     if (/kepala.tata.usaha|tata.usaha|pesuruh|teknisi/.test(text)) return Number($("att-er-karyawan")?.value) || 18;
     return Number($("att-er-guru")?.value) || 18;
   }

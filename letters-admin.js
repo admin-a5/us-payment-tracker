@@ -178,12 +178,7 @@ async function loadLettersAdmin() {
         <td data-label="Order No"><a href="#" class="letters-order-link" data-order="${escapeHtml(r.order_number)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-date="${formatDate(r.updated_at || r.created_at)}" title="Click for details">${escapeHtml(r.order_number)}</a> <button class="la-copy-btn" data-order="${escapeHtml(r.order_number)}" data-requestor="${escapeHtml(r.requestor_name)}" data-class="${escapeHtml(r.requestor_class)}" data-id="${escapeHtml(r.requestor_id)}" data-year="${escapeHtml(r.academic_year)}" data-items="${escapeHtml(JSON.stringify(r.items))}" data-date="${escapeHtml(r.created_at)}" data-status="${escapeHtml(r.status)}" title="Salin">📋</button></td>
         <td data-label="Requestor"><strong>${escapeHtml(r.requestor_name)}</strong></td>
         <td data-label="ID"><small>${escapeHtml(r.requestor_id)}</small></td>
-        <td data-label="Items">${(r.items || []).map(i => {
-          const label = i.type === "__custom__" && i.description ? i.description : i.type;
-          const desc = i.description && i.type !== "__custom__" ? i.description : "";
-          const lang = i.lang ? ` [${i.lang}]` : "";
-          return `<span class="module-pill neutral">${escapeHtml(label)}${lang}${desc ? ` <small style="color:var(--muted)">(${escapeHtml(desc)})</small>` : ""}</span>`;
-        }).join(" ")}</td>
+        <td data-label="Items">${window.renderItemsDropdown(r.items || [], "module-pill neutral")}</td>
         <td data-label="Status">
           <select class="letters-status-select status-${escapeHtml(r.status)}" data-id="${r.id}" data-order="${escapeHtml(r.order_number)}" data-prev-status="${escapeHtml(r.status)}">
             <option value="submitted" ${r.status === "submitted" ? "selected" : ""}>submitted</option>
